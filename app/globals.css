@@ -1,0 +1,113 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Oswald:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --bg: #f8f7f4;
+  --ink: #1a1a1a;
+  --accent: #ff6a00;
+  --ink-faint: rgba(26, 26, 26, 0.08);
+  --ink-muted: rgba(26, 26, 26, 0.5);
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+  }
+
+  .header-meta, .font-mono, code {
+    font-family: 'Space Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .hero-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 0.88;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .huge-text {
+    font-size: clamp(3rem, 9vw, 8rem);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    padding: 0.35rem 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .nav-item:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-item.active {
+    background: var(--accent);
+    color: #ffffff;
+    opacity: 1;
+    font-weight: 700;
+  }
+
+  .tag {
+    border: 1px solid var(--ink);
+    padding: 0.35rem 0.75rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tag.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .btn-draw {
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+
+  .btn-draw:hover:not(:disabled) {
+    background: var(--accent);
+    color: #ffffff;
+  }
+}
+

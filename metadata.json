@@ -1,0 +1,6 @@
+{
+  "name": "Municipal Teachers' Day 2026 Raffle System",
+  "description": "A reliable, projector-ready raffle system for Municipal Teachers' Day 2026 in Malungon with 5 simultaneous district cards and complete Google Apps Script / Google Sheets integration.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

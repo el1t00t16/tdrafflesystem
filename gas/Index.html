@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Municipal Teachers' Day 2026 Raffle System - Malungon</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti for Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #ea580c;
+      --primary-hover: #c2410c;
+      --primary-light: #ffedd5;
+      --primary-dark: #9a3412;
+      --bg-dark: #0f172a;
+      --card-dark: #1e293b;
+      --border-dark: #334155;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-yellow: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #0b1120;
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: #111827;
+      border-bottom: 2px solid #ea580c;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-badge {
+      background: #ea580c;
+      color: white;
+      font-weight: 800;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: #fb923c;
+      font-weight: 600;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #ea580c;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #c2410c;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: #475569;
+      color: #e2e8f0;
+    }
+    .btn-outline:hover {
+      background: #1e293b;
+      border-color: #ea580c;
+      color: #fff;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* PROJECTOR RAFFLE DISPLAY VIEW */
+    .raffle-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      min-height: calc(100vh - 120px);
+      justify-content: space-between;
+    }
+
+    .raffle-banner {
+      text-align: center;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 1.25rem 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .event-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: #f97316;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    .event-heading {
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .prize-callout {
+      margin-top: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1.25rem;
+      background: rgba(234, 88, 12, 0.15);
+      border: 1px solid rgba(234, 88, 12, 0.4);
+      padding: 0.6rem 1.5rem;
+      border-radius: 9999px;
+    }
+
+    .prize-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffedd5;
+    }
+
+    .prize-metric {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fdba74;
+      background: rgba(0,0,0,0.3);
+      padding: 0.2rem 0.75rem;
+      border-radius: 9999px;
+    }
+
+    /* 5 DISTRICT CARDS GRID (2-2-1 Arrangement) */
+    .district-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .district-card-fifth {
+      grid-column: span 2;
+      max-width: 590px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .district-card {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 190px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .district-card.is-drawing {
+      border-color: #f97316;
+      box-shadow: 0 0 25px rgba(249, 115, 22, 0.35);
+      transform: scale(1.01);
+    }
+
+    .district-card.has-winner {
+      border-color: #10b981;
+      background: #0f2922;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+    }
+
+    .district-header {
+      background: #0f172a;
+      padding: 0.65rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    .district-name {
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      color: #fdba74;
+    }
+
+    .district-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: #334155;
+      color: #94a3b8;
+    }
+
+    .district-card.has-winner .district-badge {
+      background: #059669;
+      color: white;
+    }
+
+    .district-body {
+      flex: 1;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .shuffling-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f8fafc;
+      animation: pulse 0.15s infinite alternate;
+    }
+
+    .shuffling-sub {
+      font-size: 0.85rem;
+      color: #ea580c;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    .winner-item {
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+      width: 100%;
+    }
+    .winner-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .winner-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .winner-school {
+      font-size: 0.85rem;
+      color: #a7f3d0;
+      font-weight: 600;
+    }
+
+    .winner-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: #059669;
+      color: white;
+      margin-top: 0.25rem;
+    }
+
+    .no-winner-box {
+      color: #64748b;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Countdown Overlay */
+    .countdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .countdown-number {
+      font-size: 8rem;
+      font-weight: 900;
+      color: #ea580c;
+      text-shadow: 0 0 50px rgba(234, 88, 12, 0.8);
+      animation: popZoom 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
+    }
+
+    /* Modals & Dialogs */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 150;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: #1e293b;
+      border: 2px solid #ea580c;
+      border-radius: 16px;
+      max-width: 650px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+      overflow: hidden;
+      animation: modalEnter 0.25s ease-out;
+    }
+
+    .modal-header {
+      background: #0f172a;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      background: #0f172a;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* Admin View */
+    .admin-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: #ea580c;
+      border-color: #ea580c;
+      color: white;
+    }
+
+    /* Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .data-table th {
+      background: #0f172a;
+      color: #fb923c;
+      font-weight: 700;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 2px solid #ea580c;
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #334155;
+      color: #e2e8f0;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(234, 88, 12, 0.05);
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    @keyframes popZoom {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
+
+    @keyframes modalEnter {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 768px) {
+      .district-grid {
+        grid-template-columns: 1fr;
+      }
+      .district-card-fifth {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Bar -->
+  <header>
+    <div class="brand">
+      <span class="brand-badge">DEPED MALUNGON</span>
+      <div>
+        <div class="brand-title">Municipal Teachers' Day 2026</div>
+        <div class="brand-subtitle">5-District Simultaneous Grand Raffle System</div>
+      </div>
+    </div>
+    <div class="nav-controls">
+      <button id="btnSoundToggle" class="btn btn-outline" onclick="toggleSound()">
+        🔊 Sound: ON
+      </button>
+      <button id="btnViewToggle" class="btn btn-primary" onclick="toggleView()">
+        📺 Switch to Display
+      </button>
+      <button class="btn btn-outline" onclick="toggleFullscreen()">
+        ⛶ Fullscreen
+      </button>
+    </div>
+  </header>
+
+  <!-- Countdown Overlay -->
+  <div id="countdownOverlay" class="countdown-overlay">
+    <div id="countdownNumber" class="countdown-number">3</div>
+  </div>
+
+  <!-- Draw Preview Confirmation Modal -->
+  <div id="previewModal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>READY TO DRAW?</h3>
+        <button class="btn btn-outline" onclick="closePreviewModal()" style="padding: 0.2rem 0.6rem;">✕</button>
+      </div>
+      <div class="modal-body" id="previewModalBody">
+        <!-- Dynamically populated -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closePreviewModal()">CANCEL</button>
+        <button class="btn btn-primary" onclick="executeDrawFromPreview()">🎲 START DRAW</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winner Confirmation & Redraw Modal -->
+  <div id="confirmWinnerModal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: #10b981;">🎉 DRAW RESULTS REVIEW</h3>
+      </div>
+      <div class="modal-body" id="confirmWinnerBody">
+        <!-- Dynamically populated -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="promptRedraw()">🔄 REDRAW</button>
+        <button class="btn btn-success" onclick="executeConfirmWinners()">✓ CONFIRM WINNERS</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <!-- VIEW 1: PROJECTOR RAFFLE DISPLAY -->
+    <div id="raffleDisplayView" class="raffle-container">
+      <div class="raffle-banner">
+        <div class="event-eyebrow">MUNICIPAL TEACHERS' DAY 2026 • MALUNGON, SARANGANI</div>
+        <h1 class="event-heading">GRAND RAFFLE DRAW</h1>
+        <div class="prize-callout" id="activePrizeCallout">
+          <span class="prize-name" id="displayPrizeName">Select a Prize to Draw</span>
+          <span class="prize-metric" id="displayPrizeQty">0 Winners</span>
+          <span class="prize-metric" id="displayPrizeVal">₱0 Total</span>
+        </div>
+      </div>
+
+      <!-- FIVE DISTRICT CARDS -->
+      <div class="district-grid">
+        <!-- NORTH -->
+        <div class="district-card" id="card-NORTH">
+          <div class="district-header">
+            <span class="district-name">NORTH DISTRICT</span>
+            <span class="district-badge" id="badge-NORTH">READY</span>
+          </div>
+          <div class="district-body" id="body-NORTH">
+            <div class="no-winner-box">WAITING FOR DRAW</div>
+          </div>
+        </div>
+
+        <!-- SOUTH -->
+        <div class="district-card" id="card-SOUTH">
+          <div class="district-header">
+            <span class="district-name">SOUTH DISTRICT</span>
+            <span class="district-badge" id="badge-SOUTH">READY</span>
+          </div>
+          <div class="district-body" id="body-SOUTH">
+            <div class="no-winner-box">WAITING FOR DRAW</div>
+          </div>
+        </div>
+
+        <!-- EAST -->
+        <div class="district-card" id="card-EAST">
+          <div class="district-header">
+            <span class="district-name">EAST DISTRICT</span>
+            <span class="district-badge" id="badge-EAST">READY</span>
+          </div>
+          <div class="district-body" id="body-EAST">
+            <div class="no-winner-box">WAITING FOR DRAW</div>
+          </div>
+        </div>
+
+        <!-- WEST -->
+        <div class="district-card" id="card-WEST">
+          <div class="district-header">
+            <span class="district-name">WEST DISTRICT</span>
+            <span class="district-badge" id="badge-WEST">READY</span>
+          </div>
+          <div class="district-body" id="body-WEST">
+            <div class="no-winner-box">WAITING FOR DRAW</div>
+          </div>
+        </div>
+
+        <!-- PRIVATE (CENTERED 5TH CARD) -->
+        <div class="district-card district-card-fifth" id="card-PRIVATE">
+          <div class="district-header">
+            <span class="district-name">PRIVATE SCHOOLS DISTRICT</span>
+            <span class="district-badge" id="badge-PRIVATE">READY</span>
+          </div>
+          <div class="district-body" id="body-PRIVATE">
+            <div class="no-winner-box">WAITING FOR DRAW</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 1rem;">
+        <button id="btnQuickDraw" class="btn btn-primary" style="font-size: 1.15rem; padding: 0.85rem 2.5rem;" onclick="triggerDrawModal()">
+          🎲 DRAW WINNERS
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 2: ADMIN DASHBOARD -->
+    <div id="adminView" style="display: none;">
+      <div class="admin-nav">
+        <button class="tab-btn active" onclick="switchAdminTab('dash')">Dashboard</button>
+        <button class="tab-btn" onclick="switchAdminTab('raffle')">Raffle Console</button>
+        <button class="tab-btn" onclick="switchAdminTab('prizes')">Prize Management</button>
+        <button class="tab-btn" onclick="switchAdminTab('winners')">Winners History</button>
+        <button class="tab-btn" onclick="switchAdminTab('claims')">Prize Claims</button>
+        <button class="tab-btn" onclick="switchAdminTab('logs')">Raffle Log</button>
+      </div>
+
+      <!-- Tab: Dashboard -->
+      <div id="tab-dash">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">TOTAL PARTICIPANTS</span>
+            <span class="metric-value" id="statTotalParticipants">2,000</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">ELIGIBLE POOL</span>
+            <span class="metric-value" id="statEligible" style="color: #10b981;">1,950</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">CONFIRMED WINNERS</span>
+            <span class="metric-value" id="statWinners" style="color: #fb923c;">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">REMAINING PRIZES</span>
+            <span class="metric-value" id="statRemainingPrizes" style="color: #38bdf8;">32</span>
+          </div>
+        </div>
+
+        <div style="background: #1e293b; padding: 1.5rem; border-radius: 12px; border: 1px solid #334155;">
+          <h3 style="margin-bottom: 1rem; color: #fdba74;">Event Overview & Status</h3>
+          <p style="color: #94a3b8; line-height: 1.6;">
+            The Municipal Teachers' Day 2026 Raffle is ready. All 5 districts (North, South, East, West, Private) 
+            are synced. Each prize draw selects N winners from the combined pool of all eligible personnel and visualizes 
+            them simultaneously on the 5 projector cards.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab: Raffle Console -->
+      <div id="tab-raffle" style="display: none;">
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; max-width: 600px; margin: 0 auto;">
+          <h3 style="color: #fff; margin-bottom: 1.25rem;">Raffle Draw Controller</h3>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem;">
+              SELECT PRIZE TO DRAW:
+            </label>
+            <select id="selectPrizeAdmin" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px;" onchange="onPrizeSelectChange()">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="color: #94a3b8;">Available Quantity:</span>
+              <span style="font-weight: 800; color: #fdba74;" id="consoleAvailableQty">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="color: #94a3b8;">Total Winners to Pick:</span>
+              <span style="font-weight: 800; color: #10b981;" id="consoleWinnersQty">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #94a3b8;">Total Prize Value:</span>
+              <span style="font-weight: 800; color: #fff;" id="consoleTotalVal">₱0</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1.05rem;" onclick="triggerDrawModal()">
+            🎲 LAUNCH DRAW WINNERS
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Prizes -->
+      <div id="tab-prizes" style="display: none;">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Prize ID</th>
+                <th>Prize Name</th>
+                <th>Unit Value</th>
+                <th>Quantity</th>
+                <th>Drawn</th>
+                <th>Remaining</th>
+                <th>Total Value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="prizesTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Winners -->
+      <div id="tab-winners" style="display: none;">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Winner ID</th>
+                <th>Participant</th>
+                <th>District</th>
+                <th>Type</th>
+                <th>School</th>
+                <th>Prize</th>
+                <th>Draw #</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="winnersTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Claims -->
+      <div id="tab-claims" style="display: none;">
+        <div style="background: #1e293b; padding: 1.5rem; border-radius: 12px; border: 1px solid #334155; max-width: 600px; margin: 0 auto;">
+          <h3 style="color: #fff; margin-bottom: 1rem;">Verify & Claim Prize</h3>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="claimSearchInput" placeholder="Enter Participant Name or ID..." style="flex: 1; padding: 0.6rem 0.8rem; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px;">
+            <button class="btn btn-primary" onclick="searchClaimWinner()">Search</button>
+          </div>
+          <div id="claimResultArea">
+            <p style="color: #94a3b8; font-size: 0.9rem;">Search for a winner above to process prize claim.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Logs -->
+      <div id="tab-logs" style="display: none;">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Log ID</th>
+                <th>Draw #</th>
+                <th>Timestamp</th>
+                <th>Prize</th>
+                <th>Winners</th>
+                <th>Pool Size</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * Client State & Local Fallback for Google Apps Script
+     */
+    let currentView = 'raffle'; // 'raffle' or 'admin'
+    let soundEnabled = true;
+    let audioCtx = null;
+    let prizesList = [];
+    let currentPendingDraw = null;
+    let isDrawingActive = false;
+
+    // Web Audio Synthesizer
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq, duration) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btnSoundToggle').textContent = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function toggleView() {
+      if (currentView === 'raffle') {
+        currentView = 'admin';
+        document.getElementById('raffleDisplayView').style.display = 'none';
+        document.getElementById('adminView').style.display = 'block';
+        document.getElementById('btnViewToggle').textContent = '📺 Switch to Display';
+        loadAdminData();
+      } else {
+        currentView = 'raffle';
+        document.getElementById('adminView').style.display = 'none';
+        document.getElementById('raffleDisplayView').style.display = 'flex';
+        document.getElementById('btnViewToggle').textContent = '⚙️ Switch to Admin';
+      }
+    }
+
+    function switchAdminTab(tabKey) {
+      const tabs = ['dash', 'raffle', 'prizes', 'winners', 'claims', 'logs'];
+      tabs.forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.style.display = (t === tabKey) ? 'block' : 'none';
+      });
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', tabs[idx] === tabKey);
+      });
+    }
+
+    // Initialize System
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check query param
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get('page');
+      if (page === 'admin') {
+        toggleView();
+      }
+      loadInitialPrizes();
+    });
+
+    function loadInitialPrizes() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(renderPrizes).getPrizes();
+        google.script.run.withSuccessHandler(renderStats).getDashboardStats();
+      } else {
+        // Sample fallback for direct preview
+        prizesList = [
+          { id: 'P001', name: '₱500 Cash Prize', unitValue: 500, quantity: 10, drawnQuantity: 0, remainingQuantity: 10, totalValue: 5000, status: 'AVAILABLE' },
+          { id: 'P002', name: '₱1,000 Cash Prize', unitValue: 1000, quantity: 6, drawnQuantity: 0, remainingQuantity: 6, totalValue: 6000, status: 'AVAILABLE' },
+          { id: 'P003', name: 'Stand Fan', unitValue: 1500, quantity: 5, drawnQuantity: 0, remainingQuantity: 5, totalValue: 7500, status: 'AVAILABLE' },
+          { id: 'P004', name: 'Rice Cooker', unitValue: 1800, quantity: 4, drawnQuantity: 0, remainingQuantity: 4, totalValue: 7200, status: 'AVAILABLE' },
+          { id: 'P007', name: '₱5,000 Grand Cash', unitValue: 5000, quantity: 2, drawnQuantity: 0, remainingQuantity: 2, totalValue: 10000, status: 'AVAILABLE' }
+        ];
+        renderPrizes(prizesList);
+      }
+    }
+
+    function renderPrizes(prizes) {
+      prizesList = prizes || [];
+      const sel = document.getElementById('selectPrizeAdmin');
+      sel.innerHTML = '';
+      
+      prizesList.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (${p.remainingQuantity} available - ₱${p.unitValue.toLocaleString()})`;
+        if (p.remainingQuantity <= 0) opt.disabled = true;
+        sel.appendChild(opt);
+      });
+      onPrizeSelectChange();
+      renderPrizesTable();
+    }
+
+    function onPrizeSelectChange() {
+      const sel = document.getElementById('selectPrizeAdmin');
+      const p = prizesList.find(x => x.id === sel.value);
+      if (p) {
+        document.getElementById('consoleAvailableQty').textContent = p.remainingQuantity;
+        document.getElementById('consoleWinnersQty').textContent = p.remainingQuantity;
+        document.getElementById('consoleTotalVal').textContent = '₱' + (p.remainingQuantity * p.unitValue).toLocaleString();
+        
+        document.getElementById('displayPrizeName').textContent = p.name;
+        document.getElementById('displayPrizeQty').textContent = `${p.remainingQuantity} Winner${p.remainingQuantity > 1 ? 's' : ''}`;
+        document.getElementById('displayPrizeVal').textContent = `Total: ₱${(p.remainingQuantity * p.unitValue).toLocaleString()}`;
+      }
+    }
+
+    function renderPrizesTable() {
+      const tbody = document.getElementById('prizesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = prizesList.map(p => `
+        <tr>
+          <td><strong>${p.id}</strong></td>
+          <td>${p.name}</td>
+          <td>₱${p.unitValue.toLocaleString()}</td>
+          <td>${p.quantity}</td>
+          <td>${p.drawnQuantity}</td>
+          <td style="color: #fdba74; font-weight: 800;">${p.remainingQuantity}</td>
+          <td>₱${p.totalValue.toLocaleString()}</td>
+          <td><span style="padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${p.status === 'AVAILABLE' ? '#059669' : '#dc2626'}; font-size: 0.75rem;">${p.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderStats(stats) {
+      if (!stats) return;
+      document.getElementById('statTotalParticipants').textContent = stats.totalParticipants.toLocaleString();
+      document.getElementById('statEligible').textContent = stats.eligibleCount.toLocaleString();
+      document.getElementById('statWinners').textContent = stats.winnerCount.toLocaleString();
+      document.getElementById('statRemainingPrizes').textContent = stats.remainingPrizes.toLocaleString();
+    }
+
+    function loadAdminData() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(renderStats).getDashboardStats();
+        google.script.run.withSuccessHandler(renderPrizes).getPrizes();
+        google.script.run.withSuccessHandler(renderWinnersTable).getWinners();
+      }
+    }
+
+    function renderWinnersTable(winners) {
+      const tbody = document.getElementById('winnersTableBody');
+      if (!tbody || !winners) return;
+      tbody.innerHTML = winners.map(w => `
+        <tr>
+          <td><strong>${w.winnerId}</strong></td>
+          <td>${w.name}</td>
+          <td>${w.district}</td>
+          <td>${w.personnelType}</td>
+          <td>${w.school}</td>
+          <td style="color: #fdba74;">${w.prize}</td>
+          <td>${w.drawNumber}</td>
+          <td><span style="padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${w.claimStatus === 'CLAIMED' ? '#059669' : '#d97706'}; font-size: 0.75rem;">${w.claimStatus}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // DRAW FLOW & ANIMATION
+    function triggerDrawModal() {
+      const sel = document.getElementById('selectPrizeAdmin');
+      const prize = prizesList.find(x => x.id === sel.value);
+      if (!prize || prize.remainingQuantity <= 0) {
+        alert('Please select an available prize with remaining quantity.');
+        return;
+      }
+
+      const body = document.getElementById('previewModalBody');
+      body.innerHTML = `
+        <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155; line-height: 1.8;">
+          <div><strong style="color: #94a3b8;">Prize:</strong> <span style="font-size: 1.15rem; font-weight: 800; color: #fff;">${prize.name}</span></div>
+          <div><strong style="color: #94a3b8;">Unit Value:</strong> ₱${prize.unitValue.toLocaleString()}</div>
+          <div><strong style="color: #94a3b8;">Number of Winners to Select:</strong> <span style="color: #10b981; font-weight: 800; font-size: 1.1rem;">${prize.remainingQuantity}</span></div>
+          <div><strong style="color: #94a3b8;">Total Prize Value:</strong> <span style="color: #fdba74; font-weight: 800;">₱${(prize.unitValue * prize.remainingQuantity).toLocaleString()}</span></div>
+          <div><strong style="color: #94a3b8;">Districts Participating:</strong> 5 (NORTH, SOUTH, EAST, WEST, PRIVATE)</div>
+          <div><strong style="color: #94a3b8;">Pool Selection:</strong> Centralized Fair Shuffle (Equal Chance)</div>
+        </div>
+      `;
+      document.getElementById('previewModal').style.display = 'flex';
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').style.display = 'none';
+    }
+
+    function executeDrawFromPreview() {
+      closePreviewModal();
+      const sel = document.getElementById('selectPrizeAdmin');
+      const prizeId = sel.value;
+
+      // Switch to display view if currently in admin
+      if (currentView === 'admin') {
+        toggleView();
+      }
+
+      // Reset card visuals to drawing state
+      ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'].forEach(d => {
+        const card = document.getElementById('card-' + d);
+        const badge = document.getElementById('badge-' + d);
+        const body = document.getElementById('body-' + d);
+        card.className = 'district-card is-drawing';
+        badge.textContent = 'DRAWING...';
+        badge.style.background = '#ea580c';
+        badge.style.color = '#fff';
+      });
+
+      // Call Google Apps Script backend or fallback simulation
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleDrawSuccess)
+          .withFailureHandler(handleDrawError)
+          .drawWinners(prizeId);
+      } else {
+        // Client-side simulation fallback for local preview testing
+        setTimeout(() => {
+          const prize = prizesList.find(p => p.id === prizeId);
+          const mockDistricts = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'];
+          const mockWinners = [];
+          for (let i = 0; i < prize.remainingQuantity; i++) {
+            const dist = mockDistricts[Math.floor(Math.random() * mockDistricts.length)];
+            mockWinners.push({
+              id: 'TD26-0' + Math.floor(1000 + Math.random() * 9000),
+              fullName: 'Sample Winner ' + (i + 1),
+              district: dist,
+              personnelType: Math.random() > 0.2 ? 'TEACHING' : 'NON-TEACHING',
+              school: dist + ' District School'
+            });
+          }
+          handleDrawSuccess({
+            drawNumber: 'DRAW-0001',
+            prize: prize,
+            winners: mockWinners,
+            eligiblePoolSize: 1950
+          });
+        }, 800);
+      }
+
+      startDrawAnimation();
+    }
+
+    let rapidInterval = null;
+    function startDrawAnimation() {
+      isDrawingActive = true;
+      const sampleNames = [
+        'Maria Santos', 'Juan Dela Cruz', 'Ana Garcia', 'Pedro Reyes', 'Angelo Bautista',
+        'Lourdes Rivera', 'Gabriel Ramos', 'Cherry Villanueva', 'Francis Castro', 'Sheryl Corpuz'
+      ];
+
+      rapidInterval = setInterval(() => {
+        if (!isDrawingActive) return;
+        ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'].forEach(d => {
+          const body = document.getElementById('body-' + d);
+          const randName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
+          body.innerHTML = `
+            <div class="shuffling-name">${randName}</div>
+            <div class="shuffling-sub">Cycling Pool...</div>
+          `;
+        });
+        playBeep(450 + Math.random() * 200, 0.04);
+      }, 75);
+    }
+
+    function handleDrawSuccess(result) {
+      currentPendingDraw = result;
+      // Let rapid shuffle run for 3.5 seconds, then countdown 3, 2, 1
+      setTimeout(() => {
+        clearInterval(rapidInterval);
+        runCountdown(() => {
+          revealWinners(result);
+        });
+      }, 3500);
+    }
+
+    function handleDrawError(err) {
+      clearInterval(rapidInterval);
+      isDrawingActive = false;
+      alert('Draw failed: ' + (err.message || err));
+      ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'].forEach(d => {
+        document.getElementById('card-' + d).className = 'district-card';
+        document.getElementById('badge-' + d).textContent = 'READY';
+      });
+    }
+
+    function runCountdown(onComplete) {
+      const overlay = document.getElementById('countdownOverlay');
+      const numEl = document.getElementById('countdownNumber');
+      overlay.style.display = 'flex';
+
+      let count = 3;
+      numEl.textContent = count;
+      playBeep(587.33, 0.35);
+
+      const timer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          numEl.textContent = count;
+          playBeep(count === 1 ? 880 : 587.33, 0.35);
+        } else {
+          clearInterval(timer);
+          overlay.style.display = 'none';
+          onComplete();
+        }
+      }, 1000);
+    }
+
+    function revealWinners(result) {
+      isDrawingActive = false;
+      playBeep(1046.5, 0.8);
+      if (typeof confetti !== 'undefined') {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+
+      // Group winners by district
+      const winnersByDistrict = {
+        NORTH: [], SOUTH: [], EAST: [], WEST: [], PRIVATE: []
+      };
+
+      result.winners.forEach(w => {
+        if (winnersByDistrict[w.district]) {
+          winnersByDistrict[w.district].push(w);
+        }
+      });
+
+      // Update 5 District Cards
+      ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'].forEach(d => {
+        const card = document.getElementById('card-' + d);
+        const badge = document.getElementById('badge-' + d);
+        const body = document.getElementById('body-' + d);
+        const list = winnersByDistrict[d];
+
+        if (list.length > 0) {
+          card.className = 'district-card has-winner';
+          badge.textContent = `🏆 ${list.length} WINNER${list.length > 1 ? 'S' : ''}`;
+          badge.style.background = '#059669';
+          body.innerHTML = list.map(w => `
+            <div class="winner-item">
+              <div class="winner-name">🏆 ${w.fullName}</div>
+              <div class="winner-school">${w.school}</div>
+              <span class="winner-tag">${w.personnelType}</span>
+            </div>
+          `).join('');
+        } else {
+          card.className = 'district-card';
+          badge.textContent = 'NO WINNER';
+          badge.style.background = '#334155';
+          body.innerHTML = `<div class="no-winner-box">NO WINNER IN THIS DRAW</div>`;
+        }
+      });
+
+      // Show Admin Review & Confirmation Dialog
+      setTimeout(() => {
+        showConfirmationDialog(result);
+      }, 1500);
+    }
+
+    function showConfirmationDialog(result) {
+      const modal = document.getElementById('confirmWinnerModal');
+      const body = document.getElementById('confirmWinnerBody');
+      body.innerHTML = `
+        <div style="margin-bottom: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.75rem;">
+          <h4 style="color: #fff; font-size: 1.1rem;">Prize: ${result.prize.name}</h4>
+          <p style="color: #fdba74; font-size: 0.9rem;">Round: ${result.drawNumber} • ${result.winners.length} Winner${result.winners.length > 1 ? 's' : ''} Drawn</p>
+        </div>
+        <div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+          ${result.winners.map((w, i) => `
+            <div style="background: #0f172a; padding: 0.75rem; border-radius: 8px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="color: #fff;">${i + 1}. ${w.fullName}</strong>
+                <div style="color: #94a3b8; font-size: 0.8rem;">${w.school}</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="background: #ea580c; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px;">${w.district}</span>
+                <div style="color: #a7f3d0; font-size: 0.75rem; margin-top: 0.2rem;">${w.personnelType}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <p style="color: #94a3b8; font-size: 0.8rem; margin-top: 1rem;">
+          ⚠️ Click <strong>CONFIRM WINNERS</strong> to officially record these results in Google Sheets, mark participants as won, and deduct prize quantity. Or click <strong>REDRAW</strong> to safely discard.
+        </p>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    function promptRedraw() {
+      if (confirm('Are you sure you want to DISCARD these results and REDRAW? This draw will not be counted.')) {
+        document.getElementById('confirmWinnerModal').style.display = 'none';
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.cancelDraw(currentPendingDraw, 'REDRAW');
+        }
+        alert('Results discarded. You may now start a new draw.');
+      }
+    }
+
+    function executeConfirmWinners() {
+      document.getElementById('confirmWinnerModal').style.display = 'none';
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            alert(`🎉 Official Draw Confirmed! Logged as ${res.drawNumber}.`);
+            loadAdminData();
+          })
+          .withFailureHandler(err => {
+            alert('Failed to record winners: ' + err);
+          })
+          .confirmDraw(currentPendingDraw);
+      } else {
+        alert('🎉 Simulation: Winners officially confirmed!');
+      }
+    }
+
+    function searchClaimWinner() {
+      const q = document.getElementById('claimSearchInput').value.trim().toLowerCase();
+      const area = document.getElementById('claimResultArea');
+      if (!q) {
+        area.innerHTML = '<p style="color: #ef4444;">Please enter a search query.</p>';
+        return;
+      }
+      area.innerHTML = `
+        <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #10b981; margin-top: 0.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="color: #fff; font-size: 1.1rem;">Winner Verified</strong>
+              <div style="color: #94a3b8; font-size: 0.85rem;">Prize: ₱500 Cash Prize</div>
+            </div>
+            <button class="btn btn-success" onclick="confirmClaimAction('WN-0001')">✓ Mark Claimed</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function confirmClaimAction(winnerId) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            alert('Prize marked as CLAIMED!');
+            searchClaimWinner();
+          })
+          .markPrizeClaimed(winnerId, 'Claims Officer');
+      } else {
+        alert('Prize successfully marked as CLAIMED in simulation.');
+      }
+    }
+  </script>
+</body>
+</html>
