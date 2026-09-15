@@ -8,9 +8,9 @@ export type YesNo = 'YES' | 'NO';
 
 export type PrizeStatus = 'AVAILABLE' | 'EXHAUSTED';
 
-export type ClaimStatus = 'UNCLAIMED' | 'CLAIMED';
+export type ClaimStatus = 'UNCLAIMED' | 'CLAIMED' | 'FORFEITED';
 
-export type RaffleRoundStatus = 'CONFIRMED' | 'CANCELLED' | 'REDRAWN';
+export type RaffleRoundStatus = 'CONFIRMED' | 'CANCELLED' | 'REDRAWN' | 'FORFEITED';
 
 export type DistributionMode = 'EQUAL_PER_DISTRICT' | 'COMBINED_POOL';
 
@@ -94,6 +94,8 @@ export interface Winner {
   proxyName?: string;
   proxyRelationship?: string;
   claimNotes?: string;
+  forfeitedAt?: string;
+  forfeitReason?: string;
 }
 
 export interface RaffleLog {
@@ -110,6 +112,7 @@ export interface RaffleLog {
   admin: string;
   distributionMode?: DistributionMode;
   winnersPerDistrict?: number;
+  targetDistrict?: District | 'ALL';
 }
 
 export interface SystemSettings {
@@ -121,6 +124,15 @@ export interface SystemSettings {
   animationDuration: number; // in seconds (e.g. 6)
   soundEnabled: boolean;
   raffleStatus: 'READY' | 'DRAWING' | 'COMPLETED';
+  gateAccessPin?: string; // Default: '2026'
+  adminAccessPin?: string; // Default: '2026'
+}
+
+export interface GateSession {
+  stationId: string;
+  officerName: string;
+  authenticatedAt: string;
+  isLoggedIn: boolean;
 }
 
 export interface TemporaryDrawResult {
@@ -131,4 +143,13 @@ export interface TemporaryDrawResult {
   eligiblePoolSize: number;
   distributionMode: DistributionMode;
   winnersPerDistrict?: number;
+  targetDistrict?: District | 'ALL';
 }
+
+export interface ClaimStationSession {
+  stationId: string;
+  officerName: string;
+  authenticatedAt: string;
+  isLoggedIn: boolean;
+}
+

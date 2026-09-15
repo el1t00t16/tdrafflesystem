@@ -25,9 +25,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   const districtWinners: Record<District, number> = {
     NORTH: 0,
-    SOUTH: 0,
     EAST: 0,
     WEST: 0,
+    SOUTH: 0,
     PRIVATE: 0
   };
   winners.forEach((w) => {
@@ -114,12 +114,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             2. Winners by District
           </h4>
           <div className="space-y-2 text-xs">
-            {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => (
+            {(['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'] as District[]).map((d) => (
               <div
                 key={d}
                 className="flex justify-between items-center bg-neutral-950 p-3 border border-white/10 print:border-gray-200"
               >
-                <span className="font-black text-white text-xs uppercase tracking-wider print:text-black">{d} DISTRICT:</span>
+                <span className="font-black text-white text-xs uppercase tracking-wider print:text-black">
+                  {d === 'PRIVATE' ? 'PRIVATE (ECCD + PRIVATE SCHOOL + LSB):' : `${d} DISTRICT:`}
+                </span>
                 <span className="font-black text-[#FF1E1E] text-sm print:text-black">{districtWinners[d]} Winners</span>
               </div>
             ))}

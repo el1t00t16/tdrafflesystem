@@ -26,9 +26,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   // District breakdowns
   const districtCounts: Record<District, { total: number; winners: number }> = {
     NORTH: { total: 0, winners: 0 },
-    SOUTH: { total: 0, winners: 0 },
     EAST: { total: 0, winners: 0 },
     WEST: { total: 0, winners: 0 },
+    SOUTH: { total: 0, winners: 0 },
     PRIVATE: { total: 0, winners: 0 }
   };
 
@@ -124,14 +124,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => {
+            {(['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'] as District[]).map((d) => {
               const data = districtCounts[d];
               const percent = ((data.total / Math.max(1, totalParticipants)) * 100).toFixed(0);
 
               return (
                 <div key={d} className="bg-neutral-950 border border-white/10 p-3">
                   <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider mb-1.5">
-                    <span className="text-white">{d} DISTRICT</span>
+                    <span className="text-white">{d === 'PRIVATE' ? 'PRIVATE (ECCD + PRIVATE SCHOOL + LSB)' : `${d} DISTRICT`}</span>
                     <span className="text-neutral-300">
                       {data.total.toLocaleString()} <span className="text-neutral-500 font-normal">({percent}%)</span>
                     </span>

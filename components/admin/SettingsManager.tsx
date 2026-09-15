@@ -1,8 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
-import { SystemSettings } from '../../lib/types';
-import { Settings, ShieldCheck, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { SystemSettings, Participant } from '../../lib/types';
+import {
+  Settings,
+  ShieldCheck,
+  AlertTriangle,
+  RefreshCw,
+  CheckCircle,
+  Database,
+  Copy,
+  Check,
+  UploadCloud,
+  Loader2,
+  ExternalLink,
+  Trash2,
+  QrCode,
+  Lock,
+  Smartphone
+} from 'lucide-react';
+import QRCode from 'qrcode';
+import {
+  getSupabaseCredentials,
+  setSupabaseCredentials,
+  testSupabaseConnection,
+  SUPABASE_SQL_SCHEMA,
+  batchSyncParticipantsToSupabase
+} from '../../lib/supabase';
 
 interface SettingsManagerProps {
   settings: SystemSettings;
@@ -10,6 +34,7 @@ interface SettingsManagerProps {
   onPrepareNewEvent: () => void;
   totalParticipants: number;
   totalWinners: number;
+  participants?: Participant[];
 }
 
 export const SettingsManager: React.FC<SettingsManagerProps> = ({
@@ -17,18 +42,144 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   onUpdateSettings,
   onPrepareNewEvent,
   totalParticipants,
-  totalWinners
+  totalWinners,
+  participants = []
 }) => {
-  const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
+  const [localSettings, setLocalSettings] = useState<SystemSettings>(() => {
+    let pin = settings.gateAccessPin || '2026';
+    try {
+      const stored = localStorage.getItem('td26_gate_pin');
+      if (stored) pin = stored;
+    } catch (e) {}
+    let adminPin = settings.adminAccessPin || '2026';
+    try {
+      const storedAdmin = localStorage.getItem('td26_admin_pin');
+      if (storedAdmin) adminPin = storedAdmin;
+    } catch (e) {}
+    return { ...settings, gateAccessPin: pin, adminAccessPin: adminPin };
+  });
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [copiedGateUrl, setCopiedGateUrl] = useState(false);
+  const [showQuickSetupQr, setShowQuickSetupQr] = useState(false);
+  const [quickSetupQrUrl, setQuickSetupQrUrl] = useState<string | null>(null);
+  const [copiedQuickSetupUrl, setCopiedQuickSetupUrl] = useState(false);
+  const [pinSavedFeedback, setPinSavedFeedback] = useState(false);
+
+  // Supabase State initialized lazily
+  const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseCredentials().url);
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState(() => getSupabaseCredentials().anonKey);
+  const [supabaseSource, setSupabaseSource] = useState<'ENV' | 'LOCAL_STORAGE' | 'NONE'>(
+    () => getSupabaseCredentials().source
+  );
+  const [testStatus, setTestStatus] = useState<{ loading: boolean; success?: boolean; message?: string }>({ loading: false });
+  const [copiedSchema, setCopiedSchema] = useState(false);
+  const [isSyncingParticipants, setIsSyncingParticipants] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string | null>(null);
+
+  const handleTestConnection = async () => {
+    setTestStatus({ loading: true });
+    const result = await testSupabaseConnection(supabaseUrl, supabaseAnonKey);
+    setTestStatus({ loading: false, success: result.success, message: result.message });
+  };
+
+  const handleSaveSupabase = () => {
+    setSupabaseCredentials(supabaseUrl, supabaseAnonKey);
+    const creds = getSupabaseCredentials();
+    setSupabaseSource(creds.source);
+    setTestStatus({
+      loading: false,
+      success: true,
+      message: 'Supabase credentials saved! The app is now connected to your live database.'
+    });
+  };
+
+  const handleClearSupabase = () => {
+    setSupabaseCredentials('', '');
+    setSupabaseUrl('');
+    setSupabaseAnonKey('');
+    setSupabaseSource('NONE');
+    setTestStatus({ loading: false, message: 'Supabase credentials cleared.' });
+  };
+
+  const handleCopySchema = () => {
+    navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
+    setCopiedSchema(true);
+    setTimeout(() => setCopiedSchema(false), 2500);
+  };
+
+  const handlePushParticipants = async () => {
+    if (participants.length === 0) {
+      alert('No participants loaded to push.');
+      return;
+    }
+    setIsSyncingParticipants(true);
+    setSyncProgress(`0 / ${participants.length} pushed...`);
+
+    const res = await batchSyncParticipantsToSupabase(participants, (processed, total) => {
+      setSyncProgress(`${processed.toLocaleString()} / ${total.toLocaleString()} synced`);
+    });
+
+    setIsSyncingParticipants(false);
+    if (res.success) {
+      setSyncProgress(`Successfully synced ${res.count.toLocaleString()} participants to Supabase!`);
+    } else {
+      setSyncProgress(`Sync error: ${res.error}`);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateSettings(localSettings);
+    try {
+      localStorage.setItem('td26_gate_pin', localSettings.gateAccessPin || '2026');
+      localStorage.setItem('td26_admin_pin', localSettings.adminAccessPin || '2026');
+    } catch (e) {
+      console.error(e);
+    }
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  const handleCopyGateUrl = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://teachers-day-raffle-system.web.app';
+    const gateUrl = `${origin}/attendance`;
+    navigator.clipboard.writeText(gateUrl);
+    setCopiedGateUrl(true);
+    setTimeout(() => setCopiedGateUrl(false), 2500);
+  };
+
+  const handleToggleQuickSetupQr = async () => {
+    if (!showQuickSetupQr) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://teachers-day-raffle-system.web.app';
+      const targetUrl = supabaseUrl && supabaseAnonKey
+        ? `${origin}/attendance?surl=${encodeURIComponent(supabaseUrl)}&skey=${encodeURIComponent(supabaseAnonKey)}`
+        : `${origin}/attendance`;
+      try {
+        const qrData = await QRCode.toDataURL(targetUrl, {
+          width: 260,
+          margin: 1,
+          color: { dark: '#000000', light: '#ffffff' }
+        });
+        setQuickSetupQrUrl(qrData);
+      } catch (err) {
+        console.error('Failed to generate quick setup QR:', err);
+      }
+      setShowQuickSetupQr(true);
+    } else {
+      setShowQuickSetupQr(false);
+    }
+  };
+
+  const handleCopyQuickSetupUrl = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://teachers-day-raffle-system.web.app';
+    const targetUrl = supabaseUrl && supabaseAnonKey
+      ? `${origin}/attendance?surl=${encodeURIComponent(supabaseUrl)}&skey=${encodeURIComponent(supabaseAnonKey)}`
+      : `${origin}/attendance`;
+    navigator.clipboard.writeText(targetUrl);
+    setCopiedQuickSetupUrl(true);
+    setTimeout(() => setCopiedQuickSetupUrl(false), 2500);
   };
 
   const handleExecuteReset = () => {
@@ -130,22 +281,22 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {/* Animation Duration Slider */}
-          <div className="bg-neutral-950 border border-white/10 p-4 space-y-2">
+          <div className="bg-neutral-950 border border-white/10 p-4 space-y-3">
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-black text-white text-sm uppercase tracking-wide">ANIMATION DURATION</div>
                 <p className="text-neutral-400 text-[11px]">
-                  Duration of rapid name cycling before reveal
+                  Duration of rapid name cycling before reveal (3 to 30 seconds)
                 </p>
               </div>
-              <span className="text-[#FF1E1E] font-black text-sm">
+              <span className="text-[#FF1E1E] font-black text-base font-mono">
                 {localSettings.animationDuration} SECONDS
               </span>
             </div>
             <input
               type="range"
               min="3"
-              max="12"
+              max="30"
               step="1"
               value={localSettings.animationDuration}
               onChange={(e) =>
@@ -156,6 +307,29 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               }
               className="w-full accent-[#FF1E1E] cursor-pointer"
             />
+            {/* Quick Duration Preset Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-neutral-400 font-mono uppercase mr-1">Presets:</span>
+              {[3, 5, 10, 15, 20, 25, 30].map((sec) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() =>
+                    setLocalSettings({
+                      ...localSettings,
+                      animationDuration: sec
+                    })
+                  }
+                  className={`px-2.5 py-1 text-xs font-mono font-bold transition-all border ${
+                    localSettings.animationDuration === sec
+                      ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow-sm'
+                      : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-white/10'
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
@@ -246,6 +420,454 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Gatekeeper Security & Scanner Stations Access Panel */}
+      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl space-y-5 relative border-t-2 border-t-[#ff6a00]">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/30 flex items-center justify-center text-[#ff6a00]">
+              <QrCode className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
+                GATEKEEPER &amp; SCANNER STATIONS
+              </h4>
+              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+                Volunteer attendance passkey &amp; multi-gate mobile terminal link
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff6a00] animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-300">
+              STATION SECURITY ACTIVE
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-neutral-950 border border-white/10 p-4 space-y-4 text-xs">
+          {/* Admin Master Console PIN Setting */}
+          <div className="space-y-1.5 pb-3 border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#FF1E1E]" />
+                <span>ADMIN MASTER CONSOLE ACCESS PIN:</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = { ...localSettings, adminAccessPin: '2026' };
+                  setLocalSettings(updated);
+                  onUpdateSettings(updated);
+                  try {
+                    localStorage.setItem('td26_admin_pin', '2026');
+                    localStorage.setItem('td26_settings', JSON.stringify(updated));
+                  } catch (e) {}
+                  setPinSavedFeedback(true);
+                  setTimeout(() => setPinSavedFeedback(false), 2500);
+                }}
+                className="text-[10px] text-[#FF1E1E] hover:underline font-mono"
+              >
+                Reset to default (2026)
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <input
+                type="text"
+                maxLength={15}
+                placeholder="2026"
+                value={localSettings.adminAccessPin || ''}
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  const updated = { ...localSettings, adminAccessPin: val };
+                  setLocalSettings(updated);
+                  onUpdateSettings(updated);
+                  try {
+                    localStorage.setItem('td26_admin_pin', val);
+                    localStorage.setItem('td26_settings', JSON.stringify(updated));
+                  } catch (err) {}
+                  setPinSavedFeedback(true);
+                  setTimeout(() => setPinSavedFeedback(false), 2500);
+                }}
+                className="w-36 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#FF1E1E]"
+              />
+              <span className="text-[11px] text-neutral-400 font-sans">
+                Protects the main stage console from gate volunteers, staff, or audience participants.
+              </span>
+            </div>
+          </div>
+
+          {/* Gate Access PIN Setting */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#ff6a00]" />
+                <span>GATE STATION ACCESS PIN:</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = { ...localSettings, gateAccessPin: '2026' };
+                  setLocalSettings(updated);
+                  onUpdateSettings(updated);
+                  try {
+                    localStorage.setItem('td26_gate_pin', '2026');
+                    localStorage.setItem('td26_settings', JSON.stringify(updated));
+                  } catch (e) {}
+                  setPinSavedFeedback(true);
+                  setTimeout(() => setPinSavedFeedback(false), 2500);
+                }}
+                className="text-[10px] text-[#ff6a00] hover:underline font-mono"
+              >
+                Reset to default (2026)
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <input
+                type="text"
+                maxLength={10}
+                placeholder="2026"
+                value={localSettings.gateAccessPin || ''}
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  const updated = { ...localSettings, gateAccessPin: val };
+                  setLocalSettings(updated);
+                  onUpdateSettings(updated);
+                  try {
+                    localStorage.setItem('td26_gate_pin', val);
+                    localStorage.setItem('td26_settings', JSON.stringify(updated));
+                  } catch (err) {}
+                  setPinSavedFeedback(true);
+                  setTimeout(() => setPinSavedFeedback(false), 2500);
+                }}
+                className="w-36 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#ff6a00]"
+              />
+              <span className="text-[11px] text-neutral-400 font-sans">
+                Only volunteers with this passkey can unlock the QR scanner station.
+              </span>
+            </div>
+          </div>
+
+          {/* Passcode Instant Feedback Banner */}
+          {pinSavedFeedback && (
+            <div className="p-2 bg-emerald-950/40 border border-emerald-500/50 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Passcodes updated &amp; active immediately! Previous codes are now rejected.</span>
+            </div>
+          )}
+
+          {/* Shareable Scanner Link */}
+          <div className="space-y-1.5 pt-3 border-t border-white/10">
+            <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+              <ExternalLink className="w-3.5 h-3.5 text-[#22c55e]" />
+              <span>VOLUNTEER SCANNER STATION LINK (SHARE WITH ENTRANCE CREW):</span>
+            </label>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={typeof window !== 'undefined' ? `${window.location.origin}/attendance` : 'https://teachers-day-raffle-system.web.app/attendance'}
+                className="flex-1 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-xs select-all outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleCopyGateUrl}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+              >
+                {copiedGateUrl ? (
+                  <>
+                    <Check className="w-4 h-4 text-[#22c55e]" />
+                    <span className="text-[#22c55e]">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-neutral-400" />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
+              <a
+                href="/attendance"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-[#ff6a00] hover:bg-[#ff7b1a] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+              >
+                <span>Open Terminal</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Phone Setup with Supabase Auto-Connect */}
+          <div className="pt-3 border-t border-white/10 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5 text-[#ff6a00]" />
+                <span>MOBILE PHONE 1-SCAN SETUP (AUTO-CONNECTS SUPABASE &amp; 2,000 TEACHERS):</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleToggleQuickSetupQr}
+                  className="px-3 py-1.5 bg-[#ff6a00]/20 hover:bg-[#ff6a00]/30 border border-[#ff6a00]/40 text-[#ff6a00] font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>{showQuickSetupQr ? 'Hide Station QR' : 'Show Station Setup QR'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyQuickSetupUrl}
+                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-neutral-200 font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
+                >
+                  {copiedQuickSetupUrl ? <Check className="w-3.5 h-3.5 text-[#22c55e]" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedQuickSetupUrl ? 'Copied!' : 'Copy Mobile Link'}</span>
+                </button>
+              </div>
+            </div>
+
+            {showQuickSetupQr && (
+              <div className="bg-neutral-900 border border-[#ff6a00]/40 p-4 rounded-sm flex flex-col sm:flex-row items-center gap-4 animate-fade-in">
+                {quickSetupQrUrl ? (
+                  <div className="p-2 bg-white rounded-sm shrink-0 shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={quickSetupQrUrl} alt="Quick Setup QR" className="w-40 h-40 object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-40 h-40 bg-neutral-950 flex items-center justify-center text-neutral-400 text-xs">
+                    Generating QR...
+                  </div>
+                )}
+                <div className="space-y-2 text-neutral-300 text-xs">
+                  <div className="font-bold text-white uppercase text-sm flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#ff6a00] animate-ping" />
+                    <span>Scan with Mobile Camera to Instantly Sync</span>
+                  </div>
+                  <p className="text-neutral-400 leading-relaxed text-[11px]">
+                    Point your mobile phone camera at this QR code. It opens the Gatekeeper Terminal with your Supabase database credentials automatically applied — immediately pulling all 2,000 teachers without typing anything on the phone!
+                  </p>
+                  <div className="text-[10px] font-mono text-neutral-400 bg-neutral-950 p-2 border border-white/10">
+                    Station PIN: <strong className="text-white">{localSettings.gateAccessPin || '2026'}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Security & Multi-Network Highlights */}
+          <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] font-mono text-neutral-300">
+            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
+              <div className="text-white font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#22c55e]" />
+                <span>Strictly Isolated</span>
+              </div>
+              <p className="text-neutral-400 text-[10px] leading-tight">
+                Gate volunteers cannot view or alter raffle prizes, winner rolls, or system configurations.
+              </p>
+            </div>
+
+            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
+              <div className="text-white font-bold flex items-center gap-1">
+                <RefreshCw className="w-3.5 h-3.5 text-[#38bdf8]" />
+                <span>Any Network</span>
+              </div>
+              <p className="text-neutral-400 text-[10px] leading-tight">
+                No venue Wi-Fi needed. Works on 4G/5G mobile data, pocket Wi-Fi, or hotspot over HTTPS.
+              </p>
+            </div>
+
+            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
+              <div className="text-white font-bold flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-[#ff6a00]" />
+                <span>Multi-Gate Sync</span>
+              </div>
+              <p className="text-neutral-400 text-[10px] leading-tight">
+                Gate 1, Gate 2, and VIP desks sync instantly to Supabase with real-time duplicate scan prevention.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Supabase Cloud Database Integration Panel */}
+      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl space-y-5 relative border-t-2 border-t-[#22c55e]">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <Database className="w-6 h-6 text-[#22c55e]" />
+            <div>
+              <h4 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
+                SUPABASE CLOUD DATABASE
+              </h4>
+              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+                Live attendance audit trail &amp; multi-station cloud synchronization
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                supabaseUrl && supabaseAnonKey ? 'bg-[#22c55e] animate-pulse' : 'bg-[#eab308]'
+              }`}
+            />
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-300">
+              {supabaseUrl && supabaseAnonKey ? 'CLOUD CONNECTED' : 'OFFLINE / LOCAL CACHE'}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-neutral-950 border border-white/10 p-4 space-y-4 text-xs">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300">
+                SUPABASE PROJECT URL:
+              </label>
+              {supabaseSource !== 'NONE' && (
+                <span className="text-[9px] font-mono text-neutral-400 uppercase">
+                  Source: {supabaseSource === 'LOCAL_STORAGE' ? 'Browser Settings' : 'Build Environment'}
+                </span>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="https://xyzcompany.supabase.co"
+              value={supabaseUrl}
+              onChange={(e) => setSupabaseUrl(e.target.value)}
+              className="w-full bg-neutral-900 border border-white/15 px-3.5 py-2.5 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">
+              SUPABASE ANON PUBLIC KEY:
+            </label>
+            <input
+              type="password"
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              value={supabaseAnonKey}
+              onChange={(e) => setSupabaseAnonKey(e.target.value)}
+              className="w-full bg-neutral-900 border border-white/15 px-3.5 py-2.5 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+            />
+          </div>
+
+          {/* Test Status feedback */}
+          {testStatus.message && (
+            <div
+              className={`p-3 border text-xs flex items-center gap-2 ${
+                testStatus.success
+                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+                  : 'bg-red-950/40 border-red-500/50 text-red-200'
+              }`}
+            >
+              {testStatus.success ? (
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              )}
+              <span>{testStatus.message}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={testStatus.loading || !supabaseUrl || !supabaseAnonKey}
+              className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-all"
+            >
+              {testStatus.loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#22c55e]" />
+              ) : (
+                <Database className="w-3.5 h-3.5 text-[#22c55e]" />
+              )}
+              <span>Test Connection</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveSupabase}
+              disabled={!supabaseUrl || !supabaseAnonKey}
+              className="px-5 py-2.5 bg-[#22c55e] hover:bg-[#16a34a] text-black font-black text-xs uppercase tracking-wider disabled:opacity-40 transition-all flex items-center gap-2"
+            >
+              <Check className="w-3.5 h-3.5 text-black" />
+              <span>Save &amp; Connect Live</span>
+            </button>
+
+            {(supabaseUrl || supabaseAnonKey) && (
+              <button
+                type="button"
+                onClick={handleClearSupabase}
+                className="px-3 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-white/15 text-xs font-bold uppercase transition-all"
+                title="Clear credentials"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Database Quick Actions */}
+        <div className="border border-white/10 bg-neutral-950 p-4 space-y-3 text-xs">
+          <div className="font-black text-white text-xs uppercase tracking-wider flex items-center justify-between">
+            <span>Database Setup &amp; Sync Utilities</span>
+            <a
+              href="https://supabase.com/dashboard"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] text-neutral-400 hover:text-white inline-flex items-center gap-1 font-mono underline"
+            >
+              Open Supabase Console <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={handleCopySchema}
+              className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-white/30 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+            >
+              {copiedSchema ? (
+                <>
+                  <Check className="w-4 h-4 text-[#22c55e]" />
+                  <span className="text-[#22c55e]">Schema Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-neutral-400" />
+                  <span>Copy SQL Schema</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePushParticipants}
+              disabled={isSyncingParticipants || !supabaseUrl || !supabaseAnonKey}
+              className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-[#22c55e] text-white font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
+            >
+              {isSyncingParticipants ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#22c55e]" />
+                  <span>Pushing Data...</span>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-4 h-4 text-[#22c55e]" />
+                  <span>Sync {participants.length.toLocaleString()} Teachers to Cloud</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {syncProgress && (
+            <div className="p-2.5 bg-neutral-900 border border-white/10 font-mono text-[11px] text-neutral-300">
+              {syncProgress}
+            </div>
+          )}
+
+          <p className="text-neutral-400 text-[11px] leading-relaxed pt-1">
+            Tip: If you haven&apos;t created your Supabase tables yet, click <strong>&quot;Copy SQL Schema&quot;</strong>, open your Supabase project&apos;s <strong>SQL Editor</strong>, paste, and click <strong>Run</strong>.
+          </p>
+        </div>
       </div>
     </div>
   );

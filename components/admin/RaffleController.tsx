@@ -20,7 +20,7 @@ interface RaffleControllerProps {
   districtEligibleCounts: Record<District, number>;
 }
 
-const DISTRICTS: District[] = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'];
+const DISTRICTS: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
 export const RaffleController: React.FC<RaffleControllerProps> = ({
   prizes,
@@ -97,6 +97,11 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
               onChange={(e) => onSelectPrize(e.target.value)}
               className="w-full bg-neutral-950 border border-white/20 focus:border-[#FF6A00] px-4 py-3 text-white font-black text-sm uppercase tracking-wide outline-none transition-colors"
             >
+              {prizes.length === 0 && (
+                <option value="" disabled>
+                  No prizes registered — please add prizes in Prize Inventory
+                </option>
+              )}
               {prizes.map((prize) => (
                 <option
                   key={prize.id}
@@ -104,7 +109,10 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                   disabled={prize.remainingQuantity <= 0}
                   className="bg-neutral-900 text-white py-2"
                 >
-                  {prize.name} — (Remaining: {prize.remainingQuantity} / {prize.quantity}) • ₱{prize.unitValue.toLocaleString()} each
+                  {prize.name} — (Remaining: {prize.remainingQuantity} / {prize.quantity})
+                  {prize.unitValue > 0
+                    ? ` • ₱${prize.unitValue.toLocaleString()} each`
+                    : (prize.description ? ` • ${prize.description}` : ' • Physical Item')}
                   {prize.remainingQuantity <= 0 ? ' [EXHAUSTED]' : ''}
                 </option>
               ))}
@@ -351,7 +359,7 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                     }`}
                   >
                     <div className="text-[9px] font-black uppercase tracking-wider text-neutral-400">
-                      {d}
+                      {d === 'PRIVATE' ? 'PRIVATE (ECCD+LSB)' : d}
                     </div>
                     <div className="text-base font-black text-white font-mono mt-0.5">
                       {count}

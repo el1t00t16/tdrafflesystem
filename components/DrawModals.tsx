@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { District, DistributionMode, Participant, Prize, TemporaryDrawResult } from '../lib/types';
 import { Trophy, CheckCircle, RotateCcw, AlertTriangle, ShieldAlert, Target, Globe, X } from 'lucide-react';
 
-const DISTRICTS: District[] = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'];
+const DISTRICTS: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
 interface DrawPreviewModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ interface DrawPreviewModalProps {
   winnersPerDistrict: number;
   totalWinnersToDraw: number;
   districtEligibleCounts: Record<District, number>;
+  targetDistrict?: District | 'ALL';
 }
 
 export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
@@ -29,7 +30,8 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
   excludedWinnersCount,
   winnersPerDistrict,
   totalWinnersToDraw,
-  districtEligibleCounts: _districtEligibleCounts
+  districtEligibleCounts: _districtEligibleCounts,
+  targetDistrict
 }) => {
   if (!isOpen || !prize) return null;
 
@@ -44,14 +46,14 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
               <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-white leading-none">
                 READY TO DRAW?
               </h3>
-              <p className="font-mono text-[10px] text-white/60 uppercase tracking-widest mt-1">
-                Confirm criteria before launching stage animation
-              </p>
+              <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mt-0.5 block">
+                Malungon Teachers&apos; Day 2026
+              </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white p-1 hover:bg-white/10 transition-colors"
+            className="text-neutral-400 hover:text-white transition-colors p-1"
           >
             <X className="w-5 h-5" />
           </button>
@@ -73,10 +75,15 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
                     <Target className="w-3.5 h-3.5 text-[#ff6a00]" />
                     <span>Equal per District ({winnersPerDistrict} each)</span>
                   </>
+                ) : targetDistrict && targetDistrict !== 'ALL' ? (
+                  <>
+                    <Target className="w-3.5 h-3.5 text-[#ff6a00]" />
+                    <span>{targetDistrict} District Exclusive</span>
+                  </>
                 ) : (
                   <>
                     <Globe className="w-3.5 h-3.5 text-[#ff6a00]" />
-                    <span>Combined Pool</span>
+                    <span>Combined Pool (All Districts)</span>
                   </>
                 )}
               </span>
@@ -214,7 +221,7 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
                   key={d}
                   className="px-2 py-0.5 bg-[#f8f7f4] border border-[#1a1a1a]/20 text-[#1a1a1a] uppercase font-bold"
                 >
-                  {d}: <strong className="text-[#ff6a00]">{districtCounts[d] || 0}</strong>
+                  {d === 'PRIVATE' ? 'PRIVATE (ECCD+LSB)' : d}: <strong className="text-[#ff6a00]">{districtCounts[d] || 0}</strong>
                 </span>
               ))}
             </div>
@@ -242,7 +249,7 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
                   <span className="bg-[#ff6a00] text-white font-mono font-bold text-xs px-2.5 py-0.5 uppercase tracking-wider">
-                    {w.district}
+                    {w.district === 'PRIVATE' ? 'PRIVATE (ECCD/LSB)' : `${w.district} DISTRICT`}
                   </span>
                   <span className="bg-[#1a1a1a] text-white font-mono font-bold text-xs px-2 py-0.5 uppercase tracking-wider">
                     {w.personnelType}

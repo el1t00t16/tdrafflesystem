@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { Lock, ExternalLink } from 'lucide-react';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
   currentView: 'display' | 'admin' | 'claim' | 'attendance' | 'gas';
@@ -11,9 +13,8 @@ interface HeaderProps {
   onToggleFullscreen: () => void;
   unclaimedCount?: number;
   presentCount?: number;
+  onLock?: () => void;
 }
-
-const emptySubscribe = () => () => {};
 
 export const Header: React.FC<HeaderProps> = ({
   currentView,
@@ -23,19 +24,20 @@ export const Header: React.FC<HeaderProps> = ({
   isFullscreen,
   onToggleFullscreen,
   unclaimedCount = 0,
-  presentCount = 0
+  presentCount = 0,
+  onLock
 }) => {
-  const isMounted = React.useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <>
       {/* Technical Navigation Bar (Variation 3 .admin-nav) */}
       <div className="admin-nav bg-[#1a1a1a] px-4 sm:px-12 py-2 flex flex-wrap items-center justify-between text-[#f8f7f4] border-b border-black select-none">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           <button
             id="nav-btn-display"
             onClick={() => onViewChange('display')}
@@ -50,36 +52,58 @@ export const Header: React.FC<HeaderProps> = ({
           >
             Admin Console
           </button>
-          <button
-            id="nav-btn-attendance"
-            onClick={() => onViewChange('attendance')}
-            className={`nav-item flex items-center gap-1.5 ${currentView === 'attendance' ? 'active' : ''}`}
-          >
-            <span>Attendance &amp; Gate</span>
-            {isMounted && (presentCount !== undefined && presentCount > 0) && (
-              <span
-                suppressHydrationWarning
-                className="font-mono text-[9px] bg-[#22c55e] text-black px-1.5 py-0.2 rounded-xs font-bold"
-              >
-                {presentCount}
-              </span>
-            )}
-          </button>
-          <button
-            id="nav-btn-claim"
-            onClick={() => onViewChange('claim')}
-            className={`nav-item flex items-center gap-1.5 ${currentView === 'claim' ? 'active' : ''}`}
-          >
-            <span>Prize Claim</span>
-            {isMounted && unclaimedCount > 0 && (
-              <span
-                suppressHydrationWarning
-                className="font-mono text-[9px] bg-[#ff6a00] text-white px-1.5 py-0.2 rounded-xs font-bold"
-              >
-                {unclaimedCount}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center">
+            <button
+              id="nav-btn-attendance"
+              onClick={() => onViewChange('attendance')}
+              className={`nav-item flex items-center gap-1.5 ${currentView === 'attendance' ? 'active' : ''}`}
+            >
+              <span>Attendance &amp; Gate</span>
+              {isMounted && (presentCount !== undefined && presentCount > 0) && (
+                <span
+                  suppressHydrationWarning
+                  className="font-mono text-[9px] bg-[#22c55e] text-black px-1.5 py-0.2 rounded-xs font-bold"
+                >
+                  {presentCount}
+                </span>
+              )}
+            </button>
+            <a
+              href="/attendance"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Standalone Attendance Scanner Station in new window (/attendance)"
+              className="p-1 hover:text-[#22c55e] text-neutral-400 transition-colors ml-0.5"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="flex items-center">
+            <button
+              id="nav-btn-claim"
+              onClick={() => onViewChange('claim')}
+              className={`nav-item flex items-center gap-1.5 ${currentView === 'claim' ? 'active' : ''}`}
+            >
+              <span>Prize Claim</span>
+              {isMounted && unclaimedCount > 0 && (
+                <span
+                  suppressHydrationWarning
+                  className="font-mono text-[9px] bg-[#ff6a00] text-white px-1.5 py-0.2 rounded-xs font-bold"
+                >
+                  {unclaimedCount}
+                </span>
+              )}
+            </button>
+            <a
+              href="/claims"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Standalone Prize Claim Workstation in new window (/claims)"
+              className="p-1 hover:text-[#ff6a00] text-neutral-400 transition-colors ml-0.5"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
           <button
             id="nav-btn-gas"
             onClick={() => onViewChange('gas')}
@@ -89,7 +113,27 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {isMounted && (
+            <div
+              className={`flex items-center gap-1.5 font-mono text-[9px] px-2 py-1 border transition-colors ${
+                isSupabaseConfigured()
+                  ? 'border-emerald-500/30 text-emerald-300 bg-emerald-950/20'
+                  : 'border-yellow-500/30 text-yellow-300 bg-yellow-950/20'
+              }`}
+              title={isSupabaseConfigured() ? 'Connected to Supabase Cloud' : 'Running in Local/Offline Mode'}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isSupabaseConfigured() ? 'bg-[#22c55e] animate-pulse' : 'bg-yellow-400'
+                }`}
+              />
+              <span className="font-bold uppercase tracking-wider">
+                {isSupabaseConfigured() ? 'Cloud Live' : 'Offline Mode'}
+              </span>
+            </div>
+          )}
+
           <button
             id="header-sound-toggle"
             onClick={onToggleSound}
@@ -106,16 +150,28 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
+
+          {onLock && (
+            <button
+              id="header-lock-toggle"
+              onClick={onLock}
+              className="nav-item flex items-center gap-1 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/60 bg-red-950/20"
+              title="Lock Master Admin Console"
+            >
+              <Lock className="w-3 h-3 text-[#FF1E1E]" />
+              <span>Lock Console</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Editorial Style Layout Header */}
-      <header className="bg-[#f8f7f4] text-[#1a1a1a] px-6 sm:px-12 py-6 sm:py-8 flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b-2 border-[#1a1a1a]">
+      <header className="bg-[#f8f7f4] text-[#1a1a1a] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a]">
         <div className="header-title">
-          <div className="header-meta font-mono text-[11px] uppercase tracking-widest text-[#1a1a1a]/60 mb-1">
+          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 mb-0.5">
             SARANGANI PROVINCE / REGION XII
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold uppercase leading-none text-[#1a1a1a] -mb-1">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] -mb-0.5">
             Teachers&apos; Day 2026
           </h1>
         </div>

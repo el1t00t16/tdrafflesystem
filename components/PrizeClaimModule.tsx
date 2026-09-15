@@ -43,15 +43,17 @@ interface PrizeClaimModuleProps {
     }
   ) => void;
   onUnclaimPrize?: (winnerId: string) => void;
+  onForfeitPrize?: (winnerId: string, reason?: string) => void;
 }
 
 export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
   winners,
   onClaimPrize,
-  onUnclaimPrize
+  onUnclaimPrize,
+  onForfeitPrize
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNCLAIMED' | 'CLAIMED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNCLAIMED' | 'CLAIMED' | 'FORFEITED'>('ALL');
   const [districtFilter, setDistrictFilter] = useState<string>('ALL');
   const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(() => {
     return winners.length > 0 ? winners[0].winnerId : null;
@@ -72,10 +74,15 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
   // Undo Confirmation Dialog
   const [revertingWinnerId, setRevertingWinnerId] = useState<string | null>(null);
 
+  // Forfeiture Confirmation Dialog
+  const [forfeitingWinner, setForfeitingWinner] = useState<Winner | null>(null);
+  const [forfeitReason, setForfeitReason] = useState('Unclaimed by deadline / Absent on stage');
+
   // Stats
   const totalWinners = winners.length;
   const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
-  const unclaimedCount = totalWinners - claimedCount;
+  const forfeitedCount = winners.filter((w) => w.claimStatus === 'FORFEITED').length;
+  const unclaimedCount = winners.filter((w) => w.claimStatus === 'UNCLAIMED').length;
   const totalValue = winners.reduce((sum, w) => sum + (w.unitValue || 0), 0);
   const disbursedValue = winners
     .filter((w) => w.claimStatus === 'CLAIMED')
@@ -88,7 +95,9 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
       if (statusFilter !== 'ALL' && w.claimStatus !== statusFilter) return false;
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (w.originalDistrict !== 'ECCD') return false;
+          if (!w.originalDistrict?.toLowerCase().includes('eccd') && !w.school.toLowerCase().includes('eccd')) return false;
+        } else if (districtFilter === 'LSB') {
+          if (!w.position?.toLowerCase().includes('lsb') && !w.personnelType?.toLowerCase().includes('lsb')) return false;
         } else if (w.district !== districtFilter) {
           return false;
         }
@@ -333,6 +342,12 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                 >
                   Claimed ({claimedCount})
                 </button>
+                <button
+                  onClick={() => setStatusFilter('FORFEITED')}
+                  className={`px-2 py-1 uppercase ${statusFilter === 'FORFEITED' ? 'bg-red-700 text-white' : 'text-neutral-600 hover:text-black'}`}
+                >
+                  Forfeited ({forfeitedCount})
+                </button>
               </div>
 
               <select
@@ -342,11 +357,12 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
               >
                 <option value="ALL">All Districts</option>
                 <option value="NORTH">North</option>
-                <option value="SOUTH">South</option>
                 <option value="EAST">East</option>
                 <option value="WEST">West</option>
-                <option value="PRIVATE">Private</option>
-                <option value="ECCD">ECCD</option>
+                <option value="SOUTH">South</option>
+                <option value="PRIVATE">Private (ECCD + Private School + LSB)</option>
+                <option value="LSB">-- Filter Only LSB</option>
+                <option value="ECCD">-- Filter Only ECCD</option>
               </select>
             </div>
           </div>
@@ -361,6 +377,7 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
               filteredWinners.map((w) => {
                 const isSelected = selectedWinner?.winnerId === w.winnerId;
                 const isClaimed = w.claimStatus === 'CLAIMED';
+                const isForfeited = w.claimStatus === 'FORFEITED';
 
                 return (
                   <div
@@ -369,6 +386,8 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                     className={`p-3 border-2 transition-all cursor-pointer relative ${
                       isSelected
                         ? 'border-[#1a1a1a] bg-[#f8f7f4] shadow-sm ring-1 ring-[#1a1a1a]'
+                        : isForfeited
+                        ? 'border-red-200 bg-red-50/30 opacity-75'
                         : 'border-[#1a1a1a]/20 hover:border-[#1a1a1a]/50 bg-white'
                     }`}
                   >
@@ -395,14 +414,22 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                           className={`inline-block font-mono text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
                             isClaimed
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : isForfeited
+                              ? 'bg-red-100 text-red-800 border border-red-300 line-through'
                               : 'bg-amber-100 text-amber-900 border border-amber-300 font-black'
                           }`}
                         >
                           {w.claimStatus}
                         </span>
-                        <div className="font-mono text-[11px] font-bold text-[#1a1a1a] mt-1">
-                          ₱{w.unitValue.toLocaleString()}
-                        </div>
+                        {w.unitValue > 0 ? (
+                          <div className="font-mono text-[11px] font-bold text-[#1a1a1a] mt-1">
+                            ₱{w.unitValue.toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className="font-mono text-[10px] font-bold text-neutral-500 mt-1 uppercase">
+                            Item Prize
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -439,10 +466,16 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                     className={`font-mono text-xs font-bold px-3 py-1 uppercase tracking-wider ${
                       selectedWinner.claimStatus === 'CLAIMED'
                         ? 'bg-emerald-700 text-white'
+                        : selectedWinner.claimStatus === 'FORFEITED'
+                        ? 'bg-red-700 text-white'
                         : 'bg-[#ff6a00] text-white'
                     }`}
                   >
-                    {selectedWinner.claimStatus === 'CLAIMED' ? 'OFFICIALLY CLAIMED' : 'READY FOR VERIFICATION & CLAIM'}
+                    {selectedWinner.claimStatus === 'CLAIMED'
+                      ? 'OFFICIALLY CLAIMED'
+                      : selectedWinner.claimStatus === 'FORFEITED'
+                      ? 'TICKET FORFEITED (RETURNED TO RAFFLE)'
+                      : 'READY FOR VERIFICATION & CLAIM'}
                   </span>
                 </div>
 
@@ -510,14 +543,25 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                   </div>
                 </div>
 
-                <div className="text-right sm:border-l sm:border-[#1a1a1a]/20 sm:pl-4">
-                  <span className="font-mono text-[10px] font-bold text-neutral-500 uppercase block">
-                    Valued At
-                  </span>
-                  <div className="font-mono font-bold text-xl text-[#1a1a1a]">
-                    ₱{selectedWinner.unitValue.toLocaleString()}
+                {selectedWinner.unitValue > 0 ? (
+                  <div className="text-right sm:border-l sm:border-[#1a1a1a]/20 sm:pl-4">
+                    <span className="font-mono text-[10px] font-bold text-neutral-500 uppercase block">
+                      Valued At
+                    </span>
+                    <div className="font-mono font-bold text-xl text-[#1a1a1a]">
+                      ₱{selectedWinner.unitValue.toLocaleString()}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-right sm:border-l sm:border-[#1a1a1a]/20 sm:pl-4">
+                    <span className="font-mono text-[10px] font-bold text-neutral-500 uppercase block">
+                      Reward Type
+                    </span>
+                    <div className="font-mono font-bold text-xs px-2 py-0.5 bg-[#1a1a1a] text-white uppercase tracking-wider mt-1 inline-block">
+                      Physical Item
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Status Specific Section */}
@@ -587,6 +631,30 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                         <span>Revert to Unclaimed</span>
                       </button>
                     )}
+                  </div>
+                </div>
+              ) : selectedWinner.claimStatus === 'FORFEITED' ? (
+                /* FORFEITED STATE CARD */
+                <div className="bg-red-50 border-2 border-red-700 p-5 space-y-4">
+                  <div className="flex items-center gap-2 text-red-800">
+                    <AlertCircle className="w-6 h-6 flex-shrink-0 text-red-700" />
+                    <div>
+                      <h4 className="font-mono font-bold text-sm uppercase tracking-wide">
+                        TICKET OFFICIALLY FORFEITED &amp; CANCELLED
+                      </h4>
+                      <p className="font-mono text-[11px] text-red-900/80">
+                        Forfeited on {selectedWinner.forfeitedAt || 'Event Day'} • Reason: {selectedWinner.forfeitReason || 'Unclaimed / Absent'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-red-200 p-3 text-xs font-mono space-y-2 text-neutral-800">
+                    <p className="text-xs">
+                      1 unit of <strong>{selectedWinner.prizeName}</strong> was returned to the Active Raffle Pool and made available for redraw on stage.
+                    </p>
+                    <div className="text-[10px] text-neutral-500 uppercase">
+                      Audit Trail: Ticket {selectedWinner.winnerId} cannot be disbursed.
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -713,6 +781,26 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                     <Check className="w-5 h-5 text-[#ff6a00] hover:text-white" />
                     <span>CONFIRM CLAIM &amp; RELEASE PRIZE</span>
                   </button>
+
+                  {/* Secondary Action: Forfeit Unclaimed & Return to Raffle Pool */}
+                  {onForfeitPrize && (
+                    <div className="pt-2 border-t border-[#1a1a1a]/15">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForfeitingWinner(selectedWinner);
+                          setForfeitReason('Unclaimed by deadline / Absent on stage');
+                        }}
+                        className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-700 border-2 border-red-300 hover:border-red-500 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                      >
+                        <RotateCcw className="w-4 h-4 text-red-600" />
+                        <span>FORFEIT TICKET &amp; RETURN 1 PRIZE TO RAFFLE FOR REDRAW</span>
+                      </button>
+                      <p className="text-[10px] text-neutral-500 font-mono mt-1 text-center">
+                        This marks this ticket as forfeited and immediately restores 1 unit back to the active raffle inventory for redraw on stage.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -751,6 +839,74 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                 className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs uppercase font-bold"
               >
                 Confirm Revert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forfeiture Confirmation Modal */}
+      {forfeitingWinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white border-2 border-[#1a1a1a] max-w-lg w-full p-6 shadow-2xl space-y-4 font-mono">
+            <div className="flex items-center gap-2 text-red-700 border-b border-red-200 pb-3">
+              <AlertCircle className="w-6 h-6 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-base uppercase">CONFIRM TICKET FORFEITURE &amp; REDRAW</h4>
+                <span className="text-[10px] text-neutral-500 uppercase">Malungon Teachers&apos; Day 2026 Audit Protocol</span>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 p-3 text-xs space-y-2 text-red-950">
+              <p className="leading-relaxed">
+                You are about to forfeit ticket <strong className="font-bold">{forfeitingWinner.winnerId}</strong> belonging to:
+              </p>
+              <div className="bg-white p-2.5 border border-red-200 font-bold uppercase text-xs space-y-0.5">
+                <div className="text-black text-sm">{forfeitingWinner.name}</div>
+                <div className="text-neutral-600 text-[11px]">{forfeitingWinner.school} • {forfeitingWinner.originalDistrict || forfeitingWinner.district}</div>
+                <div className="text-red-700 text-[11px]">PRIZE: {forfeitingWinner.prizeName}</div>
+              </div>
+              <p className="text-[11px] text-red-800 leading-snug">
+                ⚠️ <strong>Inventory Action:</strong> 1 unit of <strong>{forfeitingWinner.prizeName}</strong> will immediately be restored to the <strong>Active Raffle Pool</strong> so the Stage Operator can redraw it!
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold uppercase text-neutral-600">
+                Official Reason for Forfeiture:
+              </label>
+              <select
+                value={forfeitReason}
+                onChange={(e) => setForfeitReason(e.target.value)}
+                className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/40 p-2 text-xs font-mono font-bold text-[#1a1a1a] outline-none"
+              >
+                <option value="Unclaimed by deadline / Absent on stage">Unclaimed by deadline / Absent on stage</option>
+                <option value="No-show after 3 stage announcements">No-show after 3 stage announcements</option>
+                <option value="Disqualified / Ineligible Personnel">Disqualified / Ineligible Personnel</option>
+                <option value="Voluntary prize surrender / Declined">Voluntary prize surrender / Declined</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#1a1a1a]/15">
+              <button
+                type="button"
+                onClick={() => setForfeitingWinner(null)}
+                className="px-4 py-2.5 border border-[#1a1a1a] text-xs uppercase font-bold hover:bg-neutral-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onForfeitPrize && forfeitingWinner) {
+                    onForfeitPrize(forfeitingWinner.winnerId, forfeitReason);
+                  }
+                  setForfeitingWinner(null);
+                }}
+                className="px-5 py-2.5 bg-red-700 hover:bg-red-800 text-white text-xs uppercase font-bold flex items-center gap-2 transition-colors shadow"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Confirm Forfeit &amp; Return Prize</span>
               </button>
             </div>
           </div>
@@ -846,7 +1002,7 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                       {printingWinner.prizeName}
                     </span>
                     <span className="font-mono font-bold text-sm">
-                      ₱{printingWinner.unitValue.toLocaleString()}
+                      {printingWinner.unitValue > 0 ? `₱${printingWinner.unitValue.toLocaleString()}` : 'Physical Item / Gift'}
                     </span>
                   </div>
                   <div className="text-[11px] text-neutral-600">

@@ -2,49 +2,91 @@
 
 import React, { useState } from 'react';
 import { Prize } from '../../lib/types';
-import { Gift, Plus, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Gift, Plus, CheckCircle, AlertCircle, X, Trash2, Cloud, CloudOff, UploadCloud } from 'lucide-react';
+import { isSupabaseConfigured, syncPrizesToSupabase } from '../../lib/supabase';
 
 interface PrizesManagerProps {
   prizes: Prize[];
   onAddPrize: (prize: Prize) => void;
+  onDeletePrize?: (prizeId: string) => void;
+  onClearAllPrizes?: () => void;
 }
 
-export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize }) => {
+export const PrizesManager: React.FC<PrizesManagerProps> = ({
+  prizes,
+  onAddPrize,
+  onDeletePrize,
+  onClearAllPrizes
+}) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [prizeType, setPrizeType] = useState<'ITEM' | 'CASH'>('ITEM');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [unitValue, setUnitValue] = useState<number>(1000);
-  const [quantity, setQuantity] = useState<number>(3);
+  const [unitValue, setUnitValue] = useState<number>(0);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const handleSyncToCloud = async () => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase credentials are not configured yet! Please enter your Supabase Project URL and Anon Key in the Settings tab first.');
+      return;
+    }
+    setSyncingCloud(true);
+    setCloudMsg({ text: 'Syncing prizes to Supabase Cloud...' });
+    const res = await syncPrizesToSupabase(prizes);
+    setSyncingCloud(false);
+    if (res.success) {
+      setCloudMsg({ text: `Successfully synced ${res.count} prizes to Supabase Cloud!` });
+      setTimeout(() => setCloudMsg(null), 4000);
+    } else {
+      setCloudMsg({ text: `Sync error: ${res.error}`, error: true });
+    }
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || quantity <= 0) return;
+
+    const isCash = prizeType === 'CASH';
+    const finalUnitValue = isCash ? (Number(unitValue) || 0) : 0;
+    const finalQuantity = Number(quantity) || 1;
 
     const nextId = `P${String(prizes.length + 1).padStart(3, '0')}`;
     const newPrize: Prize = {
       id: nextId,
       name: name.trim(),
       description: description.trim(),
-      unitValue: Number(unitValue) || 0,
-      quantity: Number(quantity) || 1,
+      unitValue: finalUnitValue,
+      quantity: finalQuantity,
       drawnQuantity: 0,
-      remainingQuantity: Number(quantity) || 1,
-      totalValue: (Number(unitValue) || 0) * (Number(quantity) || 1),
+      remainingQuantity: finalQuantity,
+      totalValue: finalUnitValue * finalQuantity,
       status: 'AVAILABLE'
     };
 
     onAddPrize(newPrize);
     setName('');
     setDescription('');
-    setUnitValue(1000);
-    setQuantity(3);
+    setUnitValue(0);
+    setQuantity(1);
+    setPrizeType('ITEM');
     setShowAddModal(false);
+
+    if (isSupabaseConfigured()) {
+      setCloudMsg({ text: `Prize ${nextId} added and synced to Supabase Cloud!` });
+      setTimeout(() => setCloudMsg(null), 3000);
+    } else {
+      setCloudMsg({ text: `Prize ${nextId} saved locally. (Offline Mode: Not pushed to Supabase Cloud)` });
+      setTimeout(() => setCloudMsg(null), 4000);
+    }
   };
 
   const totalPrizeUnits = prizes.reduce((s, p) => s + p.quantity, 0);
   const totalDrawnUnits = prizes.reduce((s, p) => s + p.drawnQuantity, 0);
   const totalRemainingUnits = prizes.reduce((s, p) => s + p.remainingQuantity, 0);
-  const totalPrizeWorth = prizes.reduce((s, p) => s + p.totalValue, 0);
+  const totalCashWorth = prizes.reduce((s, p) => s + (p.unitValue > 0 ? p.totalValue : 0), 0);
+  const totalPhysicalUnits = prizes.filter((p) => p.unitValue <= 0).reduce((s, p) => s + p.quantity, 0);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -63,27 +105,114 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize
           <div className="text-xl sm:text-2xl font-black text-[#FF1E1E] mt-1">{totalRemainingUnits}</div>
         </div>
         <div className="bg-[#121212] border border-white/10 p-4 border-t-2 border-t-[#FF1E1E]">
-          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Prize Fund</div>
-          <div className="text-xl sm:text-2xl font-black text-white mt-1">₱{totalPrizeWorth.toLocaleString()}</div>
+          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Cash Fund</div>
+          <div className="text-xl sm:text-2xl font-black text-white mt-1">₱{totalCashWorth.toLocaleString()}</div>
+          {totalPhysicalUnits > 0 && (
+            <div className="text-[10px] text-neutral-400 font-bold mt-0.5">
+              + {totalPhysicalUnits} physical item unit{totalPhysicalUnits > 1 ? 's' : ''}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Offline Mode Alert */}
+      {!isSupabaseConfigured() && (
+        <div className="bg-yellow-950/30 border border-yellow-500/30 p-3.5 text-xs flex items-start gap-2.5 text-yellow-300">
+          <CloudOff className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-black uppercase tracking-wider">Offline Mode Active (Supabase Disconnected)</div>
+            <p className="text-neutral-400 text-[11px] leading-relaxed">
+              Prizes added right now will only be saved in your current browser session. To have prizes automatically show up in your Supabase SQL database and sync live to other tablets/projectors, enter your <strong className="text-white">Supabase URL &amp; Anon Key</strong> in the <strong>Settings</strong> tab.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cloud Sync Status Feedback Banner */}
+      {cloudMsg && (
+        <div
+          className={`p-3 text-xs flex items-center justify-between border ${
+            cloudMsg.error
+              ? 'bg-red-950/40 border-red-500/50 text-red-300'
+              : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {cloudMsg.error ? (
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            )}
+            <span className="font-bold">{cloudMsg.text}</span>
+          </div>
+          <button onClick={() => setCloudMsg(null)} className="text-neutral-400 hover:text-white p-1">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Header Bar */}
       <div className="bg-[#121212] border border-white/10 p-5 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative border-t-2 border-t-[#FF1E1E]">
         <div>
-          <h3 className="font-black text-lg sm:text-xl text-white uppercase tracking-tight leading-none">PRIZE INVENTORY</h3>
+          <div className="flex items-center gap-2.5">
+            <h3 className="font-black text-lg sm:text-xl text-white uppercase tracking-tight leading-none">
+              PRIZE INVENTORY
+            </h3>
+            <span
+              className={`font-mono text-[9px] px-2 py-0.5 border font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                isSupabaseConfigured()
+                  ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/40'
+                  : 'border-yellow-500/40 text-yellow-400 bg-yellow-950/40'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isSupabaseConfigured() ? 'bg-emerald-400 animate-pulse' : 'bg-yellow-400'
+                }`}
+              />
+              {isSupabaseConfigured() ? 'Cloud Live' : 'Offline Mode'}
+            </span>
+          </div>
           <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
             Primary setting is Prize Quantity. The system automatically computes Total Winners &amp; Total Value.
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-1.5 rounded-none"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Prize</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSupabaseConfigured() && prizes.length > 0 && (
+            <button
+              onClick={handleSyncToCloud}
+              disabled={syncingCloud}
+              className="px-3.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+              title="Push current local prizes inventory to Supabase Cloud"
+            >
+              <UploadCloud className={`w-4 h-4 ${syncingCloud ? 'animate-bounce' : ''}`} />
+              <span>{syncingCloud ? 'Syncing...' : 'Sync to Cloud'}</span>
+            </button>
+          )}
+
+          {prizes.length > 0 && onClearAllPrizes && (
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all prizes from inventory?')) {
+                  onClearAllPrizes();
+                }
+              }}
+              className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 hover:text-red-400 font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear All</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-1.5 rounded-none"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Prize</span>
+          </button>
+        </div>
       </div>
 
       {/* Prize Table */}
@@ -101,38 +230,72 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize
                 <th className="p-3 text-center">Remaining</th>
                 <th className="p-3 text-right">Total Value</th>
                 <th className="p-3 text-center">Status</th>
+                <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {prizes.map((p) => (
-                <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
-                  <td className="p-3 font-mono font-black text-white">{p.id}</td>
-                  <td className="p-3 font-black text-white uppercase whitespace-nowrap">{p.name}</td>
-                  <td className="p-3 text-neutral-400 max-w-xs truncate">{p.description}</td>
-                  <td className="p-3 text-right font-bold text-white">
-                    ₱{p.unitValue.toLocaleString()}
-                  </td>
-                  <td className="p-3 text-center font-bold text-neutral-300">{p.quantity}</td>
-                  <td className="p-3 text-center text-neutral-400 font-bold">{p.drawnQuantity}</td>
-                  <td className="p-3 text-center">
-                    <span className="font-black text-sm text-[#FF1E1E]">{p.remainingQuantity}</span>
-                  </td>
-                  <td className="p-3 text-right font-black text-white">
-                    ₱{p.totalValue.toLocaleString()}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span
-                      className={`px-2.5 py-0.5 font-black text-[9px] uppercase tracking-widest ${
-                        p.status === 'AVAILABLE'
-                          ? 'bg-neutral-900 text-white border border-white/30'
-                          : 'bg-neutral-950 text-neutral-500 border border-white/10'
-                      }`}
-                    >
-                      {p.status}
-                    </span>
+              {prizes.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="p-8 text-center text-neutral-500 font-mono text-xs uppercase tracking-wider">
+                    No prizes in inventory. Click &quot;+ Add New Prize&quot; above to configure event prizes.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                prizes.map((p) => (
+                  <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
+                    <td className="p-3 font-mono font-black text-white">{p.id}</td>
+                    <td className="p-3 font-black text-white uppercase whitespace-nowrap">{p.name}</td>
+                    <td className="p-3 text-neutral-400 max-w-xs truncate">{p.description}</td>
+                    <td className="p-3 text-right font-bold text-white">
+                      {p.unitValue > 0 ? (
+                        `₱${p.unitValue.toLocaleString()}`
+                      ) : (
+                        <span className="px-2 py-0.5 bg-neutral-900 text-neutral-400 border border-white/10 font-mono text-[9px] font-bold uppercase tracking-wider">
+                          Item / Gift
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-center font-bold text-neutral-300">{p.quantity}</td>
+                    <td className="p-3 text-center text-neutral-400 font-bold">{p.drawnQuantity}</td>
+                    <td className="p-3 text-center">
+                      <span className="font-black text-sm text-[#FF1E1E]">{p.remainingQuantity}</span>
+                    </td>
+                    <td className="p-3 text-right font-black text-white">
+                      {p.unitValue > 0 ? (
+                        `₱${p.totalValue.toLocaleString()}`
+                      ) : (
+                        <span className="text-neutral-500 font-mono font-bold">—</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span
+                        className={`px-2.5 py-0.5 font-black text-[9px] uppercase tracking-widest ${
+                          p.status === 'AVAILABLE'
+                            ? 'bg-neutral-900 text-white border border-white/30'
+                            : 'bg-neutral-950 text-neutral-500 border border-white/10'
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      {onDeletePrize && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete ${p.name} (${p.id})?`)) {
+                              onDeletePrize(p.id);
+                            }
+                          }}
+                          className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-950/30 transition-colors rounded-xs"
+                          title="Delete Prize"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -153,12 +316,51 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize
             </div>
 
             <form onSubmit={handleCreate} className="p-5 space-y-4 text-xs">
+              {/* Prize Category Selector */}
+              <div>
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1.5">
+                  Prize Type:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrizeType('ITEM');
+                      setUnitValue(0);
+                    }}
+                    className={`py-2 px-3 border font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all ${
+                      prizeType === 'ITEM'
+                        ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow'
+                        : 'bg-neutral-950 text-neutral-400 border-white/15 hover:border-white/40 hover:text-white'
+                    }`}
+                  >
+                    <Gift className="w-3.5 h-3.5" />
+                    <span>Physical Item / Gift</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrizeType('CASH');
+                      if (unitValue <= 0) setUnitValue(1000);
+                    }}
+                    className={`py-2 px-3 border font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all ${
+                      prizeType === 'CASH'
+                        ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow'
+                        : 'bg-neutral-950 text-neutral-400 border-white/15 hover:border-white/40 hover:text-white'
+                    }`}
+                  >
+                    <span className="font-mono font-black text-sm leading-none">₱</span>
+                    <span>Cash Prize</span>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Prize Name:</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. ₱1,000 Cash Prize or Smart TV"
+                  placeholder={prizeType === 'ITEM' ? 'e.g. ELECTRIC FAN, SMART TV, RICE COOKER' : 'e.g. ₱1,000 CASH PRIZE'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] uppercase font-bold"
@@ -166,32 +368,48 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize
               </div>
 
               <div>
-                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Description:</label>
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">
+                  {prizeType === 'ITEM' ? 'Sponsor / Donor / Remarks:' : 'Description / Remarks:'}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. Cash incentive for Teachers Day"
+                  placeholder={prizeType === 'ITEM' ? 'e.g. SPONSORED BY: LANDBANK' : 'e.g. Teachers Day Special Cash Incentive'}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-medium"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Unit Value (₱):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="50"
-                    required
-                    value={unitValue}
-                    onChange={(e) => setUnitValue(Number(e.target.value))}
-                    className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
-                  />
-                </div>
+              {prizeType === 'CASH' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Unit Value (₱):</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="50"
+                      required
+                      value={unitValue}
+                      onChange={(e) => setUnitValue(Number(e.target.value))}
+                      className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
+                    />
+                  </div>
 
+                  <div>
+                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Quantity Available:</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
+                    />
+                  </div>
+                </div>
+              ) : (
                 <div>
-                  <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Quantity Available:</label>
+                  <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Quantity Available (Units):</label>
                   <input
                     type="number"
                     min="1"
@@ -201,17 +419,26 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({ prizes, onAddPrize
                     className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
                   />
                 </div>
-              </div>
+              )}
 
               <div className="bg-neutral-950 border border-white/10 p-3 text-neutral-400 space-y-1">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black uppercase tracking-wider">Calculated Winners:</span>
-                  <span className="text-white font-black">{quantity} Winners</span>
+                  <span className="text-white font-black">{quantity} Winner{quantity > 1 ? 's' : ''}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider">Total Calculated Value:</span>
-                  <span className="text-[#FF1E1E] font-black">₱{(unitValue * quantity).toLocaleString()}</span>
-                </div>
+                {prizeType === 'CASH' ? (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-wider">Total Calculated Value:</span>
+                    <span className="text-[#FF1E1E] font-black">₱{(unitValue * quantity).toLocaleString()}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-wider">Prize Category:</span>
+                    <span className="text-white font-mono font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 bg-neutral-900 border border-white/10">
+                      Physical Item / Sponsored Gift
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

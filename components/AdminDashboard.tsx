@@ -35,6 +35,8 @@ interface AdminDashboardProps {
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
   onAddPrize: (prize: Prize) => void;
+  onDeletePrize?: (prizeId: string) => void;
+  onClearAllPrizes?: () => void;
   onClaimPrize: (
     winnerId: string,
     claimedBy: string,
@@ -47,6 +49,7 @@ interface AdminDashboardProps {
     }
   ) => void;
   onUnclaimPrize?: (winnerId: string) => void;
+  onForfeitPrize?: (winnerId: string, reason?: string) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
   onPrepareNewEvent: () => void;
   eligiblePoolCount: number;
@@ -72,8 +75,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onToggleEligibility,
   onImportParticipants,
   onAddPrize,
+  onDeletePrize,
+  onClearAllPrizes,
   onClaimPrize,
   onUnclaimPrize,
+  onForfeitPrize,
   onUpdateSettings,
   onPrepareNewEvent,
   eligiblePoolCount,
@@ -172,7 +178,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {activeTab === 'prizes' && (
-        <PrizesManager prizes={prizes} onAddPrize={onAddPrize} />
+        <PrizesManager
+          prizes={prizes}
+          onAddPrize={onAddPrize}
+          onDeletePrize={onDeletePrize}
+          onClearAllPrizes={onClearAllPrizes}
+        />
       )}
 
       {activeTab === 'winners' && <WinnersManager winners={winners} />}
@@ -182,6 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           winners={winners}
           onClaimPrize={onClaimPrize}
           onUnclaimPrize={onUnclaimPrize}
+          onForfeitPrize={onForfeitPrize}
         />
       )}
 

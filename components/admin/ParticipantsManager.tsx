@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { District, Participant, EligibilityStatus, YesNo } from '../../lib/types';
 import { parseProfilingTSV } from '../../lib/data';
-import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check } from 'lucide-react';
+import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check, Cloud, CloudOff, AlertCircle } from 'lucide-react';
+import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
 
 interface ParticipantsManagerProps {
   participants: Participant[];
@@ -26,13 +27,18 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [pastedTsv, setPastedTsv] = useState('');
   const [importEligibilityMode, setImportEligibilityMode] = useState<EligibilityStatus>('INELIGIBLE');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string | null>(null);
+  const [cloudMsg, setCloudMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const pageSize = 25;
 
   const filtered = useMemo(() => {
     return participants.filter((p) => {
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (p.originalDistrict !== 'ECCD') return false;
+          if (!p.originalDistrict?.toLowerCase().includes('eccd') && !p.school.toLowerCase().includes('eccd')) return false;
+        } else if (districtFilter === 'LSB') {
+          if (!p.position?.toLowerCase().includes('lsb') && !p.typeOfPersonnel?.toLowerCase().includes('lsb')) return false;
         } else if (p.district !== districtFilter) {
           return false;
         }
@@ -59,7 +65,35 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleProcessImport = () => {
+  const handlePushAllToCloud = async () => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase is currently in Offline Mode. Please configure your URL & Anon Key in the Settings tab first.');
+      return;
+    }
+    if (participants.length === 0) {
+      alert('No participants in roster to sync.');
+      return;
+    }
+
+    setSyncingCloud(true);
+    setSyncProgress(`0 / ${participants.length}...`);
+
+    const res = await batchSyncParticipantsToSupabase(participants, (processed, total) => {
+      setSyncProgress(`${processed.toLocaleString()} / ${total.toLocaleString()}`);
+    });
+
+    setSyncingCloud(false);
+    setSyncProgress(null);
+
+    if (res.success) {
+      setCloudMsg({ text: `Successfully synced ${res.count.toLocaleString()} participants to Supabase Cloud!` });
+      setTimeout(() => setCloudMsg(null), 5000);
+    } else {
+      setCloudMsg({ text: `Sync error: ${res.error}`, error: true });
+    }
+  };
+
+  const handleProcessImport = async () => {
     if (!pastedTsv.trim()) return;
     const parsed = parseProfilingTSV(pastedTsv, importEligibilityMode);
     if (parsed.length === 0) {
@@ -68,27 +102,91 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     }
     if (onImportParticipants) {
       onImportParticipants(parsed);
-      setImportStatus(`Successfully loaded ${parsed.length} teacher profiling records! (Initial Status: ${importEligibilityMode})`);
+      
+      if (isSupabaseConfigured()) {
+        setImportStatus(`Imported locally! Syncing ${parsed.length} records to Supabase Cloud...`);
+        const res = await batchSyncParticipantsToSupabase(parsed, (done, total) => {
+          setImportStatus(`Syncing to Supabase Cloud: ${done} / ${total}...`);
+        });
+        if (res.success) {
+          setImportStatus(`Successfully synced ${res.count} participants to Supabase Cloud!`);
+        } else {
+          setImportStatus(`Saved locally. Supabase error: ${res.error}`);
+        }
+      } else {
+        setImportStatus(`Loaded ${parsed.length} teacher records in Offline Mode (saved to browser storage).`);
+      }
+
       setTimeout(() => {
         setIsImportModalOpen(false);
         setPastedTsv('');
         setImportStatus(null);
-      }, 1200);
+      }, 2000);
     }
   };
 
   return (
     <div className="space-y-4 animate-fade-in text-[#1a1a1a]">
+      {/* Offline Alert */}
+      {!isSupabaseConfigured() && (
+        <div className="bg-yellow-50 border border-yellow-300 p-3.5 text-xs flex items-start gap-2.5 text-yellow-900 font-mono">
+          <CloudOff className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <span className="font-bold uppercase tracking-wider">Offline Mode Active (Supabase Disconnected):</span>
+            <p className="text-neutral-600 text-[11px] leading-relaxed">
+              Imported participants are stored only in your local browser cache. To sync them into your live Supabase database so that entrance check-in stations and projector devices can see them, configure your <strong>Supabase URL &amp; Anon Key</strong> in the <strong>Settings</strong> tab.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cloud Sync Feedback Banner */}
+      {cloudMsg && (
+        <div
+          className={`p-3 text-xs font-mono flex items-center justify-between border ${
+            cloudMsg.error
+              ? 'bg-red-50 border-red-300 text-red-700'
+              : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {cloudMsg.error ? (
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            )}
+            <span className="font-bold">{cloudMsg.text}</span>
+          </div>
+          <button onClick={() => setCloudMsg(null)} className="text-neutral-500 hover:text-black p-1">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Header & Filter Bar */}
       <div className="bg-white border-2 border-[#1a1a1a] p-5 shadow-sm space-y-4 relative">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-bold text-xl sm:text-2xl text-[#1a1a1a] uppercase tracking-tight leading-none">
                 TEACHERS & STAFF PROFILING ROSTER
               </h3>
               <span className="font-mono text-[10px] bg-[#1a1a1a] text-white px-2 py-0.5 font-bold uppercase tracking-wider">
                 {participants.length} TOTAL
+              </span>
+              <span
+                className={`font-mono text-[9px] px-2 py-0.5 border font-bold uppercase tracking-wider flex items-center gap-1 ${
+                  isSupabaseConfigured()
+                    ? 'border-emerald-500/40 text-emerald-700 bg-emerald-50'
+                    : 'border-yellow-500/40 text-yellow-800 bg-yellow-50'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isSupabaseConfigured() ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
+                  }`}
+                />
+                {isSupabaseConfigured() ? 'Cloud Live' : 'Offline Mode'}
               </span>
             </div>
             <p className="font-mono text-[10px] text-neutral-600 uppercase tracking-widest mt-1">
@@ -97,7 +195,19 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
           </div>
 
           {/* Quick Actions & Search */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+            {isSupabaseConfigured() && participants.length > 0 && (
+              <button
+                onClick={handlePushAllToCloud}
+                disabled={syncingCloud}
+                className="px-3.5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                title="Push all participants to Supabase Cloud database"
+              >
+                <UploadCloud className={`w-4 h-4 text-[#ff6a00] hover:text-white ${syncingCloud ? 'animate-bounce' : ''}`} />
+                <span>{syncingCloud ? (syncProgress || 'Syncing...') : 'Sync to Cloud'}</span>
+              </button>
+            )}
+
             <button
               onClick={() => setIsImportModalOpen(true)}
               className="px-3.5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -138,11 +248,12 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             >
               <option value="ALL">All Districts</option>
               <option value="NORTH">North District</option>
-              <option value="SOUTH">South District</option>
               <option value="EAST">East District</option>
               <option value="WEST">West District</option>
-              <option value="PRIVATE">Private Schools</option>
-              <option value="ECCD">ECCD Workers</option>
+              <option value="SOUTH">South District</option>
+              <option value="PRIVATE">Private (ECCD + Private School + LSB)</option>
+              <option value="LSB">-- Filter Only LSB</option>
+              <option value="ECCD">-- Filter Only ECCD</option>
             </select>
           </div>
 
@@ -245,7 +356,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                     </td>
                     <td className="p-3">
                       <span className="bg-[#1a1a1a] text-white font-mono font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider whitespace-nowrap">
-                        {p.originalDistrict || p.district}
+                        {p.district === 'PRIVATE' ? `PRIVATE (${p.originalDistrict || 'LSB/ECCD'})` : `${p.district}`}
                       </span>
                     </td>
                     <td className="p-3">
