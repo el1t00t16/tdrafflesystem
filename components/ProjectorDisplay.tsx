@@ -147,13 +147,13 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     <div className={`flex-1 flex flex-col relative ${fullStageActive ? 'h-screen overflow-hidden' : ''}`}>
       {/* Cinematic Stage Top Bar when in Full Stage Mode */}
       {fullStageActive && (
-        <div className="bg-[#1a1a1a] text-[#f8f7f4] px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 border-b-2 border-[#1a1a1a] shadow-md animate-fade-in select-none relative min-h-[72px] sm:min-h-[82px] shrink-0">
+        <div className="bg-[var(--header-bg)] text-[var(--ink)] px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 border-b-2 border-[var(--border)] shadow-md animate-fade-in select-none relative min-h-[72px] sm:min-h-[82px] shrink-0">
           {/* Left: Status Badge */}
           <div className="flex items-center gap-2 shrink-0">
             <span
               className={`font-mono text-xs sm:text-sm uppercase px-2.5 sm:px-3 py-1 text-white font-black tracking-wider shadow-xs rounded-xs ${
                 isDrawing
-                  ? 'bg-[#ff6a00] animate-pulse'
+                  ? 'bg-[var(--accent)] text-black animate-pulse'
                   : hasPendingReview
                   ? 'bg-amber-600 animate-pulse'
                   : drawStatus === 'REVEALED'
@@ -173,7 +173,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
           {/* Center: The Name of the Prize Being Drawn (Flex-1, Naturally Centered, Never Collides With Buttons) */}
           <div className="flex-1 text-center px-2 sm:px-4 min-w-0">
-            <div className="font-display text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-md truncate">
+            <div className="font-display text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-[var(--ink)] leading-tight drop-shadow-md truncate">
               {selectedPrize ? (
                 selectedPrize.unitValue > 0
                   ? `₱${selectedPrize.unitValue.toLocaleString()} — ${selectedPrize.name}`
@@ -182,7 +182,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 'GRAND RAFFLE DRAW'
               )}
             </div>
-            <div className="font-mono text-[10px] sm:text-xs lg:text-sm text-[#ff6a00] font-bold uppercase tracking-wider mt-0.5 truncate">
+            <div className="font-mono text-[10px] sm:text-xs lg:text-sm text-[var(--accent)] font-bold uppercase tracking-wider mt-0.5 truncate">
               {selectedPrize?.description && (
                 <span>{selectedPrize.description} • </span>
               )}
@@ -232,7 +232,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 onClick={onToggleSound}
                 className={`p-1.5 border font-mono text-xs transition-colors rounded-xs ${
                   soundEnabled
-                    ? 'border-[#ff6a00] text-[#ff6a00] bg-[#ff6a00]/10'
+                    ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--badge-bg)]'
                     : 'border-white/20 text-white/50 hover:text-white'
                 }`}
                 title={soundEnabled ? 'Mute Sound' : 'Enable Sound'}
@@ -266,7 +266,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
       {/* Main Layout Grid (Full-width 100% stage, zero horizontal margins) */}
       <div
-        className={`w-full flex-1 bg-[#f8f7f4] flex flex-col ${
+        className={`w-full flex-1 theme-bg-gradient flex flex-col ${
           fullStageActive
             ? 'h-[calc(100vh-72px)] sm:h-[calc(100vh-82px)] overflow-hidden'
             : 'min-h-[calc(100vh-140px)] lg:grid lg:grid-cols-[1.1fr_2fr]'
@@ -274,9 +274,9 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
       >
         {/* Editorial Sidebar - Compact & Cohesive (Zero Dead Space) */}
         {!fullStageActive && (
-          <aside className="sidebar p-4 sm:p-5 lg:p-6 lg:border-r-2 lg:border-[#1a1a1a] bg-white flex flex-col gap-4 animate-fade-in overflow-y-auto">
+          <aside className="sidebar p-4 sm:p-5 lg:p-6 lg:border-r-2 lg:border-[var(--border)] bg-[var(--surface)] text-[var(--ink)] flex flex-col gap-4 animate-fade-in overflow-y-auto">
             {/* Top Status & Full Stage Toggle */}
-            <div className="flex items-center justify-between pb-1 border-b border-[#1a1a1a]/10">
+            <div className="flex items-center justify-between pb-1 border-b border-[var(--border)]">
               <div
                 className="header-meta font-mono text-xs uppercase tracking-wider font-bold"
                 style={{ color: 'var(--accent)' }}
@@ -290,7 +290,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               <button
                 type="button"
                 onClick={() => setFullStage(true)}
-                className="font-mono text-[11px] font-bold uppercase text-[#1a1a1a]/70 hover:text-[#ff6a00] border border-[#1a1a1a]/20 hover:border-[#ff6a00] px-2.5 py-1 transition-colors flex items-center gap-1.5 rounded-sm"
+                className="font-mono text-[11px] font-bold uppercase text-[var(--ink-muted)] hover:text-[var(--accent)] border border-[var(--border)] hover:border-[var(--accent)] px-2.5 py-1 transition-colors flex items-center gap-1.5 rounded-sm"
                 title="Hide navigation and sidebar for clean full screen stage (or press Esc to exit)"
               >
                 <span>Full Stage</span>
@@ -298,18 +298,18 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </button>
             </div>
 
-            <h2 className="font-display text-2xl sm:text-3xl font-black uppercase text-[#1a1a1a] tracking-tight leading-none">
+            <h2 className="font-display text-2xl sm:text-3xl font-black uppercase text-[var(--ink)] tracking-tight leading-none">
               Grand Raffle Draw
             </h2>
 
             {/* Active Prize Selection Card */}
-            <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] p-3.5 rounded-lg space-y-2.5 shadow-xs">
+            <div className="bg-[var(--surface-card)] border-2 border-[var(--border)] p-3.5 rounded-lg space-y-2.5 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/70 font-bold">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--ink-muted)] font-bold">
                   Active Raffle Prize
                 </span>
                 {prizes && prizes.length > 1 && onSelectPrize && (
-                  <span className="font-mono text-[9px] uppercase font-bold text-[#ff6a00] bg-[#ff6a00]/10 border border-[#ff6a00]/30 px-2 py-0.5 rounded-xs">
+                  <span className="font-mono text-[9px] uppercase font-bold text-[var(--accent)] bg-[var(--badge-bg)] border border-[var(--border-accent)] px-2 py-0.5 rounded-xs">
                     Select Below
                   </span>
                 )}
@@ -323,7 +323,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   onChange={(e) => onSelectPrize(e.target.value)}
                   disabled={isDrawing}
                   aria-label="Select Prize to Draw"
-                  className="w-full bg-white hover:bg-neutral-50 border-2 border-[#1a1a1a] focus:border-[#ff6a00] p-2 text-xs font-mono font-bold uppercase tracking-wide text-[#1a1a1a] outline-none transition-colors cursor-pointer shadow-xs disabled:opacity-40"
+                  className="w-full bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border-2 border-[var(--border)] focus:border-[var(--accent)] p-2 text-xs font-mono font-bold uppercase tracking-wide text-[var(--ink)] outline-none transition-colors cursor-pointer shadow-xs disabled:opacity-40"
                 >
                   {prizes.map((p) => {
                     const isExhausted = p.remainingQuantity <= 0;
@@ -335,7 +335,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                         key={p.id}
                         value={p.id}
                         disabled={isExhausted}
-                        className="bg-white text-[#1a1a1a] py-1 font-bold"
+                        className="bg-[var(--surface)] text-[var(--ink)] py-1 font-bold"
                       >
                         {isExhausted ? `[DRAWN] ${label}` : label}
                       </option>
@@ -345,7 +345,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               )}
 
               <div className="pt-0.5">
-                <div className="font-display text-2xl sm:text-3xl font-black leading-tight text-[#1a1a1a] tracking-tight truncate">
+                <div className="font-display text-2xl sm:text-3xl font-black leading-tight text-[var(--ink)] tracking-tight truncate">
                   {selectedPrize ? (
                     selectedPrize.unitValue > 0 ? (
                       `₱${selectedPrize.unitValue.toLocaleString()}`
@@ -356,7 +356,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                     'SELECT PRIZE'
                   )}
                 </div>
-                <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5">
+                <div className="font-mono text-[11px] uppercase tracking-wider text-[var(--ink-muted)] font-semibold mt-0.5">
                   {selectedPrize ? (
                     selectedPrize.unitValue > 0 ? (
                       `${selectedPrize.name} • ${availableQty} AVAILABLE`
@@ -371,8 +371,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
             </div>
 
             {/* Criteria & Stepper Card */}
-            <div className="border border-[#1a1a1a]/15 p-3.5 rounded-lg space-y-3 bg-white shadow-xs">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/60 font-bold">
+            <div className="border-2 border-[var(--border)] p-3.5 rounded-lg space-y-3 bg-[var(--surface-card)] shadow-xs">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--ink-muted)] font-bold">
                 Distribution Criteria
               </div>
 
@@ -383,8 +383,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   onClick={() => onDistributionModeChange?.('EQUAL_PER_DISTRICT')}
                   className={`tag text-xs font-mono font-bold uppercase px-3 py-1.5 border transition-all ${
                     distributionMode === 'EQUAL_PER_DISTRICT'
-                      ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
-                      : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/30 hover:border-[#1a1a1a]'
+                      ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-xs'
+                      : 'bg-[var(--surface)] text-[var(--ink)] border-[var(--border)] hover:border-[var(--accent)]'
                   }`}
                 >
                   Equal Per District
@@ -394,8 +394,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   onClick={() => onDistributionModeChange?.('COMBINED_POOL')}
                   className={`tag text-xs font-mono font-bold uppercase px-3 py-1.5 border transition-all ${
                     distributionMode === 'COMBINED_POOL'
-                      ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
-                      : 'bg-white text-[#1a1a1a] border-[#1a1a1a]/30 hover:border-[#1a1a1a]'
+                      ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-xs'
+                      : 'bg-[var(--surface)] text-[var(--ink)] border-[var(--border)] hover:border-[var(--accent)]'
                   }`}
                 >
                   Combined Pool
@@ -403,40 +403,40 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </div>
 
               {/* Draw Count & Adjust Stepper */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#1a1a1a]/10">
-                <div className="font-mono text-xs text-[#1a1a1a]">
-                  <span className="text-[#1a1a1a]/60">Draw: </span>
+              <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
+                <div className="font-mono text-xs text-[var(--ink)]">
+                  <span className="text-[var(--ink-muted)]">Draw: </span>
                   <span className="font-bold">
                     {distributionMode === 'EQUAL_PER_DISTRICT'
                       ? `${winnersPerDistrict} / dist`
                       : `${combinedWinnersCount} pool`}
                   </span>
-                  <span className="mx-1 text-[#1a1a1a]/30">•</span>
-                  <span className="font-bold text-[#ff6a00]">{totalWinnersToDraw} Total</span>
+                  <span className="mx-1 text-[var(--border)]">•</span>
+                  <span className="font-bold text-[var(--accent)]">{totalWinnersToDraw} Total</span>
                 </div>
 
                 {/* Quick Adjust Stepper Controls */}
                 {selectedPrize && selectedPrize.remainingQuantity > 0 && (
-                  <div className="inline-flex border-2 border-[#1a1a1a] rounded-sm overflow-hidden">
+                  <div className="inline-flex border-2 border-[var(--border)] rounded-sm overflow-hidden">
                     {distributionMode === 'EQUAL_PER_DISTRICT' && onWinnersPerDistrictChange && (
                       <>
                         <button
                           type="button"
                           disabled={winnersPerDistrict <= 1}
                           onClick={() => onWinnersPerDistrictChange(Math.max(1, winnersPerDistrict - 1))}
-                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[#1a1a1a] hover:text-white disabled:opacity-30 transition-colors bg-neutral-100"
+                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[var(--accent)] hover:text-black disabled:opacity-30 transition-colors bg-[var(--surface-elevated)] text-[var(--ink)]"
                           title="Decrease count per district"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-white">
+                        <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-[var(--surface)] text-[var(--ink)]">
                           {winnersPerDistrict}
                         </span>
                         <button
                           type="button"
                           disabled={winnersPerDistrict >= maxPerDistrict}
                           onClick={() => onWinnersPerDistrictChange(winnersPerDistrict + 1)}
-                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[#1a1a1a] hover:text-white disabled:opacity-30 transition-colors bg-neutral-100"
+                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[var(--accent)] hover:text-black disabled:opacity-30 transition-colors bg-[var(--surface-elevated)] text-[var(--ink)]"
                           title="Increase count per district"
                         >
                           <Plus className="w-3 h-3" />
@@ -450,19 +450,19 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                           type="button"
                           disabled={combinedWinnersCount <= 1}
                           onClick={() => onCombinedWinnersCountChange(Math.max(1, combinedWinnersCount - 1))}
-                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[#1a1a1a] hover:text-white disabled:opacity-30 transition-colors bg-neutral-100"
+                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[var(--accent)] hover:text-black disabled:opacity-30 transition-colors bg-[var(--surface-elevated)] text-[var(--ink)]"
                           title="Decrease combined winners count"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-white">
+                        <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-[var(--surface)] text-[var(--ink)]">
                           {combinedWinnersCount}
                         </span>
                         <button
                           type="button"
                           disabled={combinedWinnersCount >= availableQty}
                           onClick={() => onCombinedWinnersCountChange(combinedWinnersCount + 1)}
-                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[#1a1a1a] hover:text-white disabled:opacity-30 transition-colors bg-neutral-100"
+                          className="px-2 py-0.5 text-xs font-mono font-bold hover:bg-[var(--accent)] hover:text-black disabled:opacity-30 transition-colors bg-[var(--surface-elevated)] text-[var(--ink)]"
                           title="Increase combined winners count"
                         >
                           <Plus className="w-3 h-3" />
@@ -475,10 +475,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
               {/* Choice A: District Target Scope Selector (When in Combined Pool / Redraw Mode) */}
               {distributionMode === 'COMBINED_POOL' && onTargetDistrictChange && (
-                <div className="pt-2 border-t border-[#1a1a1a]/10 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-neutral-500">
+                <div className="pt-2 border-t border-[var(--border)] space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-[var(--ink-muted)]">
                     <span>Target District Scope:</span>
-                    <span className="text-[#ff6a00]">
+                    <span className="text-[var(--accent)]">
                       {targetDistrict === 'ALL' ? 'All 5 Districts' : `${targetDistrict} Only`}
                     </span>
                   </div>
@@ -488,8 +488,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       onClick={() => onTargetDistrictChange('ALL')}
                       className={`text-[9px] font-mono font-bold uppercase px-1.5 py-1 border transition-all text-center ${
                         targetDistrict === 'ALL'
-                          ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
-                          : 'bg-white text-neutral-700 border-neutral-300 hover:border-black'
+                          ? 'bg-[var(--accent)] text-black border-[var(--accent)] font-black'
+                          : 'bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--ink)]'
                       }`}
                     >
                       All (5)
@@ -501,8 +501,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                         onClick={() => onTargetDistrictChange(d)}
                         className={`text-[9px] font-mono font-bold uppercase px-1.5 py-1 border transition-all text-center ${
                           targetDistrict === d
-                            ? 'bg-[#FF1E1E] text-white border-[#FF1E1E]'
-                            : 'bg-white text-neutral-700 border-neutral-300 hover:border-black'
+                            ? 'bg-[var(--accent)] text-black border-[var(--accent)] font-black'
+                            : 'bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--ink)]'
                         }`}
                       >
                         {d === 'PRIVATE' ? 'Private' : d}
@@ -532,7 +532,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                         onRedraw();
                       }
                     }}
-                    className="w-full p-2 border border-red-500/40 hover:bg-red-950/20 text-red-600 font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 rounded-md"
+                    className="w-full p-2 border border-red-500/40 hover:bg-red-950/20 text-red-400 font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 rounded-md"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Redraw Round</span>
@@ -555,7 +555,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
             )}
 
             {/* Quick Operator Status Footer */}
-            <div className="mt-auto pt-3 border-t border-[#1a1a1a]/10 font-mono text-[10px] text-[#1a1a1a]/50 flex items-center justify-between">
+            <div className="mt-auto pt-3 border-t border-[var(--border)] font-mono text-[10px] text-[var(--ink-muted)] flex items-center justify-between">
               <span>PROJECTOR READY</span>
               <span>PRESS ESC TO EXIT FULL STAGE</span>
             </div>
@@ -563,24 +563,24 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
         )}
 
         {/* Main Stage: Single Winner Hero Spotlight OR 2 + 2 + 1 Multi-District Layout */}
-        <main className="main-stage flex-1 p-3 sm:p-6 lg:p-8 bg-[#f8f7f4] flex flex-col justify-center items-center overflow-y-auto">
+        <main className="main-stage flex-1 p-3 sm:p-6 lg:p-8 theme-bg-gradient flex flex-col justify-center items-center overflow-y-auto">
           {distributionMode === 'COMBINED_POOL' && totalWinnersToDraw === 1 ? (
             /* Single Winner Hero Spotlight Card - Balanced, Proportional & Majestic */
             <div className="w-full max-w-4xl lg:max-w-5xl 2xl:max-w-6xl mx-auto flex flex-col justify-center animate-fade-in my-auto">
               <div
-                className={`bg-white border-3 sm:border-4 rounded-3xl p-6 sm:p-9 lg:p-11 shadow-2xl flex flex-col justify-between h-[420px] sm:h-[480px] lg:h-[520px] max-h-[82vh] overflow-hidden ${
+                className={`bg-[var(--surface-card)] border-3 sm:border-4 rounded-3xl p-6 sm:p-9 lg:p-11 shadow-2xl flex flex-col justify-between h-[420px] sm:h-[480px] lg:h-[520px] max-h-[82vh] overflow-hidden transition-all ${
                   isDrawing
-                    ? 'bg-orange-50/90 border-[#ff6a00] shadow-2xl ring-8 ring-[#ff6a00]/30'
+                    ? 'border-[var(--accent)] shadow-2xl ring-8 ring-[var(--accent-glow)]'
                     : drawStatus === 'REVEALED' && revealedWinners.length > 0
-                    ? 'border-emerald-600 bg-white shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse'
-                    : 'border-[#1a1a1a]/30'
+                    ? 'border-emerald-500 bg-[var(--surface-card)] shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse'
+                    : 'border-[var(--border)]'
                 }`}
               >
                 {/* Celebratory Header: Centered with subtle gradient accent divider */}
                 <div className="shrink-0 text-center flex flex-col items-center justify-center pb-2">
                   {drawStatus === 'REVEALED' && revealedWinners.length > 0 ? (
                     <>
-                      <div className="font-mono text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-emerald-600 flex items-center gap-2 sm:gap-3 drop-shadow-xs">
+                      <div className="font-mono text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-emerald-400 flex items-center gap-2 sm:gap-3 drop-shadow-xs">
                         <span className="text-xl sm:text-3xl lg:text-4xl">🎉</span>
                         <span>CONGRATULATIONS!</span>
                         <span className="text-xl sm:text-3xl lg:text-4xl">🎉</span>
@@ -589,7 +589,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                     </>
                   ) : isDrawing ? (
                     <>
-                      <div className="font-mono text-xs sm:text-sm md:text-base font-black uppercase tracking-[0.25em] text-[#ff6a00] flex items-center gap-2 animate-pulse">
+                      <div className="font-mono text-xs sm:text-sm md:text-base font-black uppercase tracking-[0.25em] text-[var(--accent)] flex items-center gap-2 animate-pulse">
                         <span>⚡</span>
                         <span>
                           {targetDistrict && targetDistrict !== 'ALL'
@@ -598,19 +598,19 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                         </span>
                         <span>⚡</span>
                       </div>
-                      <div className="w-36 sm:w-56 h-1 bg-gradient-to-r from-transparent via-[#ff6a00]/40 to-transparent mt-2.5 rounded-full" />
+                      <div className="w-36 sm:w-56 h-1 bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent mt-2.5 rounded-full" />
                     </>
                   ) : (
                     <>
-                      <div className="font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-neutral-500 flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-neutral-400" />
+                      <div className="font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)] flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-[var(--accent)]" />
                         <span>
                           {targetDistrict && targetDistrict !== 'ALL'
                             ? `${targetDistrict} DISTRICT EXCLUSIVE REDRAW`
                             : 'READY TO DRAW 1 LUCKY WINNER'}
                         </span>
                       </div>
-                      <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mt-2 rounded-full" />
+                      <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-[var(--border)] to-transparent mt-2 rounded-full" />
                     </>
                   )}
                 </div>
@@ -623,12 +623,12 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       <div className="h-[150px] sm:h-[190px] lg:h-[220px] w-full flex items-center justify-center px-2 sm:px-4 overflow-hidden relative">
                         <div
                           key={singleWinnerShufflingName}
-                          className={`font-winner font-black text-[#111827] uppercase text-center leading-[1.05] drop-shadow-md animate-reel-slide ${getHeroNameFontSize(singleWinnerShufflingName)}`}
+                          className={`font-winner font-black text-[var(--ink)] uppercase text-center leading-[1.05] drop-shadow-md animate-reel-slide ${getHeroNameFontSize(singleWinnerShufflingName)}`}
                         >
                           {singleWinnerShufflingName}
                         </div>
                       </div>
-                      <div className="font-mono text-xs sm:text-sm md:text-base text-[#ff6a00] font-bold uppercase tracking-widest pt-3 animate-pulse">
+                      <div className="font-mono text-xs sm:text-sm md:text-base text-[var(--accent)] font-bold uppercase tracking-widest pt-3 animate-pulse">
                         [ SELECTING 1 WINNER... ]
                       </div>
                     </div>
@@ -637,7 +637,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       {/* Fixed-height name container: scaled font gives short names grand visual presence */}
                       <div className="h-[140px] sm:h-[180px] lg:h-[210px] w-full flex items-center justify-center px-4 overflow-hidden">
                         <div
-                          className={`font-winner font-black text-[#111827] uppercase text-center leading-[1.05] drop-shadow-sm animate-winner-reveal ${getHeroNameFontSize(revealedWinners[0].fullName)}`}
+                          className={`font-winner font-black text-[var(--ink)] uppercase text-center leading-[1.05] drop-shadow-sm animate-winner-reveal ${getHeroNameFontSize(revealedWinners[0].fullName)}`}
                         >
                           {revealedWinners[0].fullName}
                         </div>
@@ -645,7 +645,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
                       {/* Details Badge Row - Refined Spacing & High-Contrast Visual Balance */}
                       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-1">
-                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#111827] text-white font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full shadow-xs">
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[var(--surface-elevated)] text-[var(--ink)] font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full border border-[var(--border)] shadow-xs">
                           {revealedWinners[0].district === 'PRIVATE'
                             ? (revealedWinners[0].originalDistrict?.toLowerCase().includes('eccd')
                                 ? 'ECCD (PRIVATE)'
@@ -654,24 +654,24 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                 : 'PRIVATE SCHOOL')
                             : `${revealedWinners[0].originalDistrict || revealedWinners[0].district} DISTRICT`}
                         </span>
-                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-neutral-100 text-neutral-800 font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full border border-neutral-300/80 shadow-xs">
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[var(--surface)] text-[var(--ink)] font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full border border-[var(--border)] shadow-xs">
                           {revealedWinners[0].school}
                         </span>
-                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-50 text-amber-800 font-mono text-xs sm:text-sm md:text-base font-black uppercase rounded-full border border-amber-300 shadow-xs">
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-500/15 text-amber-300 font-mono text-xs sm:text-sm md:text-base font-black uppercase rounded-full border border-amber-500/30 shadow-xs">
                           {revealedWinners[0].position}
                         </span>
-                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-white text-neutral-600 font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full border border-neutral-200 shadow-xs">
+                        <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[var(--surface)] text-[var(--ink-muted)] font-mono text-xs sm:text-sm md:text-base font-bold uppercase rounded-full border border-[var(--border)] shadow-xs">
                           ID: {revealedWinners[0].id}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6 space-y-2 text-neutral-400 font-mono">
-                      <Trophy className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-neutral-300 stroke-1" />
-                      <div className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-wider text-neutral-600">
+                    <div className="text-center py-6 space-y-2 text-[var(--ink-muted)] font-mono">
+                      <Trophy className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-[var(--accent)] opacity-60 stroke-1" />
+                      <div className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-wider text-[var(--ink)]">
                         READY TO COMMENCE DRAW
                       </div>
-                      <div className="text-xs sm:text-sm text-neutral-400">
+                      <div className="text-xs sm:text-sm text-[var(--ink-muted)]">
                         {targetDistrict !== 'ALL'
                           ? `Eligible pool: ${candidatePoolByDistrict?.[targetDistrict]?.length || 0} teachers in ${targetDistrict} District`
                           : 'Eligible pool: All eligible teachers across all 5 districts'}
@@ -682,8 +682,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
                 {/* Hero Footer - Balanced Centered Subtle Accent */}
                 <div className="shrink-0 text-center pt-2 sm:pt-3 flex flex-col items-center">
-                  <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-2 rounded-full" />
-                  <span className="font-mono text-[11px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
+                  <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-[var(--border)] to-transparent mb-2 rounded-full" />
+                  <span className="font-mono text-[11px] sm:text-xs text-[var(--ink-muted)] font-bold uppercase tracking-[0.25em]">
                     MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
                   </span>
                 </div>
@@ -701,10 +701,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   <div
                     key={id}
                     id={`card-${id}`}
-                    className={`district-pane bg-white border-2 sm:border-3 border-[#1a1a1a]/20 rounded-2xl sm:rounded-3xl p-3 sm:p-4 lg:p-5 shadow-xs transition-all flex flex-col justify-between min-h-[140px] sm:min-h-[160px] lg:min-h-[180px] xl:min-h-[195px] ${
+                    className={`district-pane bg-[var(--surface-card)] border-2 sm:border-3 border-[var(--border)] rounded-2xl sm:rounded-3xl p-3 sm:p-4 lg:p-5 shadow-lg transition-all flex flex-col justify-between min-h-[140px] sm:min-h-[160px] lg:min-h-[180px] xl:min-h-[195px] ${
                       isCardDrawing
-                        ? 'bg-orange-50/80 border-[#ff6a00] shadow-md ring-4 ring-[#ff6a00]/25'
-                        : 'hover:border-[#1a1a1a]/40 hover:shadow-sm'
+                        ? 'border-[var(--accent)] shadow-xl ring-4 ring-[var(--accent-glow)]'
+                        : 'hover:border-[var(--accent)]/50'
                     } ${
                       isPrivate
                         ? 'sm:col-span-2 sm:w-[calc(50%-0.375rem)] md:sm:w-[calc(50%-0.5rem)] lg:sm:w-[calc(50%-0.625rem)] sm:mx-auto w-full'
@@ -712,12 +712,12 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                     }`}
                   >
                     {/* District Header (Clean, Distinct Monospace Font from Winner Names) */}
-                    <div className="text-center pb-1.5 mb-1.5 border-b-2 border-[#ff6a00]/25 relative flex items-center justify-center">
-                      <h3 className="font-mono text-sm sm:text-base lg:text-lg font-black uppercase tracking-[0.25em] text-[#ff6a00]">
+                    <div className="text-center pb-1.5 mb-1.5 border-b-2 border-[var(--border)] relative flex items-center justify-center">
+                      <h3 className="font-mono text-sm sm:text-base lg:text-lg font-black uppercase tracking-[0.25em] text-[var(--accent)]">
                         {title}
                       </h3>
                       {hasWinner && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 font-mono text-xs sm:text-sm font-bold text-[#ff6a00] bg-[#ff6a00]/15 border border-[#ff6a00]/30 px-3 py-0.5 rounded-full shadow-xs">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 font-mono text-xs sm:text-sm font-bold text-[var(--badge-text)] bg-[var(--badge-bg)] border border-[var(--border-accent)] px-3 py-0.5 rounded-full shadow-xs">
                           {winners.length} 🏆
                         </div>
                       )}
@@ -730,13 +730,13 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                           <div className="min-h-[85px] sm:min-h-[105px] lg:min-h-[125px] flex items-center justify-center w-full px-3">
                             <div
                               key={shufflingNames[id]?.name}
-                              className="font-winner font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs animate-reel-slide"
+                              className="font-winner font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[var(--ink)] uppercase tracking-tight text-center leading-tight drop-shadow-xs animate-reel-slide"
                             >
                               {shufflingNames[id]?.name || 'DepEd Participant'}
                             </div>
                           </div>
 
-                          <div className="font-mono text-xs sm:text-sm text-[#ff6a00] font-bold uppercase tracking-widest pt-2 animate-pulse">
+                          <div className="font-mono text-xs sm:text-sm text-[var(--accent)] font-bold uppercase tracking-widest pt-2 animate-pulse">
                             [ SHUFFLING ALL {candidatePoolByDistrict?.[id]?.length || 0} CANDIDATES... ]
                           </div>
                         </div>
@@ -746,12 +746,12 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                             <div
                               key={idx}
                               className={`text-center ${
-                                winners.length > 1 ? 'py-1 border-b border-[#1a1a1a]/10 last:border-b-0' : 'py-1'
+                                winners.length > 1 ? 'py-1 border-b border-[var(--border)] last:border-b-0' : 'py-1'
                               }`}
                             >
                               {/* In-Focus Well-Proportioned Teacher Name in Plus Jakarta Sans font */}
                               <div
-                                className={`font-winner font-black text-[#111827] uppercase tracking-tight leading-tight ${
+                                className={`font-winner font-black text-[var(--ink)] uppercase tracking-tight leading-tight ${
                                   winners.length === 1
                                     ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
                                     : winners.length <= 3
@@ -767,14 +767,14 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       ) : drawStatus === 'REVEALED' ? (
                         <div
                           id={`badge-${id}`}
-                          className="pane-status font-mono text-sm sm:text-base text-[#1a1a1a]/40 text-center py-4 font-semibold tracking-wider uppercase"
+                          className="pane-status font-mono text-sm sm:text-base text-[var(--ink-muted)] text-center py-4 font-semibold tracking-wider uppercase"
                         >
                           No winners in this round
                         </div>
                       ) : (
                         <div
                           id={`badge-${id}`}
-                          className="pane-status font-mono text-sm sm:text-base text-[#1a1a1a]/35 text-center py-4 font-semibold tracking-wider uppercase"
+                          className="pane-status font-mono text-sm sm:text-base text-[var(--ink-muted)] text-center py-4 font-semibold tracking-wider uppercase"
                         >
                           Waiting for raffle draw...
                         </div>

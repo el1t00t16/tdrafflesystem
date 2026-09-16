@@ -1,12 +1,89 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Inter:wght@300;400;500;600;700;900&family=Oswald:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
-:root {
-  --bg: #f8f7f4;
-  --ink: #1a1a1a;
-  --accent: #ff6a00;
+:root,
+[data-theme="royal-gold"] {
+  --theme-id: "royal-gold";
+  --bg: #080D1A;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #121D36 0%, #080D1A 85%);
+  --surface: #0E172A;
+  --surface-card: #131F38;
+  --surface-elevated: #1A294B;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-accent: #F59E0B;
+  --ink: #FFFFFF;
+  --ink-muted: #94A3B8;
+  --ink-faint: rgba(255, 255, 255, 0.08);
+  --accent: #F59E0B;
+  --accent-secondary: #E11D48;
+  --accent-glow: rgba(245, 158, 11, 0.45);
+  --badge-bg: rgba(245, 158, 11, 0.15);
+  --badge-text: #FBBF24;
+  --header-bg: #0B1326;
+  --winner-card-bg: #15223E;
+}
+
+[data-theme="cyber-crimson"] {
+  --theme-id: "cyber-crimson";
+  --bg: #070709;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #200A0D 0%, #070709 85%);
+  --surface: #101014;
+  --surface-card: #18181F;
+  --surface-elevated: #24242E;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-accent: #FF2A38;
+  --ink: #FFFFFF;
+  --ink-muted: #A1A1AA;
+  --ink-faint: rgba(255, 255, 255, 0.07);
+  --accent: #FF2A38;
+  --accent-secondary: #F59E0B;
+  --accent-glow: rgba(255, 42, 56, 0.5);
+  --badge-bg: rgba(255, 42, 56, 0.16);
+  --badge-text: #FF6B75;
+  --header-bg: #0D0D10;
+  --winner-card-bg: #1D181B;
+}
+
+[data-theme="emerald-gold"] {
+  --theme-id: "emerald-gold";
+  --bg: #021A13;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #063728 0%, #021A13 85%);
+  --surface: #062B20;
+  --surface-card: #0C3D2F;
+  --surface-elevated: #134E3D;
+  --border: rgba(255, 255, 255, 0.13);
+  --border-accent: #EAB308;
+  --ink: #FFFFFF;
+  --ink-muted: #A7F3D0;
+  --ink-faint: rgba(255, 255, 255, 0.08);
+  --accent: #EAB308;
+  --accent-secondary: #10B981;
+  --accent-glow: rgba(234, 179, 8, 0.45);
+  --badge-bg: rgba(234, 179, 8, 0.18);
+  --badge-text: #FDE047;
+  --header-bg: #042118;
+  --winner-card-bg: #0F4233;
+}
+
+[data-theme="editorial"] {
+  --theme-id: "editorial";
+  --bg: #F8F7F4;
+  --bg-gradient: none;
+  --surface: #FFFFFF;
+  --surface-card: #F8F7F4;
+  --surface-elevated: #EDEBE4;
+  --border: #1A1A1A;
+  --border-accent: #FF6A00;
+  --ink: #1A1A1A;
+  --ink-muted: rgba(26, 26, 26, 0.65);
   --ink-faint: rgba(26, 26, 26, 0.08);
-  --ink-muted: rgba(26, 26, 26, 0.5);
+  --accent: #FF6A00;
+  --accent-secondary: #1A1A1A;
+  --accent-glow: rgba(255, 106, 0, 0.35);
+  --badge-bg: rgba(255, 106, 0, 0.12);
+  --badge-text: #FF6A00;
+  --header-bg: #1A1A1A;
+  --winner-card-bg: #FFFFFF;
 }
 
 @layer base {
@@ -15,11 +92,12 @@
     background-color: var(--bg);
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   ::selection {
-    background: var(--ink);
-    color: var(--bg);
+    background: var(--accent);
+    color: #000000;
   }
 
   h1, h2, h3, h4, .font-display {
@@ -182,6 +260,52 @@
   .animate-grand-winner-pulse {
     animation: grandWinnerBreath 2.6s ease-in-out infinite;
     will-change: transform, box-shadow, border-color;
+  }
+
+  /* Theme-aware layout utilities */
+  .theme-bg-gradient {
+    background: var(--bg-gradient, var(--bg));
+  }
+
+  .theme-surface {
+    background-color: var(--surface);
+  }
+
+  .theme-surface-card {
+    background-color: var(--surface-card);
+  }
+
+  .theme-surface-elevated {
+    background-color: var(--surface-elevated);
+  }
+
+  .theme-border {
+    border-color: var(--border);
+  }
+
+  .theme-border-accent {
+    border-color: var(--border-accent);
+  }
+
+  .theme-text {
+    color: var(--ink);
+  }
+
+  .theme-text-muted {
+    color: var(--ink-muted);
+  }
+
+  .theme-accent-text {
+    color: var(--accent);
+  }
+
+  .theme-accent-bg {
+    background-color: var(--accent);
+    color: #000000;
+  }
+
+  .theme-accent-glow {
+    box-shadow: 0 0 25px var(--accent-glow);
   }
 }
 
