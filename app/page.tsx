@@ -38,7 +38,8 @@ import {
   pushLogToSupabase,
   updateParticipantEligibilityInSupabase,
   subscribeToRealtimeUpdates,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  executeFullEventResetInSupabase
 } from '../lib/supabase';
 
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
@@ -1353,30 +1354,87 @@ export default function Home() {
     }
   };
 
-  // Prepare Fresh Event Reset (clears winners, attendances, and participants)
-  const handlePrepareNewEvent = () => {
+  // Prepare Fresh Event Reset (clears winners, raffle logs, resets participant flags & prizes locally and in Supabase Cloud)
+  const handlePrepareNewEvent = async (options?: {
+    resetAttendance?: boolean;
+  }): Promise<{ success: boolean; message: string }> => {
     soundSynthesizer.playCelebrationFanfare();
+
+    // 1. Reset Local in-memory state
     setWinners([]);
     setLogs([]);
-    setAttendanceRecords([]);
-    setParticipants([]);
     setRevealedWinners([]);
     setDrawStatus('IDLE');
-    try {
-      localStorage.removeItem('td26_winners');
-      localStorage.removeItem('td26_attendance_records');
-      localStorage.removeItem('td26_profiling_participants');
-    } catch (e) {
-      console.error(e);
-    }
-    setPrizes((prev) =>
+
+    // Update participants: preserve all 2,000 personnel profiles, but reset winner & claimed flags
+    setParticipants((prev) =>
       prev.map((p) => ({
         ...p,
-        drawnQuantity: 0,
-        remainingQuantity: p.quantity,
-        status: 'AVAILABLE'
+        winner: 'NO',
+        claimed: 'NO',
+        ...(options?.resetAttendance
+          ? { eligible: 'INELIGIBLE', attendedAt: undefined, attendedBy: undefined }
+          : {})
       }))
     );
+
+    if (options?.resetAttendance) {
+      setAttendanceRecords([]);
+    }
+
+    // Reset prizes inventory back to full
+    const resetPrizesList = prizes.map((p) => ({
+      ...p,
+      drawnQuantity: 0,
+      remainingQuantity: p.quantity,
+      status: 'AVAILABLE' as const
+    }));
+    setPrizes(resetPrizesList);
+
+    // 2. Clear LocalStorage cache
+    try {
+      localStorage.removeItem('td26_winners');
+      localStorage.removeItem('td26_raffle_logs');
+      if (options?.resetAttendance) {
+        localStorage.removeItem('td26_attendance_records');
+      }
+    } catch (e) {
+      console.error('LocalStorage cleanup notice:', e);
+    }
+
+    // 3. Execute Cloud Reset in Supabase if configured
+    if (isSupabaseConfigured()) {
+      try {
+        const cloudRes = await executeFullEventResetInSupabase({
+          resetAttendance: options?.resetAttendance,
+          prizes: resetPrizesList
+        });
+
+        if (!cloudRes.success) {
+          console.error('Supabase cloud reset warning:', cloudRes.error);
+          return {
+            success: false,
+            message: `Local session reset, but Supabase Cloud error: ${cloudRes.error}`
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Local session and Supabase Cloud database have been completely reset!'
+        };
+      } catch (err: any) {
+        console.error('Supabase cloud reset exception:', err);
+        return {
+          success: false,
+          message: `Local reset completed, but Supabase Cloud encountered: ${err?.message || err}`
+        };
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Local session reset successfully (Offline Mode).'
+    };
   };
 
   if (!adminAuthChecked) {

@@ -17,7 +17,8 @@ import {
   Trash2,
   QrCode,
   Lock,
-  Smartphone
+  Smartphone,
+  X
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import {
@@ -31,7 +32,7 @@ import {
 interface SettingsManagerProps {
   settings: SystemSettings;
   onUpdateSettings: (newSettings: SystemSettings) => void;
-  onPrepareNewEvent: () => void;
+  onPrepareNewEvent: (options?: { resetAttendance?: boolean }) => Promise<{ success: boolean; message: string }> | void;
   totalParticipants: number;
   totalWinners: number;
   participants?: Participant[];
@@ -60,6 +61,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   });
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [confirmInput, setConfirmInput] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [resetAttendanceCheckbox, setResetAttendanceCheckbox] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedGateUrl, setCopiedGateUrl] = useState(false);
   const [showQuickSetupQr, setShowQuickSetupQr] = useState(false);
@@ -182,11 +186,29 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     setTimeout(() => setCopiedQuickSetupUrl(false), 2500);
   };
 
-  const handleExecuteReset = () => {
-    if (confirmInput === 'MALUNGON2026') {
-      onPrepareNewEvent();
+  const handleExecuteReset = async () => {
+    if (confirmInput !== 'MALUNGON2026') return;
+    setIsResetting(true);
+    setResetFeedback(null);
+    try {
+      const res = await onPrepareNewEvent({ resetAttendance: resetAttendanceCheckbox });
+      if (res && res.message) {
+        setResetFeedback(res);
+      } else {
+        setResetFeedback({
+          success: true,
+          message: 'Event session successfully reset locally and in Supabase Cloud!'
+        });
+      }
       setShowConfirmReset(false);
       setConfirmInput('');
+    } catch (err: any) {
+      setResetFeedback({
+        success: false,
+        message: `Reset failed: ${err?.message || err}`
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -369,9 +391,41 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
         </div>
 
+        {/* Reset Feedback Notification */}
+        {resetFeedback && (
+          <div
+            className={`p-3.5 border text-xs font-mono flex items-start gap-2.5 animate-fade-in ${
+              resetFeedback.success
+                ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
+                : 'bg-red-950/60 border-red-500 text-red-200'
+            }`}
+          >
+            {resetFeedback.success ? (
+              <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 leading-relaxed">
+              <span className="font-bold block uppercase text-[10px] tracking-wider mb-0.5">
+                {resetFeedback.success ? 'RESET COMPLETED IN SUPABASE & LOCAL CACHE' : 'RESET NOTICE'}
+              </span>
+              {resetFeedback.message}
+            </div>
+            <button
+              onClick={() => setResetFeedback(null)}
+              className="text-neutral-400 hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="pt-2">
           <button
-            onClick={() => setShowConfirmReset(true)}
+            onClick={() => {
+              setShowConfirmReset(true);
+              setResetFeedback(null);
+            }}
             className="w-full py-3 bg-black hover:bg-neutral-900 border border-white/20 hover:border-[#FF1E1E] text-neutral-300 hover:text-white font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-none"
           >
             <RefreshCw className="w-4 h-4 text-[#FF1E1E]" />
@@ -386,8 +440,29 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <span>Safety Confirmation Required</span>
             </div>
             <p className="text-neutral-300 leading-relaxed">
-              This will clear previous winner records and reset all participant winner flags to &quot;NO&quot; and prize remaining quantities back to full. <strong>The 2,000 participant master list will NOT be deleted.</strong>
+              This will clear previous winner records, clear draw history, and reset participant winner flags to &quot;NO&quot; both <strong>locally and in Supabase Cloud</strong>. All prize quantities will reset back to full. <strong>The 2,000 participant master list will NOT be deleted.</strong>
             </p>
+
+            <div className="bg-neutral-950 p-3 border border-white/10 space-y-1">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={resetAttendanceCheckbox}
+                  onChange={(e) => setResetAttendanceCheckbox(e.target.checked)}
+                  disabled={isResetting}
+                  className="accent-[#FF1E1E] w-4 h-4 mt-0.5"
+                />
+                <div>
+                  <span className="font-bold text-white uppercase text-[11px] block">
+                    Also Clear Attendance Gate Check-ins
+                  </span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">
+                    Check this to reset all teachers back to Ineligible (Absent) and clear all gate scan records in Supabase. Leave unchecked if attendees have already checked in at the gates.
+                  </span>
+                </div>
+              </label>
+            </div>
+
             <div>
               <label className="block text-neutral-300 font-black uppercase text-[10px] tracking-wider mb-1">
                 Type <strong>MALUNGON2026</strong> to confirm:
@@ -397,25 +472,36 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 placeholder="MALUNGON2026"
                 value={confirmInput}
                 onChange={(e) => setConfirmInput(e.target.value)}
-                className="w-full bg-neutral-950 border border-[#FF1E1E] p-2 text-white font-mono text-xs outline-none uppercase font-bold"
+                disabled={isResetting}
+                className="w-full bg-neutral-950 border border-[#FF1E1E] p-2 text-white font-mono text-xs outline-none uppercase font-bold disabled:opacity-50"
               />
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button
+                type="button"
+                disabled={isResetting}
                 onClick={() => {
                   setShowConfirmReset(false);
                   setConfirmInput('');
                 }}
-                className="px-3 py-1.5 border border-white/20 text-neutral-300 hover:bg-neutral-900 font-bold uppercase text-xs"
+                className="px-3 py-1.5 border border-white/20 text-neutral-300 hover:bg-neutral-900 font-bold uppercase text-xs disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
-                disabled={confirmInput !== 'MALUNGON2026'}
+                type="button"
+                disabled={confirmInput !== 'MALUNGON2026' || isResetting}
                 onClick={handleExecuteReset}
-                className="px-4 py-1.5 bg-[#FF1E1E] hover:bg-[#ff3838] disabled:opacity-30 disabled:cursor-not-allowed text-white font-black uppercase text-xs tracking-wider shadow"
+                className="px-4 py-1.5 bg-[#FF1E1E] hover:bg-[#ff3838] disabled:opacity-30 disabled:cursor-not-allowed text-white font-black uppercase text-xs tracking-wider shadow flex items-center gap-1.5"
               >
-                Confirm Fresh Event Reset
+                {isResetting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Clearing Supabase &amp; Local Cache...</span>
+                  </>
+                ) : (
+                  <span>Confirm Fresh Event Reset</span>
+                )}
               </button>
             </div>
           </div>

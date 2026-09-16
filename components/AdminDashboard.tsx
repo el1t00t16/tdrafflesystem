@@ -51,7 +51,7 @@ interface AdminDashboardProps {
   onUnclaimPrize?: (winnerId: string) => void;
   onForfeitPrize?: (winnerId: string, reason?: string) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
-  onPrepareNewEvent: () => void;
+  onPrepareNewEvent: (options?: { resetAttendance?: boolean }) => Promise<{ success: boolean; message: string }> | void;
   eligiblePoolCount: number;
   isDrawing: boolean;
   distributionMode: DistributionMode;

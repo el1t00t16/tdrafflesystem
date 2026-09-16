@@ -898,6 +898,169 @@ export async function pushLogToSupabase(log: RaffleLog): Promise<boolean> {
 }
 
 // =========================================================================
+// EVENT PREPARATION & RESET HELPERS (Supabase Cloud Wipes & Normalization)
+// =========================================================================
+
+export async function clearWinnersFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const { error } = await client.from('winners').delete().neq('winner_id', '___NEVER_MATCH___');
+    if (error) {
+      const msg = formatSupabaseError(error);
+      console.error('Supabase clear winners error:', msg, error);
+      return { success: false, error: msg };
+    }
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error clearing winners from Supabase:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+export async function clearRaffleLogsFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const { error } = await client.from('raffle_logs').delete().neq('log_id', '___NEVER_MATCH___');
+    if (error) {
+      const msg = formatSupabaseError(error);
+      console.error('Supabase clear raffle logs error:', msg, error);
+      return { success: false, error: msg };
+    }
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error clearing raffle logs from Supabase:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+export async function clearAttendanceRecordsFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const { error } = await client.from('attendance_records').delete().neq('id', '___NEVER_MATCH___');
+    if (error) {
+      const msg = formatSupabaseError(error);
+      console.error('Supabase clear attendance records error:', msg, error);
+      return { success: false, error: msg };
+    }
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error clearing attendance records from Supabase:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+export async function resetParticipantsInSupabase(options?: {
+  resetAttendance?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const updatePayload: Record<string, any> = {
+      winner: 'NO',
+      claimed: 'NO'
+    };
+    if (options?.resetAttendance) {
+      updatePayload.eligible = 'INELIGIBLE';
+      updatePayload.attended_at = null;
+      updatePayload.attended_by = null;
+    }
+
+    const { error } = await client
+      .from('participants')
+      .update(updatePayload)
+      .neq('id', '___NEVER_MATCH___');
+
+    if (error) {
+      const msg = formatSupabaseError(error);
+      console.error('Supabase reset participants error:', msg, error);
+      return { success: false, error: msg };
+    }
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error resetting participants in Supabase:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+export async function resetPrizesInventoryInSupabase(
+  prizes: Prize[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, count: 0, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const resetList = prizes.map((p) => ({
+      ...p,
+      drawnQuantity: 0,
+      remainingQuantity: p.quantity,
+      status: 'AVAILABLE' as const
+    }));
+    return await syncPrizesToSupabase(resetList);
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error resetting prizes inventory in Supabase:', msg, err);
+    return { success: false, count: 0, error: msg };
+  }
+}
+
+export async function executeFullEventResetInSupabase(options: {
+  resetAttendance?: boolean;
+  prizes?: Prize[];
+}): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+
+  try {
+    // 1. Clear Winners table
+    const winnersRes = await clearWinnersFromSupabase();
+    if (!winnersRes.success) throw new Error(`Winners reset failed: ${winnersRes.error}`);
+
+    // 2. Clear Raffle Logs table
+    const logsRes = await clearRaffleLogsFromSupabase();
+    if (!logsRes.success) throw new Error(`Raffle logs reset failed: ${logsRes.error}`);
+
+    // 3. Reset Participant winner flags (and optionally attendance)
+    const partRes = await resetParticipantsInSupabase({ resetAttendance: options.resetAttendance });
+    if (!partRes.success) throw new Error(`Participants reset failed: ${partRes.error}`);
+
+    // 4. Optionally clear Attendance Scan Records table
+    if (options.resetAttendance) {
+      const attRes = await clearAttendanceRecordsFromSupabase();
+      if (!attRes.success) throw new Error(`Attendance records reset failed: ${attRes.error}`);
+    }
+
+    // 5. Reset prizes inventory if provided
+    if (options.prizes && options.prizes.length > 0) {
+      await resetPrizesInventoryInSupabase(options.prizes);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Supabase full event reset error:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+// =========================================================================
 // REALTIME SUBSCRIPTIONS (Live multi-device websocket channels)
 // =========================================================================
 
