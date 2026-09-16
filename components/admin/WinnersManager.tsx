@@ -165,20 +165,20 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       {/* Winners Table */}
       <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 overflow-hidden shadow-sm dark:shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[1150px] text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#1a1a1a] border-b border-[#1a1a1a] dark:border-white/20 text-white uppercase font-mono font-bold tracking-wider text-[10px]">
                 <th className="p-3">#</th>
-                <th className="p-3">Winner ID</th>
-                <th className="p-3">Participant ID</th>
-                <th className="p-3">Winner Name</th>
-                <th className="p-3">District</th>
-                <th className="p-3">Type</th>
-                <th className="p-3">School</th>
-                <th className="p-3">Prize Won</th>
-                <th className="p-3">Draw #</th>
-                <th className="p-3">Date &amp; Time</th>
-                <th className="p-3 text-center">Claim Status</th>
+                <th className="p-3 whitespace-nowrap min-w-[90px]">Winner ID</th>
+                <th className="p-3 whitespace-nowrap min-w-[110px]">Participant ID</th>
+                <th className="p-3 whitespace-nowrap min-w-[180px]">Winner Name</th>
+                <th className="p-3 whitespace-nowrap min-w-[90px]">District</th>
+                <th className="p-3 whitespace-nowrap min-w-[100px]">Type</th>
+                <th className="p-3 whitespace-nowrap min-w-[180px]">School</th>
+                <th className="p-3 whitespace-nowrap min-w-[160px]">Prize Won</th>
+                <th className="p-3 whitespace-nowrap min-w-[80px]">Draw #</th>
+                <th className="p-3 whitespace-nowrap min-w-[140px]">Date &amp; Time</th>
+                <th className="p-3 text-center whitespace-nowrap min-w-[140px]">Claim Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1a1a1a]/15 dark:divide-white/5 font-sans">
@@ -194,26 +194,26 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 paginatedWinners.map((w, idx) => (
                   <tr key={w.winnerId} className="hover:bg-[#f8f7f4] dark:hover:bg-neutral-900/50 transition-colors">
                     <td className="p-3 font-mono text-neutral-500 text-[11px]">{startIndex + idx + 1}</td>
-                    <td className="p-3 font-mono font-black text-[#FF1E1E]">{w.winnerId}</td>
-                    <td className="p-3 font-mono font-bold text-neutral-600 dark:text-neutral-400">{w.participantId}</td>
+                    <td className="p-3 font-mono font-black text-[#FF1E1E] whitespace-nowrap">{w.winnerId}</td>
+                    <td className="p-3 font-mono font-bold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">{w.participantId}</td>
                     <td className="p-3 font-black text-[#1a1a1a] dark:text-white uppercase whitespace-nowrap">{w.name}</td>
-                    <td className="p-3">
+                    <td className="p-3 whitespace-nowrap">
                       <span className="bg-[#1a1a1a] dark:bg-neutral-950 text-white font-black text-[10px] px-2 py-0.5 border border-[#1a1a1a] dark:border-white/10 uppercase tracking-wider">
                         {w.district}
                       </span>
                     </td>
-                    <td className="p-3 text-neutral-700 dark:text-neutral-300">{w.personnelType}</td>
-                    <td className="p-3 text-neutral-700 dark:text-neutral-300 truncate max-w-[200px]" title={w.school}>
+                    <td className="p-3 text-neutral-700 dark:text-neutral-300 whitespace-nowrap">{w.personnelType}</td>
+                    <td className="p-3 text-neutral-700 dark:text-neutral-300 truncate max-w-[220px]" title={w.school}>
                       {w.school}
                     </td>
                     <td className="p-3 font-bold text-[#1a1a1a] dark:text-white whitespace-nowrap">{w.prizeName}</td>
-                    <td className="p-3 font-mono font-bold text-neutral-600 dark:text-neutral-400">{w.drawNumber}</td>
-                    <td className="p-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-mono text-[11px]">
+                    <td className="p-3 font-mono font-bold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">{w.drawNumber}</td>
+                    <td className="p-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-mono text-[11px] min-w-[140px]">
                       {w.date} {w.time}
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-center whitespace-nowrap min-w-[140px]">
                       <span
-                        className={`px-2.5 py-0.5 font-black text-[9px] uppercase tracking-widest inline-flex items-center gap-1 ${
+                        className={`px-3 py-1 font-black text-[9px] uppercase tracking-widest inline-flex items-center gap-1.5 ${
                           w.claimStatus === 'CLAIMED'
                             ? 'bg-[#1a1a1a] dark:bg-neutral-900 text-white border border-[#1a1a1a] dark:border-white/30'
                             : w.claimStatus === 'FORFEITED'

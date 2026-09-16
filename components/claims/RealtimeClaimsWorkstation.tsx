@@ -607,20 +607,20 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       )}
 
       {/* Station Control & KPI Header */}
-      <div className="bg-[#121215] border border-white/10 p-4 sm:p-5 shadow-2xl space-y-4 border-t-2 border-t-[#ff6a00]">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div className="bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-2xl space-y-4 border-t-4 border-t-[#ff6a00]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse" />
-              <h2 className="font-mono text-sm sm:text-base font-black text-white uppercase tracking-wider">
+              <h2 className="font-mono text-sm sm:text-base font-black text-[#1a1a1a] dark:text-white uppercase tracking-wider">
                 {stationId}
               </h2>
               <span className="text-[10px] font-mono px-2 py-0.5 bg-[#ff6a00]/20 text-[#ff6a00] border border-[#ff6a00]/40 font-bold uppercase tracking-wider">
                 Fast Real-time Claiming
               </span>
             </div>
-            <p className="font-mono text-xs text-neutral-400 mt-0.5">
-              Officer in-charge: <strong className="text-white">{officerName}</strong>
+            <p className="font-mono text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+              Officer in-charge: <strong className="text-[#1a1a1a] dark:text-white">{officerName}</strong>
             </p>
           </div>
 
@@ -629,9 +629,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
               <button
                 onClick={onRefreshCloud}
                 title="Refresh winners from Supabase Cloud"
-                className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 font-mono text-xs flex items-center gap-1.5 transition-colors"
+                className="px-3 py-2 bg-[#f8f7f4] hover:bg-[#eae8e3] dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 font-mono text-xs flex items-center gap-1.5 transition-colors"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-neutral-400" />
+                <RefreshCw className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 <span className="hidden sm:inline">Sync Cloud</span>
               </button>
             )}
@@ -639,7 +639,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             <button
               onClick={handleExportCSV}
               disabled={winners.length === 0}
-              className="px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 border border-white/20 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-2 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 disabled:opacity-30 border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Download className="w-3.5 h-3.5 text-[#ff6a00]" />
               <span>Export CSV</span>
@@ -649,8 +649,8 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
         {/* Live Counters */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 font-mono text-xs">
-          <div className="p-3 bg-neutral-950 border border-white/10">
-            <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 shadow-xs">
+            <span className="text-[10px] text-neutral-600 dark:text-neutral-500 uppercase font-bold tracking-wider block">
               Pending Unclaimed
             </span>
             <div className="font-serif text-2xl sm:text-3xl font-black text-[#ff6a00] mt-0.5">
@@ -659,31 +659,31 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             <span className="text-[10px] text-neutral-500">Awaiting disbursement</span>
           </div>
 
-          <div className="p-3 bg-neutral-950 border border-white/10">
-            <span className="text-[10px] text-emerald-500 uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 shadow-xs">
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-500 uppercase font-bold tracking-wider block">
               Claimed &amp; Disbursed
             </span>
-            <div className="font-serif text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
+            <div className="font-serif text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
               {claimedCount} <span className="text-xs text-neutral-500 font-normal">/ {totalCount}</span>
             </div>
             <span className="text-[10px] text-neutral-500">Released to teachers</span>
           </div>
 
-          <div className="p-3 bg-neutral-950 border border-white/10">
-            <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 shadow-xs">
+            <span className="text-[10px] text-neutral-600 dark:text-neutral-500 uppercase font-bold tracking-wider block">
               Value Disbursed
             </span>
-            <div className="font-serif text-xl sm:text-2xl font-black text-white mt-0.5">
+            <div className="font-serif text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white mt-0.5">
               ₱{disbursedValue.toLocaleString()}
             </div>
             <span className="text-[10px] text-neutral-500">of ₱{totalValue.toLocaleString()} total</span>
           </div>
 
-          <div className="p-3 bg-neutral-950 border border-white/10">
-            <span className="text-[10px] text-red-400 uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 shadow-xs">
+            <span className="text-[10px] text-red-600 dark:text-red-400 uppercase font-bold tracking-wider block">
               Forfeited
             </span>
-            <div className="font-serif text-2xl sm:text-3xl font-black text-neutral-400 mt-0.5">
+            <div className="font-serif text-2xl sm:text-3xl font-black text-neutral-700 dark:text-neutral-400 mt-0.5">
               {forfeitedCount}
             </div>
             <span className="text-[10px] text-neutral-500">Expired / Absent</span>
@@ -702,10 +702,10 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* BLOCK 1: Barcode Gun / Search & Live Camera QR Scanner */}
-        <div className="order-1 lg:order-1 lg:col-span-7 lg:col-start-1 lg:row-start-1 bg-[#121215] border border-white/10 p-4 shadow-xl space-y-4">
+        <div className="order-1 lg:order-1 lg:col-span-7 lg:col-start-1 lg:row-start-1 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-4">
           {/* Hardware Barcode Gun, Quick Search & Camera QR Scanner Button */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase text-neutral-300">
+            <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-1.5">
                 <QrCode className="w-3.5 h-3.5 text-[#ff6a00]" />
                 <span>Barcode Gun / Badge Scanner / Search</span>
@@ -736,7 +736,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Scan badge with gun, or search name / ID..."
-                  className="w-full bg-black border-2 border-white/20 pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-white focus:border-[#ff6a00] outline-none uppercase shadow-inner"
+                  className="w-full bg-[#f8f7f4] dark:bg-black border-2 border-[#1a1a1a]/30 dark:border-white/20 pl-9 pr-3 py-2.5 text-xs font-mono font-bold text-[#1a1a1a] dark:text-white focus:border-[#ff6a00] outline-none uppercase shadow-inner"
                 />
               </div>
               {searchQuery && (
@@ -746,7 +746,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                     setSearchQuery('');
                     if (scannerInputRef.current) scannerInputRef.current.focus();
                   }}
-                  className="px-2.5 bg-neutral-900 border border-white/20 text-neutral-400 hover:text-white"
+                  className="px-2.5 bg-[#f8f7f4] dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -862,10 +862,10 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
         {/* BLOCK 2: Selected Winner Verification & Actions (Mobile Order 2, Desktop Order 2 / Right Column) */}
         <div
           ref={verificationCardRef}
-          className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4 bg-[#121215] border border-white/10 p-4 sm:p-5 shadow-xl space-y-4"
+          className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-xl space-y-4"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+          <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-[#ff6a00]" />
               <span>DISBURSEMENT VERIFICATION</span>
             </h3>
@@ -879,11 +879,11 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           {selectedWinner ? (
             <div className="space-y-4">
               {/* Prize Header Card */}
-              <div className="bg-black border-2 border-[#ff6a00] p-4 text-center space-y-1 shadow-md">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400 block">
+              <div className="bg-[#f8f7f4] dark:bg-black border-2 border-[#ff6a00] p-4 text-center space-y-1 shadow-sm">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-600 dark:text-neutral-400 block">
                   PRIZE TO BE DISBURSED
                 </span>
-                <div className="font-serif font-black text-xl text-white uppercase tracking-tight">
+                <div className="font-serif font-black text-xl text-[#1a1a1a] dark:text-white uppercase tracking-tight">
                   {selectedWinner.prizeName}
                 </div>
                 {selectedWinner.unitValue > 0 && (
@@ -894,57 +894,57 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
               </div>
 
               {/* Recipient Details */}
-              <div className="bg-neutral-950 border border-white/10 p-3.5 space-y-2 text-xs font-mono">
-                <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                  <span className="text-neutral-400">Recipient:</span>
-                  <strong className="text-white uppercase font-sans text-sm text-right">
+              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-3.5 space-y-2 text-xs font-mono">
+                <div className="flex justify-between items-start pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10">
+                  <span className="text-neutral-600 dark:text-neutral-400">Recipient:</span>
+                  <strong className="text-[#1a1a1a] dark:text-white uppercase font-sans text-sm text-right">
                     {selectedWinner.name}
                   </strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-400">District:</span>
-                  <span className="px-2 py-0.2 bg-black text-white font-bold border border-white/10 uppercase text-[10px]">
+                  <span className="text-neutral-600 dark:text-neutral-400">District:</span>
+                  <span className="px-2 py-0.2 bg-white dark:bg-black text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/20 dark:border-white/10 uppercase text-[10px]">
                     {selectedWinner.district}
                   </span>
                 </div>
                 <div className="flex justify-between items-start">
-                  <span className="text-neutral-400">School:</span>
-                  <span className="text-neutral-200 text-right max-w-[200px] truncate">
+                  <span className="text-neutral-600 dark:text-neutral-400">School:</span>
+                  <span className="text-neutral-800 dark:text-neutral-200 text-right max-w-[200px] truncate">
                     {selectedWinner.school}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-400">Role / Position:</span>
-                  <span className="text-neutral-300">
+                  <span className="text-neutral-600 dark:text-neutral-400">Role / Position:</span>
+                  <span className="text-neutral-700 dark:text-neutral-300">
                     {selectedWinner.position} ({selectedWinner.personnelType})
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-400">Profiling ID:</span>
-                  <span className="text-neutral-300 font-bold">{selectedWinner.participantId}</span>
+                  <span className="text-neutral-600 dark:text-neutral-400">Profiling ID:</span>
+                  <span className="text-[#1a1a1a] dark:text-neutral-300 font-bold">{selectedWinner.participantId}</span>
                 </div>
                 {selectedWinner.depedId && (
                   <div className="flex justify-between items-center">
-                    <span className="text-neutral-400">DepEd ID:</span>
-                    <span className="text-neutral-300 font-bold">{selectedWinner.depedId}</span>
+                    <span className="text-neutral-600 dark:text-neutral-400">DepEd ID:</span>
+                    <span className="text-[#1a1a1a] dark:text-neutral-300 font-bold">{selectedWinner.depedId}</span>
                   </div>
                 )}
                 {selectedWinner.contactNumber && (
                   <div className="flex justify-between items-center">
-                    <span className="text-neutral-400">Contact:</span>
-                    <span className="text-neutral-300">{selectedWinner.contactNumber}</span>
+                    <span className="text-neutral-600 dark:text-neutral-400">Contact:</span>
+                    <span className="text-neutral-700 dark:text-neutral-300">{selectedWinner.contactNumber}</span>
                   </div>
                 )}
               </div>
 
               {/* Status Section */}
               {selectedWinner.claimStatus === 'CLAIMED' ? (
-                <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase font-mono">
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/50 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-bold text-xs uppercase font-mono">
                     <CheckCircle2 className="w-5 h-5" />
                     <span>PRIZE OFFICIALLY DISBURSED</span>
                   </div>
-                  <div className="font-mono text-xs text-neutral-300 space-y-1">
+                  <div className="font-mono text-xs text-neutral-700 dark:text-neutral-300 space-y-1">
                     <div>
                       Disbursed At: <strong>{selectedWinner.claimedAt}</strong>
                     </div>
@@ -955,7 +955,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                       ID Presented: <strong>{selectedWinner.idPresented || 'DepEd Employee ID'}</strong>
                     </div>
                     {selectedWinner.isProxyClaim && (
-                      <div className="text-amber-300">
+                      <div className="text-amber-800 dark:text-amber-300">
                         Proxy: <strong>{selectedWinner.proxyName}</strong> ({selectedWinner.proxyRelationship})
                       </div>
                     )}
@@ -964,16 +964,16 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   <div className="flex items-center gap-2 pt-2 border-t border-emerald-500/30">
                     <button
                       onClick={() => setPrintingWinner(selectedWinner)}
-                      className="flex-1 py-2 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow"
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors shadow"
                     >
-                      <Printer className="w-3.5 h-3.5 text-black" />
+                      <Printer className="w-3.5 h-3.5 text-white dark:text-black" />
                       <span>Print Voucher Slip</span>
                     </button>
 
                     {onUnclaimPrize && (
                       <button
                         onClick={() => setRevertingWinner(selectedWinner)}
-                        className="px-3 py-2 bg-neutral-900 hover:bg-red-950/50 border border-white/20 text-neutral-400 hover:text-red-300 font-mono text-xs transition-colors"
+                        className="px-3 py-2 bg-[#f8f7f4] hover:bg-red-50 dark:bg-neutral-900 dark:hover:bg-red-950/50 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-300 font-mono text-xs transition-colors"
                         title="Revert Claim Status to Unclaimed"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
@@ -982,18 +982,18 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   </div>
                 </div>
               ) : selectedWinner.claimStatus === 'FORFEITED' ? (
-                <div className="bg-red-950/40 border border-red-500/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase font-mono">
+                <div className="bg-red-50 dark:bg-red-950/40 border border-red-500/50 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-red-800 dark:text-red-400 font-bold text-xs uppercase font-mono">
                     <AlertTriangle className="w-5 h-5" />
                     <span>PRIZE FORFEITED</span>
                   </div>
-                  <p className="text-xs text-neutral-300 font-mono">
+                  <p className="text-xs text-neutral-700 dark:text-neutral-300 font-mono">
                     Reason: {selectedWinner.forfeitReason || 'Absent / Unclaimed by deadline'}
                   </p>
                   {onUnclaimPrize && (
                     <button
                       onClick={() => handleExecuteUnclaim(selectedWinner.winnerId)}
-                      className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-white font-mono text-xs font-bold uppercase"
+                      className="w-full py-2 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-[#1a1a1a] dark:text-white font-mono text-xs font-bold uppercase"
                     >
                       Re-activate Prize to Unclaimed
                     </button>
@@ -1013,7 +1013,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                           ⚠️ TAP TO CONFIRM DISBURSEMENT
                         </span>
                       </button>
-                      <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 px-1">
+                      <div className="flex items-center justify-between text-[10px] font-mono text-neutral-600 dark:text-neutral-400 px-1">
                         <span>Tap again to disburse to {selectedWinner.name.split(' ')[0]}</span>
                         <button
                           type="button"
@@ -1022,7 +1022,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                             if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current);
                             setConfirmingWinnerId(null);
                           }}
-                          className="text-[#ff6a00] hover:text-white underline font-bold"
+                          className="text-[#ff6a00] hover:underline font-bold"
                         >
                           Cancel
                         </button>
@@ -1039,7 +1039,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   )}
 
                   {/* Safety confirmation mode toggle */}
-                  <div className="flex items-center justify-between px-1 text-[10px] font-mono text-neutral-400">
+                  <div className="flex items-center justify-between px-1 text-[10px] font-mono text-neutral-600 dark:text-neutral-400">
                     <label className="flex items-center gap-1.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -1053,9 +1053,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                       <span>2-Tap Mobile Safe Confirmation</span>
                     </label>
                     {safeConfirmationMode ? (
-                      <span className="text-emerald-400 font-bold">🛡️ Protected against mis-clicks</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">🛡️ Protected against mis-clicks</span>
                     ) : (
-                      <span className="text-amber-400 font-bold">⚠️ Instant 1-tap</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">⚠️ Instant 1-tap</span>
                     )}
                   </div>
 
@@ -1068,7 +1068,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                         setProxyAuthConfirmed(false);
                         setClaimNotes('');
                       }}
-                      className="py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <UserCheck className="w-3.5 h-3.5 text-[#ff6a00]" />
                       <span>Proxy Claim</span>
@@ -1076,9 +1076,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
                     <button
                       onClick={() => setPrintingWinner(selectedWinner)}
-                      className="py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                     >
-                      <Printer className="w-3.5 h-3.5 text-neutral-400" />
+                      <Printer className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                       <span>Preview Slip</span>
                     </button>
                   </div>
@@ -1086,7 +1086,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   {onForfeitPrize && (
                     <button
                       onClick={() => setForfeitingWinner(selectedWinner)}
-                      className="w-full py-2 bg-neutral-950 hover:bg-red-950/60 border border-white/10 hover:border-red-500/40 text-neutral-500 hover:text-red-300 font-mono text-[11px] uppercase tracking-wider transition-colors"
+                      className="w-full py-2 bg-[#f8f7f4] hover:bg-red-50 dark:bg-neutral-950 dark:hover:bg-red-950/60 border border-[#1a1a1a]/15 dark:border-white/10 hover:border-red-500/40 text-neutral-600 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-300 font-mono text-[11px] uppercase tracking-wider transition-colors"
                     >
                       Mark as Forfeited (Absent / Expired)
                     </button>
@@ -1095,23 +1095,23 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
               )}
             </div>
           ) : (
-            <div className="p-8 text-center bg-black/40 border border-dashed border-white/10 text-neutral-500 font-mono text-xs">
+            <div className="p-8 text-center bg-[#f8f7f4] dark:bg-black/40 border border-dashed border-[#1a1a1a]/20 dark:border-white/10 text-neutral-500 font-mono text-xs">
               Select a winner ticket from the list or scan a badge to start disbursement.
             </div>
           )}
         </div>
 
         {/* BLOCK 3: Winners Table / Queue (Mobile Order 3, Desktop Order 3 / Left Bottom Column) */}
-        <div className="order-3 lg:order-3 lg:col-span-7 lg:col-start-1 lg:row-start-2 bg-[#121215] border border-white/10 p-4 shadow-xl space-y-3">
+        <div className="order-3 lg:order-3 lg:col-span-7 lg:col-start-1 lg:row-start-2 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-3">
           {/* Queue Tab Selectors & District Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-white/10 text-xs font-mono">
-            <div className="inline-flex border border-white/20 divide-x divide-white/20 bg-black overflow-x-auto max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10 text-xs font-mono">
+            <div className="inline-flex border border-[#1a1a1a]/20 dark:border-white/20 divide-x divide-[#1a1a1a]/20 dark:divide-white/20 bg-[#f8f7f4] dark:bg-black overflow-x-auto max-w-full">
               <button
                 onClick={() => setStatusTab('UNCLAIMED')}
                 className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 ${
                   statusTab === 'UNCLAIMED'
                     ? 'bg-[#ff6a00] text-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
@@ -1121,8 +1121,8 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                 onClick={() => setStatusTab('ALL')}
                 className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
                   statusTab === 'ALL'
-                    ? 'bg-neutral-800 text-white'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-[#1a1a1a] text-white dark:bg-neutral-800 dark:text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
                 All ({totalCount})
@@ -1132,7 +1132,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                 className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
                   statusTab === 'CLAIMED'
                     ? 'bg-emerald-600 text-white'
-                    : 'text-neutral-400 hover:text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
                 Claimed ({claimedCount})
@@ -1142,7 +1142,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                 className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
                   statusTab === 'FORFEITED'
                     ? 'bg-red-800 text-white'
-                    : 'text-neutral-400 hover:text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
                 Forfeited ({forfeitedCount})
@@ -1152,7 +1152,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-              className="bg-black border border-white/20 px-2.5 py-1.5 text-[11px] font-mono font-bold text-white outline-none focus:border-[#ff6a00] uppercase w-full sm:w-auto"
+              className="bg-white dark:bg-black border border-[#1a1a1a]/30 dark:border-white/20 px-2.5 py-1.5 text-[11px] font-mono font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-[#ff6a00] uppercase w-full sm:w-auto"
             >
               <option value="ALL">All Districts</option>
               <option value="NORTH">North</option>
@@ -1168,7 +1168,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           {/* Queue List Cards */}
           <div className="space-y-2 max-h-[540px] overflow-y-auto pr-1">
             {filteredWinners.length === 0 ? (
-              <div className="p-8 text-center bg-black/40 border border-dashed border-white/10 text-neutral-500 font-mono text-xs">
+              <div className="p-8 text-center bg-[#f8f7f4] dark:bg-black/40 border border-dashed border-[#1a1a1a]/20 dark:border-white/10 text-neutral-500 font-mono text-xs">
                 No winners found matching the current search criteria or status filter.
               </div>
             ) : (
@@ -1183,12 +1183,12 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                     onClick={() => handleSelectWinner(w.winnerId)}
                     className={`p-3 border-2 transition-all cursor-pointer relative select-none ${
                       isSelected
-                        ? 'border-[#ff6a00] bg-neutral-900 shadow-md ring-1 ring-[#ff6a00]'
+                        ? 'border-[#ff6a00] bg-orange-50/50 dark:bg-neutral-900 shadow-md ring-1 ring-[#ff6a00]'
                         : isClaimed
-                        ? 'border-emerald-900/50 bg-neutral-950/80 hover:border-emerald-700'
+                        ? 'border-emerald-600/40 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-neutral-950/80 hover:border-emerald-600'
                         : isForfeited
-                        ? 'border-red-950 bg-red-950/20 opacity-70'
-                        : 'border-white/10 hover:border-white/30 bg-neutral-950 active:bg-neutral-900'
+                        ? 'border-red-600/40 dark:border-red-950 bg-red-50/30 dark:bg-red-950/20 opacity-70'
+                        : 'border-[#1a1a1a]/15 dark:border-white/10 hover:border-[#1a1a1a]/40 dark:hover:border-white/30 bg-[#f8f7f4] dark:bg-neutral-950 active:bg-neutral-200 dark:active:bg-neutral-900'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -1197,10 +1197,10 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                           <span className="font-mono text-xs font-black text-[#ff6a00]">
                             {w.winnerId}
                           </span>
-                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 bg-black text-white border border-white/10 uppercase">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 bg-white dark:bg-black text-[#1a1a1a] dark:text-white border border-[#1a1a1a]/20 dark:border-white/10 uppercase">
                             {w.district}
                           </span>
-                          <span className="font-mono text-[10px] text-neutral-400">
+                          <span className="font-mono text-[10px] text-neutral-600 dark:text-neutral-400">
                             {w.participantId}
                           </span>
                           {w.drawNumber && (
@@ -1210,17 +1210,17 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                           )}
                         </div>
 
-                        <div className="font-sans font-bold text-sm text-white uppercase tracking-tight truncate">
+                        <div className="font-sans font-bold text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight truncate">
                           {w.name}
                         </div>
 
-                        <div className="text-xs text-neutral-400 truncate">
+                        <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">
                           {w.school} • <span className="text-neutral-500">{w.position}</span>
                         </div>
                       </div>
 
                       <div className="text-right shrink-0 space-y-1">
-                        <div className="font-sans font-bold text-xs text-white uppercase max-w-[150px] sm:max-w-[180px] truncate">
+                        <div className="font-sans font-bold text-xs text-[#1a1a1a] dark:text-white uppercase max-w-[150px] sm:max-w-[180px] truncate">
                           {w.prizeName}
                         </div>
 
@@ -1229,10 +1229,10 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                           <span
                             className={`px-2 py-0.5 font-mono font-black text-[9px] uppercase tracking-wider inline-flex items-center gap-1 ${
                               isClaimed
-                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-500 dark:border-emerald-600'
                                 : isForfeited
-                                ? 'bg-red-950 text-red-400 border border-red-700 line-through'
-                                : 'bg-[#ff6a00]/20 text-[#ff6a00] border border-[#ff6a00]'
+                                ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-500 dark:border-red-700 line-through'
+                                : 'bg-[#ff6a00]/15 dark:bg-[#ff6a00]/20 text-[#d45800] dark:text-[#ff6a00] border border-[#ff6a00]'
                             }`}
                           >
                             {isClaimed ? (
@@ -1253,8 +1253,8 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                       </div>
                     </div>
 
-                    {/* Safe Card Footer (No accidental 1-touch disburse while scrolling!) */}
-                    <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+                    {/* Safe Card Footer */}
+                    <div className="mt-2 pt-2 border-t border-[#1a1a1a]/10 dark:border-white/5 flex items-center justify-between text-xs">
                       <span className="font-mono text-[10px] text-neutral-500">
                         {isClaimed
                           ? `Disbursed: ${w.claimedAt || 'Yes'}`
@@ -1269,14 +1269,14 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                               <span>Active in Verification</span>
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 bg-neutral-900 border border-white/10 hover:border-[#ff6a00] text-neutral-300 font-mono text-[10px] font-bold uppercase flex items-center gap-1">
+                            <span className="px-2 py-0.5 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/10 hover:border-[#ff6a00] text-neutral-800 dark:text-neutral-300 font-mono text-[10px] font-bold uppercase flex items-center gap-1">
                               <span>Verify &amp; Disburse</span>
                               <ChevronRight className="w-3 h-3 text-[#ff6a00]" />
                             </span>
                           )}
                         </div>
                       ) : isClaimed ? (
-                        <span className="font-mono text-[10px] text-emerald-400">
+                        <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
                           Disbursed by {w.claimedBy?.split(' ')[0] || 'Officer'}
                         </span>
                       ) : null}
@@ -1292,25 +1292,25 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       {/* Proxy Claim Modal */}
       {proxyModalWinner && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121215] border-2 border-white/20 text-white w-full max-w-md shadow-2xl p-6 space-y-4 font-mono text-xs">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+          <div className="bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white w-full max-w-md shadow-2xl p-6 space-y-4 font-mono text-xs">
+            <div className="flex justify-between items-center border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-[#ff6a00]" />
-                <h3 className="font-bold uppercase tracking-wider">
+                <h3 className="font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white">
                   Authorized Proxy Claim
                 </h3>
               </div>
               <button
                 onClick={() => setProxyModalWinner(null)}
-                className="p-1 hover:bg-white/10 text-neutral-400 hover:text-white"
+                className="p-1 hover:bg-neutral-100 dark:hover:bg-white/10 text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-black p-3 border border-white/10 space-y-1">
-              <span className="text-[10px] text-neutral-400 uppercase">Winning Teacher:</span>
-              <div className="font-sans font-bold text-sm text-white uppercase">
+            <div className="bg-[#f8f7f4] dark:bg-black p-3 border border-[#1a1a1a]/15 dark:border-white/10 space-y-1">
+              <span className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase">Winning Teacher:</span>
+              <div className="font-sans font-bold text-sm text-[#1a1a1a] dark:text-white uppercase">
                 {proxyModalWinner.name}
               </div>
               <div className="text-[11px] text-[#ff6a00]">
@@ -1320,7 +1320,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-neutral-300 font-bold uppercase text-[11px]">
+                <label className="text-neutral-700 dark:text-neutral-300 font-bold uppercase text-[11px]">
                   Representative / Proxy Full Name:
                 </label>
                 <input
@@ -1328,13 +1328,13 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   value={proxyName}
                   onChange={(e) => setProxyName(e.target.value)}
                   placeholder="e.g. Maria Santos (Spouse / Co-Teacher)"
-                  className="w-full bg-black border border-white/20 px-3 py-2 text-white font-sans text-xs focus:border-[#ff6a00] outline-none uppercase"
+                  className="w-full bg-white dark:bg-black border border-[#1a1a1a]/20 dark:border-white/20 px-3 py-2 text-[#1a1a1a] dark:text-white font-sans text-xs focus:border-[#ff6a00] outline-none uppercase"
                   autoFocus
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-neutral-300 font-bold uppercase text-[11px]">
+                <label className="text-neutral-700 dark:text-neutral-300 font-bold uppercase text-[11px]">
                   Relationship to Teacher:
                 </label>
                 <input
@@ -1342,24 +1342,24 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   value={proxyRelationship}
                   onChange={(e) => setProxyRelationship(e.target.value)}
                   placeholder="e.g. Spouse / School Representative / Principal"
-                  className="w-full bg-black border border-white/20 px-3 py-2 text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
+                  className="w-full bg-white dark:bg-black border border-[#1a1a1a]/20 dark:border-white/20 px-3 py-2 text-[#1a1a1a] dark:text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-neutral-300 font-bold uppercase text-[11px]">
+                <label className="text-neutral-700 dark:text-neutral-300 font-bold uppercase text-[11px]">
                   ID Presented by Proxy:
                 </label>
                 <input
                   type="text"
                   value={proxyIdPresented}
                   onChange={(e) => setProxyIdPresented(e.target.value)}
-                  className="w-full bg-black border border-white/20 px-3 py-2 text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
+                  className="w-full bg-white dark:bg-black border border-[#1a1a1a]/20 dark:border-white/20 px-3 py-2 text-[#1a1a1a] dark:text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-neutral-300 font-bold uppercase text-[11px]">
+                <label className="text-neutral-700 dark:text-neutral-300 font-bold uppercase text-[11px]">
                   Remarks / Notes:
                 </label>
                 <input
@@ -1367,7 +1367,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                   value={claimNotes}
                   onChange={(e) => setClaimNotes(e.target.value)}
                   placeholder="Optional claim notes or receipt serial #"
-                  className="w-full bg-black border border-white/20 px-3 py-2 text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
+                  className="w-full bg-white dark:bg-black border border-[#1a1a1a]/20 dark:border-white/20 px-3 py-2 text-[#1a1a1a] dark:text-white font-sans text-xs focus:border-[#ff6a00] outline-none"
                 />
               </div>
 
@@ -1381,18 +1381,18 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                 />
                 <label
                   htmlFor="proxyAuthConfirmed"
-                  className="text-[11px] text-neutral-300 cursor-pointer select-none leading-tight"
+                  className="text-[11px] text-neutral-700 dark:text-neutral-300 cursor-pointer select-none leading-tight"
                 >
                   I have physically verified the signed authorization letter and valid government ID of the representative.
                 </label>
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-white/10">
+            <div className="flex gap-2 pt-2 border-t border-[#1a1a1a]/15 dark:border-white/10">
               <button
                 type="button"
                 onClick={() => setProxyModalWinner(null)}
-                className="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold uppercase text-xs border border-white/10"
+                className="flex-1 py-2 bg-[#f8f7f4] hover:bg-[#eae8e3] dark:bg-neutral-900 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold uppercase text-xs border border-[#1a1a1a]/20 dark:border-white/10"
               >
                 Cancel
               </button>
@@ -1411,16 +1411,16 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       {/* Undo Claim Modal */}
       {revertingWinner && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121215] border border-white/20 text-white w-full max-w-sm p-5 space-y-3 font-mono text-xs shadow-2xl">
-            <h4 className="font-bold text-sm text-red-400 uppercase">Revert Claim Status?</h4>
-            <p className="text-neutral-300 leading-normal">
+          <div className="bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white w-full max-w-sm p-5 space-y-3 font-mono text-xs shadow-2xl">
+            <h4 className="font-bold text-sm text-red-600 dark:text-red-400 uppercase">Revert Claim Status?</h4>
+            <p className="text-neutral-700 dark:text-neutral-300 leading-normal">
               Are you sure you want to revert <strong>{revertingWinner.name}</strong>&apos;s prize (
               {revertingWinner.prizeName}) back to <strong>UNCLAIMED</strong>?
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setRevertingWinner(null)}
-                className="flex-1 py-2 bg-neutral-900 text-neutral-300 font-bold uppercase text-xs"
+                className="flex-1 py-2 bg-[#f8f7f4] dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-[#1a1a1a]/20 font-bold uppercase text-xs"
               >
                 Cancel
               </button>
@@ -1438,24 +1438,24 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       {/* Forfeit Modal */}
       {forfeitingWinner && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#121215] border border-white/20 text-white w-full max-w-sm p-5 space-y-3 font-mono text-xs shadow-2xl">
-            <h4 className="font-bold text-sm text-red-400 uppercase">Forfeit Prize?</h4>
-            <p className="text-neutral-300 leading-normal">
+          <div className="bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white w-full max-w-sm p-5 space-y-3 font-mono text-xs shadow-2xl">
+            <h4 className="font-bold text-sm text-red-600 dark:text-red-400 uppercase">Forfeit Prize?</h4>
+            <p className="text-neutral-700 dark:text-neutral-300 leading-normal">
               Forfeit <strong>{forfeitingWinner.name}</strong>&apos;s prize ({forfeitingWinner.prizeName})?
             </p>
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase text-[10px]">Reason for Forfeiture:</label>
+              <label className="text-neutral-600 dark:text-neutral-400 uppercase text-[10px]">Reason for Forfeiture:</label>
               <input
                 type="text"
                 value={forfeitReason}
                 onChange={(e) => setForfeitReason(e.target.value)}
-                className="w-full bg-black border border-white/20 px-2.5 py-1.5 text-white font-sans text-xs focus:border-red-500 outline-none"
+                className="w-full bg-white dark:bg-black border border-[#1a1a1a]/20 dark:border-white/20 px-2.5 py-1.5 text-[#1a1a1a] dark:text-white font-sans text-xs focus:border-red-500 outline-none"
               />
             </div>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setForfeitingWinner(null)}
-                className="flex-1 py-2 bg-neutral-900 text-neutral-300 font-bold uppercase text-xs"
+                className="flex-1 py-2 bg-[#f8f7f4] dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-[#1a1a1a]/20 font-bold uppercase text-xs"
               >
                 Cancel
               </button>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database } from 'lucide-react';
+import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, Sun, Moon } from 'lucide-react';
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
 import { RealtimeClaimsWorkstation } from '../../components/claims/RealtimeClaimsWorkstation';
 import { Winner, ClaimStationSession } from '../../lib/types';
@@ -21,6 +21,31 @@ export default function ClaimsPage() {
   const [isCloudConfigured, setIsCloudConfigured] = useState(false);
   const [isHydrating, setIsHydrating] = useState(false);
   const [lastSyncStatus, setLastSyncStatus] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      const mode = localStorage.getItem('td26_theme_mode');
+      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+      setIsDarkMode(isDark);
+    } catch (e) {}
+  }, []);
+
+  const toggleDarkMode = () => {
+    const nextDark = !isDarkMode;
+    setIsDarkMode(nextDark);
+    try {
+      if (nextDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('td26_theme_mode', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('td26_theme_mode', 'light');
+      }
+    } catch (e) {}
+  };
 
   // Parse quick-setup credentials from URL if provided (?surl=...&skey=...)
   useEffect(() => {
@@ -286,9 +311,9 @@ export default function ClaimsPage() {
   const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-white">
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-white">
       {/* Top Station Header */}
-      <header className="bg-[#18181b] text-[#f8f7f4] border-b border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
+      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
             <Gift className="w-5 h-5" />
@@ -300,21 +325,21 @@ export default function ClaimsPage() {
                   isCloudConfigured ? 'bg-[#22c55e] animate-pulse' : 'bg-yellow-400'
                 }`}
               />
-              <h1 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+              <h1 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white">
                 {claimSession.stationId}
               </h1>
               <span
                 className={`text-[9px] font-mono px-1.5 py-0.5 rounded-xs border font-bold uppercase tracking-wider ${
                   isCloudConfigured
                     ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#22c55e]'
-                    : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-300'
+                    : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-500 dark:text-yellow-300'
                 }`}
               >
                 {isCloudConfigured ? 'Cloud Live' : 'Offline Cache'}
               </span>
             </div>
-            <p className="font-mono text-[11px] text-neutral-400">
-              Officer in-charge: <strong className="text-white">{claimSession.officerName}</strong>
+            <p className="font-mono text-[11px] text-neutral-600 dark:text-neutral-400">
+              Officer in-charge: <strong className="text-[#1a1a1a] dark:text-white">{claimSession.officerName}</strong>
             </p>
           </div>
         </div>
@@ -326,30 +351,40 @@ export default function ClaimsPage() {
               onClick={triggerCloudHydration}
               disabled={isHydrating}
               title="Refresh winners from Supabase"
-              className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white rounded-sm transition-colors"
+              className="p-1.5 bg-[#f8f7f4] dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-[#1a1a1a]/20 dark:border-white/10 text-[#1a1a1a] dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-sm transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isHydrating ? 'animate-spin text-[#22c55e]' : ''}`} />
             </button>
           )}
 
-          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-            <span className="text-neutral-400 text-[11px] uppercase">PENDING:</span>
+          <div className="flex items-center gap-1.5 bg-[#f8f7f4] dark:bg-white/5 border border-[#1a1a1a]/20 dark:border-white/10 px-3 py-1.5 rounded-sm">
+            <span className="text-neutral-600 dark:text-neutral-400 text-[11px] uppercase">PENDING:</span>
             <span className="px-1.5 py-0.5 bg-[#ff6a00]/20 text-[#ff6a00] border border-[#ff6a00]/30 font-bold text-xs">
               {unclaimedCount}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
-            <span className="text-neutral-400 text-[11px] uppercase">CLAIMED:</span>
+          <div className="flex items-center gap-1.5 bg-[#f8f7f4] dark:bg-white/5 border border-[#1a1a1a]/20 dark:border-white/10 px-3 py-1.5 rounded-sm">
+            <span className="text-neutral-600 dark:text-neutral-400 text-[11px] uppercase">CLAIMED:</span>
             <span className="px-1.5 py-0.5 bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30 font-bold text-xs">
               {claimedCount} / {winners.length}
             </span>
           </div>
 
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleDarkMode}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#f8f7f4] dark:bg-neutral-800 border border-[#1a1a1a]/25 dark:border-white/20 hover:border-black dark:hover:border-white text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider transition-colors rounded-sm"
+          >
+            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-yellow-400" /> : <Moon className="w-3.5 h-3.5 text-neutral-600" />}
+            <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
+          </button>
+
           <button
             onClick={handleLogout}
             title="Lock and switch station / officer"
-            className="flex items-center gap-1.5 bg-neutral-800 hover:bg-red-950/60 border border-white/15 hover:border-red-500/50 text-neutral-300 hover:text-red-300 px-3 py-1.5 font-bold uppercase tracking-wider transition-colors text-xs rounded-sm"
+            className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-red-100 dark:hover:bg-red-950/60 border border-[#1a1a1a]/25 dark:border-white/15 hover:border-red-500/50 text-neutral-700 dark:text-neutral-300 hover:text-red-700 dark:hover:text-red-300 px-3 py-1.5 font-bold uppercase tracking-wider transition-colors text-xs rounded-sm"
           >
             <Lock className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Lock Station</span>
