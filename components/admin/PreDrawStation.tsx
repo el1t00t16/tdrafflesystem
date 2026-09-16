@@ -83,6 +83,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'console' | 'history'>('console');
+  const [masterlistScope, setMasterlistScope] = useState<'PRE_DRAW_ONLY' | 'ALL_WINNERS'>('PRE_DRAW_ONLY');
 
   // Animation Duration for Pre-Draw Reel
   const [reelDuration, setReelDuration] = useState<number>(() => {
@@ -189,14 +190,21 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     isCombinedPoolInsufficient ||
     isQuantityExceeded;
 
+  // Helper to identify Pre-Draw records
+  const isPreDrawRecord = (drawNumber?: string, drawType?: string) => {
+    if (drawType === 'PRE_DRAW') return true;
+    if (drawNumber && String(drawNumber).toUpperCase().startsWith('PRE')) return true;
+    return false;
+  };
+
   // Pre-drawn winners recorded
   const preDrawWinners = useMemo(() => {
-    return winners.filter((w) => w.drawType === 'PRE_DRAW');
+    return winners.filter((w) => isPreDrawRecord(w.drawNumber, w.drawType));
   }, [winners]);
 
   // Pre-drawn logs
   const preDrawLogs = useMemo(() => {
-    return logs.filter((l) => l.drawType === 'PRE_DRAW');
+    return logs.filter((l) => isPreDrawRecord(l.drawNumber, l.drawType));
   }, [logs]);
 
   // Execute Pre-Draw with Animated 5 Cards Shuffling Reel
@@ -361,22 +369,27 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     }
   };
 
-  // Filtered pre-draw winners for history table
+  // Active masterlist depending on scope filter
+  const activeMasterlistWinners = useMemo(() => {
+    return masterlistScope === 'PRE_DRAW_ONLY' ? preDrawWinners : winners;
+  }, [masterlistScope, preDrawWinners, winners]);
+
+  // Filtered winners for history table
   const filteredHistory = useMemo(() => {
-    if (!searchFilter.trim()) return preDrawWinners;
+    if (!searchFilter.trim()) return activeMasterlistWinners;
     const q = searchFilter.toLowerCase();
-    return preDrawWinners.filter(
+    return activeMasterlistWinners.filter(
       (w) =>
         w.name.toLowerCase().includes(q) ||
         w.winnerId.toLowerCase().includes(q) ||
-        w.participantId.toLowerCase().includes(q) ||
+        (w.participantId && w.participantId.toLowerCase().includes(q)) ||
         w.school.toLowerCase().includes(q) ||
         w.prizeName.toLowerCase().includes(q) ||
-        w.drawNumber.toLowerCase().includes(q)
+        (w.drawNumber && w.drawNumber.toLowerCase().includes(q))
     );
-  }, [preDrawWinners, searchFilter]);
+  }, [activeMasterlistWinners, searchFilter]);
 
-  // Export Pre-Draw CSV
+  // Export CSV
   const exportPreDrawCSV = () => {
     const headers = [
       'Batch #',
@@ -392,7 +405,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
       'Claim Status'
     ];
 
-    const rows = preDrawWinners.map((w) => [
+    const rows = activeMasterlistWinners.map((w) => [
       w.drawNumber,
       w.winnerId,
       w.participantId || 'N/A',
@@ -414,7 +427,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `deped_malungon_predraw_masterlist_${new Date().toISOString().slice(0, 10)}.csv`
+      `deped_malungon_${masterlistScope === 'PRE_DRAW_ONLY' ? 'predraw' : 'all_winners'}_masterlist_${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -900,10 +913,10 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 className="font-black text-base sm:text-lg text-[#1a1a1a] dark:text-white uppercase tracking-tight">
-                  OFFICIAL PRE-DRAW WINNERS MASTERLIST
+                  OFFICIAL WINNERS MASTERLIST
                 </h3>
                 <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-0.5">
-                  Total Pre-Drawn Records: {preDrawWinners.length}
+                  Showing: {activeMasterlistWinners.length} {masterlistScope === 'PRE_DRAW_ONLY' ? 'Pre-Draw Records' : 'Total System Winners'}
                 </p>
               </div>
 
@@ -911,7 +924,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 <button
                   type="button"
                   onClick={exportPreDrawCSV}
-                  disabled={preDrawWinners.length === 0}
+                  disabled={activeMasterlistWinners.length === 0}
                   className="px-3 py-2 bg-[#1a1a1a] hover:bg-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -921,7 +934,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  disabled={preDrawWinners.length === 0}
+                  disabled={activeMasterlistWinners.length === 0}
                   className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all"
                 >
                   <Printer className="w-4 h-4" />
@@ -930,12 +943,41 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               </div>
             </div>
 
+            {/* Scope Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1a1a1a]/10 dark:border-white/10">
+              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+                VIEW SCOPE:
+              </span>
+              <button
+                type="button"
+                onClick={() => setMasterlistScope('PRE_DRAW_ONLY')}
+                className={`px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider transition-all border ${
+                  masterlistScope === 'PRE_DRAW_ONLY'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                    : 'bg-[#f8f7f4] dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border-[#1a1a1a]/20 dark:border-white/10 hover:border-indigo-600'
+                }`}
+              >
+                Pre-Draw Batches ({preDrawWinners.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setMasterlistScope('ALL_WINNERS')}
+                className={`px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider transition-all border ${
+                  masterlistScope === 'ALL_WINNERS'
+                    ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow-sm'
+                    : 'bg-[#f8f7f4] dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border-[#1a1a1a]/20 dark:border-white/10 hover:border-[#FF1E1E]'
+                }`}
+              >
+                All System Winners ({winners.length})
+              </button>
+            </div>
+
             {/* Search Input */}
             <div className="relative">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search pre-draw winner name, Profiling ID, school, prize, batch #..."
+                placeholder={`Search ${masterlistScope === 'PRE_DRAW_ONLY' ? 'pre-draw' : 'all'} winner name, Profiling ID, school, prize, batch #...`}
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/10 pl-9 pr-3 py-2 text-xs font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-indigo-600 uppercase"
@@ -966,9 +1008,9 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                   {filteredHistory.length === 0 ? (
                     <tr>
                       <td colSpan={11} className="p-8 text-center text-neutral-500 font-bold uppercase tracking-wider">
-                        {preDrawWinners.length === 0
-                          ? 'No pre-draw winners recorded yet. Use the Batch Drawer to conduct advance draws.'
-                          : 'No matching pre-draw winners found.'}
+                        {activeMasterlistWinners.length === 0
+                          ? 'No winners recorded yet for this view.'
+                          : 'No matching winners found for this search filter.'}
                       </td>
                     </tr>
                   ) : (
@@ -1150,13 +1192,13 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           <p className="text-sm font-bold uppercase font-serif">Department of Education • Region XII</p>
           <p className="text-xs uppercase font-serif">Schools Division of Sarangani • Municipality of Malungon</p>
           <h1 className="text-xl font-black uppercase tracking-tight mt-3">
-            OFFICIAL PRE-DRAW WINNERS MASTERLIST
+            {masterlistScope === 'PRE_DRAW_ONLY' ? 'OFFICIAL PRE-DRAW WINNERS MASTERLIST' : 'OFFICIAL WINNERS MASTERLIST (ALL BATCHES)'}
           </h1>
           <p className="text-xs uppercase font-mono font-bold mt-0.5">
-            Municipal Teachers' Day 2026 Celebration • Pre-Draw Session
+            Municipal Teachers' Day 2026 Celebration • Raffle Committee Records
           </p>
           <p className="text-[10px] text-neutral-600 font-mono mt-1">
-            Generated on: {new Date().toLocaleString()} • Total Pre-Draw Winners: {preDrawWinners.length}
+            Generated on: {new Date().toLocaleString()} • Total Records: {activeMasterlistWinners.length}
           </p>
         </div>
 
@@ -1176,7 +1218,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
             </tr>
           </thead>
           <tbody>
-            {preDrawWinners.map((w, idx) => (
+            {activeMasterlistWinners.map((w, idx) => (
               <tr key={w.winnerId} className="border-b border-neutral-300">
                 <td className="p-1.5 border border-black font-mono">{idx + 1}</td>
                 <td className="p-1.5 border border-black font-mono font-bold">{w.drawNumber}</td>

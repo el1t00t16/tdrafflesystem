@@ -679,9 +679,9 @@ export async function fetchWinnersFromSupabase(): Promise<Winner[] | null> {
       isProxyClaim: Boolean(row.is_proxy_claim),
       proxyName: row.proxy_name || undefined,
       proxyRelationship: row.proxy_relationship || undefined,
-      claimNotes: row.claim_notes || undefined,
       forfeitedAt: row.forfeited_at || undefined,
-      forfeitReason: row.forfeit_reason || undefined
+      forfeitReason: row.forfeit_reason || undefined,
+      drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
     }));
   } catch (err) {
     console.error('Error fetching winners from Supabase:', err);
@@ -861,7 +861,8 @@ export async function fetchLogsFromSupabase(): Promise<RaffleLog[] | null> {
       status: row.status,
       admin: row.admin,
       distributionMode: row.distribution_mode,
-      winnersPerDistrict: row.winners_per_district || undefined
+      winnersPerDistrict: row.winners_per_district || undefined,
+      drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
     }));
   } catch (err) {
     console.error('Error fetching logs from Supabase:', err);
