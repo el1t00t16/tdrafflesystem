@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { District, DistributionMode, Participant, Prize } from '../lib/types';
+import { District, DistributionMode, Participant, Prize, Winner } from '../lib/types';
 import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 
 interface ProjectorDisplayProps {
   selectedPrize: Prize | null;
   prizes?: Prize[];
   selectedPrizeId?: string;
+  preDrawWinners?: Winner[];
   onSelectPrize?: (prizeId: string) => void;
   isDrawing: boolean;
   shufflingNames: Record<District, { name: string; school: string }>;
@@ -47,6 +48,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   selectedPrize,
   prizes,
   selectedPrizeId,
+  preDrawWinners = [],
   onSelectPrize,
   isDrawing,
   shufflingNames,
@@ -790,6 +792,30 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
             </div>
           )}
         </main>
+
+        {/* Bottom Scrolling Ticker for Pre-Draw Winners */}
+        {preDrawWinners.length > 0 && !isDrawing && (
+          <div className="bg-[#1a1a1a] dark:bg-black border-t-2 border-[#1a1a1a] dark:border-white/15 text-white py-1.5 sm:py-2 px-3 overflow-hidden select-none shrink-0 z-20 flex items-center shadow-lg">
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-600 text-white font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider shrink-0 z-10 shadow-xs">
+              <span className="animate-pulse">✨</span>
+              <span>PRE-DRAW WINNERS ({preDrawWinners.length}):</span>
+            </div>
+
+            <div className="overflow-hidden relative flex-1 ml-3">
+              <div className="animate-marquee whitespace-nowrap flex items-center gap-8 text-xs font-bold tracking-wide">
+                {/* Duplicate array so marquee wraps seamlessly */}
+                {[...preDrawWinners, ...preDrawWinners].map((w, idx) => (
+                  <div key={`${w.winnerId}-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                    <span className="text-white font-black uppercase">{w.name}</span>
+                    <span className="text-neutral-400 font-normal">({w.school})</span>
+                    <span className="text-[#FF6A00] font-black uppercase">— {w.prizeName}</span>
+                    <span className="text-neutral-600 font-mono text-[11px]">•</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

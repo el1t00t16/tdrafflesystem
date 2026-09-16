@@ -568,6 +568,11 @@ export default function Home() {
     return winners.filter((w) => w.claimStatus === 'UNCLAIMED').length;
   }, [winners]);
 
+  // Pre-Draw Winners
+  const preDrawWinners = useMemo(() => {
+    return winners.filter((w) => w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE'));
+  }, [winners]);
+
   // Verified Present & Eligible Count
   const presentCount = useMemo(() => {
     return participants.filter((p) => p.eligible === 'ELIGIBLE' || p.attendedAt).length;
@@ -1012,6 +1017,109 @@ export default function Home() {
     if (nextAvailable) {
       handleSelectPrize(nextAvailable.id, remainingPrizes);
     }
+  };
+
+  // Handle Confirmation of Pre-Draw Batch (Advance Draws)
+  const handleConfirmPreDrawBatch = (batch: TemporaryDrawResult) => {
+    soundSynthesizer.playCelebrationFanfare();
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const fullTimestamp = `${dateStr} ${timeStr}`;
+
+    const newWinnerRecords: Winner[] = batch.winners.map((w, idx) => ({
+      winnerId: `WN-${String(winners.length + idx + 1).padStart(4, '0')}`,
+      participantId: w.id,
+      depedId: w.depedId,
+      contactNumber: w.contactNumber,
+      email: w.email,
+      sex: w.sex,
+      name: w.fullName,
+      district: w.district,
+      originalDistrict: w.originalDistrict,
+      personnelType: w.personnelType,
+      school: w.school,
+      position: w.position,
+      prizeId: batch.prize.id,
+      prizeName: batch.prize.name,
+      unitValue: batch.prize.unitValue,
+      drawNumber: batch.drawNumber,
+      date: dateStr,
+      time: timeStr,
+      claimStatus: 'UNCLAIMED',
+      drawType: 'PRE_DRAW'
+    }));
+
+    // Update Participants winner status = YES so they are excluded from future draws
+    const winnerIdSet = new Set(batch.winners.map((w) => w.id));
+    setParticipants((prev) => {
+      const updated = prev.map((p) => {
+        if (winnerIdSet.has(p.id)) {
+          return { ...p, winner: 'YES' as const };
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    // Update Winners list with persistence
+    setWinners((prev) => {
+      const updated = [...prev, ...newWinnerRecords];
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    // Push new winners to Supabase in real-time
+    newWinnerRecords.forEach((w) => {
+      pushWinnerToSupabase(w).catch((err) => console.warn('Supabase winner push:', err));
+    });
+
+    // Decrement Prize remaining quantity & sync to Supabase
+    const updatedPrizes: Prize[] = prizes.map((p) => {
+      if (p.id === batch.prize.id) {
+        const newDrawn = p.drawnQuantity + batch.winners.length;
+        const newRemaining = Math.max(0, p.quantity - newDrawn);
+        const status: PrizeStatus = newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED';
+        return {
+          ...p,
+          drawnQuantity: newDrawn,
+          remainingQuantity: newRemaining,
+          status
+        };
+      }
+      return p;
+    });
+    setPrizes(updatedPrizes);
+    syncPrizesToSupabase(updatedPrizes).catch((err) => console.warn('Supabase prize sync:', err));
+
+    // Record Audit Log Entry for Pre-Draw
+    const newLog: RaffleLog = {
+      logId: `LOG-${String(logs.length + 1).padStart(4, '0')}`,
+      drawNumber: batch.drawNumber,
+      timestamp: fullTimestamp,
+      prizeId: batch.prize.id,
+      prizeName: batch.prize.name,
+      numberOfWinners: batch.winners.length,
+      eligiblePoolSize: batch.eligiblePoolSize,
+      winnerIds: batch.winners.map((w) => w.id),
+      winnerNames: batch.winners.map((w) => w.fullName),
+      status: 'CONFIRMED',
+      admin: 'Pre-Draw Committee',
+      distributionMode: batch.distributionMode,
+      winnersPerDistrict: batch.winnersPerDistrict,
+      drawType: 'PRE_DRAW'
+    };
+    setLogs((prev) => [newLog, ...prev]);
+    pushLogToSupabase(newLog).catch((err) => console.warn('Supabase log push:', err));
   };
 
   // Two-Stage Confirmation: Redraw Action
@@ -1552,6 +1660,7 @@ export default function Home() {
             selectedPrize={currentPrize}
             prizes={prizes}
             selectedPrizeId={selectedPrizeId}
+            preDrawWinners={preDrawWinners}
             onSelectPrize={(id) => {
               soundSynthesizer.playClick();
               handleSelectPrize(id);
@@ -1619,6 +1728,7 @@ export default function Home() {
               handleSelectPrize(id);
             }}
             onLaunchDraw={handleOpenDrawPreview}
+            onConfirmPreDrawBatch={handleConfirmPreDrawBatch}
             onToggleEligibility={handleToggleEligibility}
             onImportParticipants={handleImportParticipants}
             onClearAllParticipants={handleClearAllParticipants}

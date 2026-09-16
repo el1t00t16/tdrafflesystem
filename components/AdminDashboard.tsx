@@ -11,6 +11,7 @@ import { ClaimsStation } from './admin/ClaimsStation';
 import { RaffleLogsView } from './admin/RaffleLogsView';
 import { ReportsView } from './admin/ReportsView';
 import { SettingsManager } from './admin/SettingsManager';
+import { PreDrawStation } from './admin/PreDrawStation';
 import {
   LayoutDashboard,
   PlayCircle,
@@ -20,8 +21,10 @@ import {
   ShieldCheck,
   FileText,
   BarChart3,
-  Settings
+  Settings,
+  ListChecks
 } from 'lucide-react';
+import { TemporaryDrawResult } from '../lib/types';
 
 interface AdminDashboardProps {
   participants: Participant[];
@@ -32,6 +35,7 @@ interface AdminDashboardProps {
   selectedPrizeId: string;
   onSelectPrize: (id: string) => void;
   onLaunchDraw: () => void;
+  onConfirmPreDrawBatch?: (batch: TemporaryDrawResult) => void;
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
   onClearAllParticipants?: () => void;
@@ -73,6 +77,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   selectedPrizeId,
   onSelectPrize,
   onLaunchDraw,
+  onConfirmPreDrawBatch,
   onToggleEligibility,
   onImportParticipants,
   onClearAllParticipants,
@@ -97,6 +102,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<
     | 'dash'
     | 'raffle'
+    | 'predraw'
     | 'participants'
     | 'prizes'
     | 'winners'
@@ -108,7 +114,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const navItems = [
     { id: 'dash', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'raffle', label: 'Raffle Draw', icon: PlayCircle },
+    { id: 'raffle', label: 'Live Stage', icon: PlayCircle },
+    { id: 'predraw', label: 'Pre-Draw Station', icon: ListChecks },
     { id: 'participants', label: 'Participants', icon: Users },
     { id: 'prizes', label: 'Prizes', icon: Gift },
     { id: 'winners', label: 'Winners', icon: Trophy },
@@ -168,6 +175,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           combinedWinnersCount={combinedWinnersCount}
           onCombinedWinnersCountChange={onCombinedWinnersCountChange}
           districtEligibleCounts={districtEligibleCounts}
+        />
+      )}
+
+      {activeTab === 'predraw' && onConfirmPreDrawBatch && (
+        <PreDrawStation
+          prizes={prizes}
+          participants={participants}
+          winners={winners}
+          logs={logs}
+          onConfirmPreDrawBatch={onConfirmPreDrawBatch}
+          allowMultipleWins={settings.allowMultipleWins}
         />
       )}
 

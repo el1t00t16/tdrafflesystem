@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Winner } from '../../lib/types';
 import { Printer, X, ShieldCheck } from 'lucide-react';
 
@@ -21,34 +21,56 @@ export const ClaimSlipReceipt: React.FC<ClaimSlipReceiptProps> = ({
     window.print();
   };
 
+  // Keyboard shortcut: Escape key closes modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const formattedDate = winner.claimedAt
     ? winner.claimedAt
     : `${winner.date} ${winner.time}`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="bg-white text-black w-full max-w-lg shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none">
-        {/* Screen Top Action Bar (Hidden when printed) */}
-        <div className="bg-[#1a1a1a] text-white px-4 py-3 flex items-center justify-between print:hidden">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex justify-center items-start print:p-0 print:bg-white print:static"
+    >
+      <div className="bg-white text-black w-full max-w-lg shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none my-auto">
+        {/* Sticky Screen Top Action Bar (Always visible on screen, hidden on paper print) */}
+        <div className="sticky top-0 z-30 bg-[#1a1a1a] text-white px-4 py-3 flex items-center justify-between border-b-2 border-black shadow-md print:hidden">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-[#ff6a00]" />
             <span className="font-mono text-xs font-bold uppercase tracking-wider">
-              Official Prize Claim Voucher
+              Prize Claim Voucher
             </span>
           </div>
+
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-[#ff6a00] hover:bg-[#e05e00] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow"
+              className="px-3.5 py-1.5 bg-[#ff6a00] hover:bg-[#ff7e1d] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print Slip</span>
             </button>
+
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 hover:bg-white/10 text-neutral-300 hover:text-white transition-colors"
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-white/20 transition-all cursor-pointer"
+              title="Close Voucher (Esc)"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
+              <span>Close</span>
             </button>
           </div>
         </div>
@@ -184,6 +206,33 @@ export const ClaimSlipReceipt: React.FC<ClaimSlipReceiptProps> = ({
             <span>Disbursed: {formattedDate}</span>
             <span>Station: {stationId}</span>
             <span>COA Ref: {winner.winnerId}-{winner.drawNumber}</span>
+          </div>
+        </div>
+
+        {/* Screen Bottom Action Bar (Dual access for easy printing and closing) */}
+        <div className="bg-neutral-100 border-t-2 border-black px-4 py-3 flex items-center justify-between print:hidden">
+          <span className="text-[10px] font-mono text-neutral-500">
+            Press <kbd className="px-1.5 py-0.5 bg-white border border-neutral-300 font-bold">Esc</kbd> to close
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-4 py-2 bg-[#ff6a00] hover:bg-[#ff7e1d] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Slip</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-[#1a1a1a] hover:bg-neutral-800 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>Close Slip</span>
+            </button>
           </div>
         </div>
       </div>

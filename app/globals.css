@@ -193,5 +193,25 @@
     animation: grandWinnerBreath 2.6s ease-in-out infinite;
     will-change: transform, box-shadow, border-color;
   }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee 40s linear infinite;
+    will-change: transform;
+  }
+
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
 }
 

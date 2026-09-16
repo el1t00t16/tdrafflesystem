@@ -55,6 +55,10 @@ export interface AttendanceRecord {
   method: 'CAMERA_QR' | 'BARCODE_GUN' | 'MANUAL_ENTRY';
 }
 
+export type DrawType = 'LIVE' | 'PRE_DRAW';
+
+export type PrizeCategory = 'GRAND' | 'MAJOR' | 'MINOR' | 'CONSOLATION';
+
 export interface Prize {
   id: string; // e.g. P001
   name: string;
@@ -65,6 +69,8 @@ export interface Prize {
   remainingQuantity: number;
   totalValue: number;
   status: PrizeStatus;
+  category?: PrizeCategory;
+  isPreDraw?: boolean;
 }
 
 export interface Winner {
@@ -96,6 +102,7 @@ export interface Winner {
   claimNotes?: string;
   forfeitedAt?: string;
   forfeitReason?: string;
+  drawType?: DrawType;
 }
 
 export interface RaffleLog {
@@ -113,6 +120,7 @@ export interface RaffleLog {
   distributionMode?: DistributionMode;
   winnersPerDistrict?: number;
   targetDistrict?: District | 'ALL';
+  drawType?: DrawType;
 }
 
 export interface SystemSettings {
@@ -144,6 +152,7 @@ export interface TemporaryDrawResult {
   distributionMode: DistributionMode;
   winnersPerDistrict?: number;
   targetDistrict?: District | 'ALL';
+  drawType?: DrawType;
 }
 
 export interface ClaimStationSession {

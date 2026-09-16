@@ -196,20 +196,46 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           </div>
 
-          {/* Quick Actions Panel */}
-          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div>
-              <h4 className="font-black text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight">Ready for the Next Prize Draw?</h4>
-              <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold">
-                Launch the simultaneous 5-district raffle console.
-              </p>
+          {/* Quick Actions Panel & Draw Type Breakdown */}
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10 text-xs">
+              <span className="font-bold text-neutral-600 dark:text-neutral-400 uppercase text-[10px] tracking-wider">
+                Draw Breakdown:
+              </span>
+              <div className="flex items-center gap-3 font-mono font-black text-xs">
+                <span className="text-orange-600 dark:text-orange-400">
+                  ⚡ Live Stage: {winners.filter((w) => w.drawType !== 'PRE_DRAW' && !w.drawNumber.startsWith('PRE')).length}
+                </span>
+                <span className="text-indigo-600 dark:text-indigo-400">
+                  ✨ Pre-Drawn: {winners.filter((w) => w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE')).length}
+                </span>
+              </div>
             </div>
-            <button
-              onClick={() => onNavigateToTab('raffle')}
-              className="px-4 py-2.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow-md transition-all whitespace-nowrap"
-            >
-              Go to Raffle Console →
-            </button>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <h4 className="font-black text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight">
+                  Prize Draw Consoles
+                </h4>
+                <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold">
+                  Conduct advance pre-draws or start the live stage display.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => onNavigateToTab('predraw')}
+                  className="flex-1 sm:flex-none px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-sm transition-all whitespace-nowrap"
+                >
+                  Pre-Draw Station →
+                </button>
+                <button
+                  onClick={() => onNavigateToTab('raffle')}
+                  className="flex-1 sm:flex-none px-3.5 py-2 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow-md transition-all whitespace-nowrap"
+                >
+                  Live Stage →
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

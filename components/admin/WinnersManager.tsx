@@ -22,11 +22,17 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('ALL');
   const [claimFilter, setClaimFilter] = useState('ALL');
+  const [drawTypeFilter, setDrawTypeFilter] = useState<'ALL' | 'LIVE' | 'PRE_DRAW'>('ALL');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
   const filtered = useMemo(() => {
     return winners.filter((w) => {
+      if (drawTypeFilter !== 'ALL') {
+        const isPreDraw = w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE');
+        if (drawTypeFilter === 'PRE_DRAW' && !isPreDraw) return false;
+        if (drawTypeFilter === 'LIVE' && isPreDraw) return false;
+      }
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
           if (!w.originalDistrict?.toLowerCase().includes('eccd') && !w.school?.toLowerCase().includes('eccd')) return false;
@@ -44,12 +50,13 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
           w.winnerId.toLowerCase().includes(q) ||
           w.participantId.toLowerCase().includes(q) ||
           w.prizeName.toLowerCase().includes(q) ||
-          w.school.toLowerCase().includes(q)
+          w.school.toLowerCase().includes(q) ||
+          w.drawNumber.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [winners, districtFilter, claimFilter, search]);
+  }, [winners, districtFilter, claimFilter, drawTypeFilter, search]);
 
   // Pagination calculations
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -61,7 +68,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
   const exportCSV = () => {
     const headers = [
       'Winner ID', 'Participant ID', 'Name', 'District', 'Personnel Type',
-      'School', 'Position', 'Prize', 'Unit Value', 'Draw Number', 'Date', 'Time', 'Claim Status'
+      'School', 'Position', 'Prize', 'Unit Value', 'Draw Type', 'Draw Number', 'Date', 'Time', 'Claim Status'
     ];
     const rows = filtered.map((w) => [
       w.winnerId,
@@ -73,6 +80,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       `"${w.position}"`,
       `"${w.prizeName}"`,
       w.unitValue,
+      w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE') ? 'PRE_DRAW' : 'LIVE',
       w.drawNumber,
       w.date,
       w.time,
@@ -102,18 +110,28 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
             </p>
           </div>
 
-          <button
-            onClick={exportCSV}
-            disabled={winners.length === 0}
-            className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#ff6a00] disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none"
-          >
-            <Download className="w-4 h-4 text-[#ff6a00]" />
-            <span>Export Winners CSV ({filtered.length})</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              disabled={winners.length === 0}
+              className="px-3.5 py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none"
+            >
+              <span>Print Sheet</span>
+            </button>
+
+            <button
+              onClick={exportCSV}
+              disabled={winners.length === 0}
+              className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#ff6a00] disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none"
+            >
+              <Download className="w-4 h-4 text-[#ff6a00]" />
+              <span>Export Winners CSV ({filtered.length})</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#1a1a1a]/15 dark:border-white/10">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3 border-t border-[#1a1a1a]/15 dark:border-white/10">
           <div className="relative">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -127,6 +145,19 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
               className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/10 pl-9 pr-3 py-2 text-xs font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] uppercase"
             />
           </div>
+
+          <select
+            value={drawTypeFilter}
+            onChange={(e) => {
+              setDrawTypeFilter(e.target.value as any);
+              setPage(1);
+            }}
+            className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/10 px-3 py-2 text-xs font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] uppercase"
+          >
+            <option value="ALL">All Draw Types (Live &amp; Pre-Draw)</option>
+            <option value="LIVE">Live Stage Draws Only</option>
+            <option value="PRE_DRAW">Pre-Draw (Advance) Only</option>
+          </select>
 
           <select
             value={districtFilter}
@@ -207,7 +238,20 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                       {w.school}
                     </td>
                     <td className="p-3 font-bold text-[#1a1a1a] dark:text-white whitespace-nowrap">{w.prizeName}</td>
-                    <td className="p-3 font-mono font-bold text-neutral-600 dark:text-neutral-400 whitespace-nowrap">{w.drawNumber}</td>
+                    <td className="p-3 font-mono whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-neutral-600 dark:text-neutral-400">{w.drawNumber}</span>
+                        {w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE') ? (
+                          <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[9px] font-black px-1.5 py-0.5 border border-indigo-300 dark:border-indigo-800 uppercase">
+                            PRE-DRAW
+                          </span>
+                        ) : (
+                          <span className="bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[9px] font-black px-1.5 py-0.5 border border-orange-300 dark:border-orange-800 uppercase">
+                            LIVE
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-mono text-[11px] min-w-[140px]">
                       {w.date} {w.time}
                     </td>
