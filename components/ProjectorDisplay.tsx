@@ -255,7 +255,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
             <button
               onClick={() => setFullStage(false)}
-              className="px-2.5 sm:px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-[#1a1a1a] font-mono text-xs font-bold uppercase tracking-wider border border-white/20 transition-all flex items-center gap-1.5 shadow-xs rounded-xs"
+              className="px-2.5 sm:px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider border border-white/20 transition-all flex items-center gap-1.5 shadow-xs rounded-md"
               title="Show navigation bar and controls sidebar (Esc)"
             >
               <span>⚙️ Controls / Exit</span>

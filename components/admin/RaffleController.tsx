@@ -70,16 +70,18 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
     isDrawing;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl relative border-t-2 border-t-[#FF6A00]">
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in font-mono">
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] p-6 sm:p-7 rounded-2xl shadow-2xl relative border-t-4 border-t-[var(--accent)]">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-6">
-          <Trophy className="w-6 h-6 text-[#FF6A00]" />
+        <div className="flex items-center gap-3 border-b border-[var(--border)] pb-4 mb-6">
+          <div className="p-2.5 rounded-xl bg-[var(--badge-bg)] text-[var(--accent)] border border-[var(--border-accent)]">
+            <Trophy className="w-6 h-6" />
+          </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
+            <h3 className="text-xl sm:text-2xl font-display font-black text-[var(--ink)] uppercase tracking-tight leading-none">
               RAFFLE DRAW CONTROLLER
             </h3>
-            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+            <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase tracking-[0.2em] mt-1">
               Select prize &amp; configure winner selection criteria
             </p>
           </div>
@@ -88,14 +90,14 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
         <div className="space-y-6">
           {/* 1. SELECT PRIZE TO DRAW */}
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-2">
               SELECT PRIZE TO DRAW:
             </label>
             <select
               id="admin-prize-dropdown"
               value={selectedPrizeId}
               onChange={(e) => onSelectPrize(e.target.value)}
-              className="w-full bg-neutral-950 border border-white/20 focus:border-[#FF6A00] px-4 py-3 text-white font-black text-sm uppercase tracking-wide outline-none transition-colors"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] focus:border-[var(--accent)] rounded-xl px-4 py-3 text-[var(--ink)] font-black text-sm uppercase tracking-wide outline-none transition-colors cursor-pointer"
             >
               {prizes.length === 0 && (
                 <option value="" disabled>
@@ -107,7 +109,7 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                   key={prize.id}
                   value={prize.id}
                   disabled={prize.remainingQuantity <= 0}
-                  className="bg-neutral-900 text-white py-2"
+                  className="bg-[var(--surface)] text-[var(--ink)] py-2"
                 >
                   {prize.name} — (Remaining: {prize.remainingQuantity} / {prize.quantity})
                   {prize.unitValue > 0
@@ -121,7 +123,7 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
 
           {/* 2. DISTRIBUTION MODE */}
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-2">
               DISTRIBUTION MODE:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -129,10 +131,10 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                 type="button"
                 id="btn-mode-equal"
                 onClick={() => onDistributionModeChange('EQUAL_PER_DISTRICT')}
-                className={`px-4 py-3 border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
+                className={`px-4 py-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
                   distributionMode === 'EQUAL_PER_DISTRICT'
-                    ? 'bg-[#FF6A00] text-white border-[#FF6A00] shadow-lg shadow-[#FF6A00]/20'
-                    : 'bg-neutral-950 text-neutral-400 border-white/15 hover:text-white hover:border-white/30'
+                    ? 'bg-[var(--accent)] text-black border-[var(--border-accent)] shadow-md font-black'
+                    : 'bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--border)] hover:text-[var(--ink)] hover:border-[var(--border-accent)]'
                 }`}
               >
                 <Target className="w-4 h-4" />
@@ -143,17 +145,17 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                 type="button"
                 id="btn-mode-combined"
                 onClick={() => onDistributionModeChange('COMBINED_POOL')}
-                className={`px-4 py-3 border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
+                className={`px-4 py-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
                   distributionMode === 'COMBINED_POOL'
-                    ? 'bg-[#FF6A00] text-white border-[#FF6A00] shadow-lg shadow-[#FF6A00]/20'
-                    : 'bg-neutral-950 text-neutral-400 border-white/15 hover:text-white hover:border-white/30'
+                    ? 'bg-[var(--accent)] text-black border-[var(--border-accent)] shadow-md font-black'
+                    : 'bg-[var(--surface)] text-[var(--ink-muted)] border-[var(--border)] hover:text-[var(--ink)] hover:border-[var(--border-accent)]'
                 }`}
               >
                 <Globe className="w-4 h-4" />
                 <span>🌐 Combined Pool</span>
               </button>
             </div>
-            <p className="text-[11px] text-neutral-400 mt-2 font-medium">
+            <p className="text-[11px] text-[var(--ink-muted)] mt-2 font-medium">
               {distributionMode === 'EQUAL_PER_DISTRICT'
                 ? 'Guarantees equal winners across all 5 municipal districts (North, South, East, West, Private).'
                 : 'Picks winners completely at random from all eligible participants without district quotas.'}
@@ -162,24 +164,24 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
 
           {/* 3. WINNERS QUANTITY CONTROLLER (EQUAL vs COMBINED) */}
           {distributionMode === 'EQUAL_PER_DISTRICT' ? (
-            <div className="bg-neutral-950 border border-white/10 p-4 sm:p-5 space-y-4">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 sm:p-5 space-y-4 shadow-inner">
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)]">
                 WINNERS PER DISTRICT:
               </label>
 
               <div className="flex flex-wrap items-center gap-4">
                 {/* Stepper */}
-                <div className="flex items-center border border-white/20 bg-black">
+                <div className="flex items-center border border-[var(--border)] bg-[var(--surface-card)] rounded-lg overflow-hidden">
                   <button
                     type="button"
                     id="btn-stepper-minus"
                     disabled={winnersPerDistrict <= 1}
                     onClick={() => onWinnersPerDistrictChange(Math.max(1, winnersPerDistrict - 1))}
-                    className="p-3 text-white hover:bg-neutral-800 disabled:text-neutral-600 disabled:hover:bg-transparent transition-colors"
+                    className="p-3 text-[var(--ink)] hover:bg-[var(--surface-elevated)] disabled:opacity-30 transition-colors"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-14 text-center font-black text-xl text-white font-mono">
+                  <span className="w-14 text-center font-black text-xl text-[var(--ink)] font-mono">
                     {winnersPerDistrict}
                   </span>
                   <button
@@ -187,23 +189,23 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                     id="btn-stepper-plus"
                     disabled={winnersPerDistrict >= maxPerDistrict || (winnersPerDistrict + 1) * 5 > availableQty}
                     onClick={() => onWinnersPerDistrictChange(winnersPerDistrict + 1)}
-                    className="p-3 text-white hover:bg-neutral-800 disabled:text-neutral-600 disabled:hover:bg-transparent transition-colors"
+                    className="p-3 text-[var(--ink)] hover:bg-[var(--surface-elevated)] disabled:opacity-30 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Total Winners Badge */}
-                <div className="px-4 py-2.5 bg-neutral-900 border border-white/15 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <span className="text-neutral-400">=</span>
-                  <span className="text-[#FF6A00] text-sm">{winnersPerDistrict * 5} TOTAL WINNERS</span>
-                  <span className="text-[10px] text-neutral-400 font-normal">({winnersPerDistrict} × 5 districts)</span>
+                <div className="px-4 py-2.5 bg-[var(--surface-card)] border border-[var(--border)] text-[var(--ink)] font-black text-xs uppercase tracking-wider rounded-lg flex items-center gap-2">
+                  <span className="text-[var(--ink-muted)]">=</span>
+                  <span className="text-[var(--accent)] text-sm">{winnersPerDistrict * 5} TOTAL WINNERS</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] font-normal">({winnersPerDistrict} × 5 districts)</span>
                 </div>
               </div>
 
-              {/* QUICK PRESETS (As shown in user's image) */}
+              {/* QUICK PRESETS */}
               <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block mb-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] block mb-2">
                   QUICK PRESETS:
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -217,12 +219,12 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                         type="button"
                         disabled={!isPossible}
                         onClick={() => onWinnersPerDistrictChange(num)}
-                        className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-wider transition-colors ${
                           isCurrent
-                            ? 'bg-neutral-800 text-white border-white/40 ring-1 ring-white/30'
+                            ? 'bg-[var(--surface-elevated)] text-[var(--accent)] border-[var(--border-accent)] shadow-xs'
                             : isPossible
-                            ? 'bg-neutral-900 text-neutral-300 border-white/10 hover:text-white hover:border-white/30'
-                            : 'bg-neutral-950 text-neutral-600 border-white/5 cursor-not-allowed'
+                            ? 'bg-[var(--surface-card)] text-[var(--ink)] border-[var(--border)] hover:border-[var(--border-accent)]'
+                            : 'opacity-30 border-[var(--border)] cursor-not-allowed'
                         }`}
                       >
                         {num} each ({totalForPreset} winners)
@@ -234,10 +236,10 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                     <button
                       type="button"
                       onClick={() => onWinnersPerDistrictChange(maxPerDistrict)}
-                      className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-wider transition-colors ${
                         winnersPerDistrict === maxPerDistrict
-                          ? 'bg-[#FF6A00] text-white border-[#FF6A00]'
-                          : 'bg-neutral-900 text-[#FF6A00] border-[#FF6A00]/40 hover:bg-neutral-800'
+                          ? 'bg-[var(--accent)] text-black border-[var(--border-accent)]'
+                          : 'bg-[var(--surface-card)] text-[var(--accent)] border-[var(--border-accent)]/50 hover:bg-[var(--surface-elevated)]'
                       }`}
                     >
                       Max ({maxPerDistrict} each = {maxPerDistrict * 5} total)
@@ -247,8 +249,8 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
               </div>
 
               {!canEqualDistribute && availableQty < 5 && (
-                <div className="bg-amber-950/40 border border-amber-600/40 p-3 text-xs text-amber-300 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div className="bg-amber-950/40 border border-amber-600/40 p-3 rounded-lg text-xs text-amber-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>
                     Remaining prize quantity is less than 5. Equal per district mode requires at least 5 prize units (1 per district). Please switch to <strong>Combined Pool</strong> or select another prize.
                   </span>
@@ -256,46 +258,46 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
               )}
             </div>
           ) : (
-            <div className="bg-neutral-950 border border-white/10 p-4 sm:p-5 space-y-4">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 sm:p-5 space-y-4 shadow-inner">
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)]">
                 WINNERS TO DRAW (COMBINED POOL):
               </label>
 
               <div className="flex flex-wrap items-center gap-4">
                 {/* Stepper */}
-                <div className="flex items-center border border-white/20 bg-black">
+                <div className="flex items-center border border-[var(--border)] bg-[var(--surface-card)] rounded-lg overflow-hidden">
                   <button
                     type="button"
                     disabled={combinedWinnersCount <= 1}
                     onClick={() => onCombinedWinnersCountChange(Math.max(1, combinedWinnersCount - 1))}
-                    className="p-3 text-white hover:bg-neutral-800 disabled:text-neutral-600 disabled:hover:bg-transparent transition-colors"
+                    className="p-3 text-[var(--ink)] hover:bg-[var(--surface-elevated)] disabled:opacity-30 transition-colors"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-14 text-center font-black text-xl text-white font-mono">
+                  <span className="w-14 text-center font-black text-xl text-[var(--ink)] font-mono">
                     {combinedWinnersCount}
                   </span>
                   <button
                     type="button"
                     disabled={combinedWinnersCount >= availableQty || combinedWinnersCount >= eligiblePoolCount}
                     onClick={() => onCombinedWinnersCountChange(combinedWinnersCount + 1)}
-                    className="p-3 text-white hover:bg-neutral-800 disabled:text-neutral-600 disabled:hover:bg-transparent transition-colors"
+                    className="p-3 text-[var(--ink)] hover:bg-[var(--surface-elevated)] disabled:opacity-30 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Total Winners Badge */}
-                <div className="px-4 py-2.5 bg-neutral-900 border border-white/15 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                  <span className="text-neutral-400">=</span>
-                  <span className="text-[#FF6A00] text-sm">{combinedWinnersCount} TOTAL WINNERS</span>
-                  <span className="text-[10px] text-neutral-400 font-normal">(Free pool shuffle)</span>
+                <div className="px-4 py-2.5 bg-[var(--surface-card)] border border-[var(--border)] text-[var(--ink)] font-black text-xs uppercase tracking-wider rounded-lg flex items-center gap-2">
+                  <span className="text-[var(--ink-muted)]">=</span>
+                  <span className="text-[var(--accent)] text-sm">{combinedWinnersCount} TOTAL WINNERS</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] font-normal">(Free pool shuffle)</span>
                 </div>
               </div>
 
               {/* Quick Presets */}
               <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block mb-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] block mb-2">
                   QUICK PRESETS:
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -307,10 +309,10 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                         key={preset}
                         type="button"
                         onClick={() => onCombinedWinnersCountChange(preset)}
-                        className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-wider transition-colors ${
                           isCurrent
-                            ? 'bg-neutral-800 text-white border-white/40 ring-1 ring-white/30'
-                            : 'bg-neutral-900 text-neutral-300 border-white/10 hover:text-white hover:border-white/30'
+                            ? 'bg-[var(--surface-elevated)] text-[var(--accent)] border-[var(--border-accent)] shadow-xs'
+                            : 'bg-[var(--surface-card)] text-[var(--ink)] border-[var(--border)] hover:border-[var(--border-accent)]'
                         }`}
                       >
                         {preset} Winner{preset > 1 ? 's' : ''}
@@ -320,10 +322,10 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                   <button
                     type="button"
                     onClick={() => onCombinedWinnersCountChange(availableQty)}
-                    className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-wider transition-colors ${
                       combinedWinnersCount === availableQty
-                        ? 'bg-[#FF6A00] text-white border-[#FF6A00]'
-                        : 'bg-neutral-900 text-[#FF6A00] border-[#FF6A00]/40 hover:bg-neutral-800'
+                        ? 'bg-[var(--accent)] text-black border-[var(--border-accent)]'
+                        : 'bg-[var(--surface-card)] text-[var(--accent)] border-[var(--border-accent)]/50 hover:bg-[var(--surface-elevated)]'
                     }`}
                   >
                     All ({availableQty} Winners)
@@ -334,14 +336,14 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
           )}
 
           {/* 4. DISTRICT ELIGIBILITY STATUS BREAKDOWN */}
-          <div className="bg-neutral-950 border border-white/10 p-4 space-y-3">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-white" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[var(--accent)]" />
                 DISTRICT ELIGIBLE POOL BREAKDOWN:
               </span>
-              <span className="text-xs font-black text-white font-mono">
-                Total: {eligiblePoolCount} Personnel
+              <span className="text-xs font-black text-[var(--ink)] font-mono">
+                Total: {eligiblePoolCount} Qualified
               </span>
             </div>
 
@@ -352,19 +354,19 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                 return (
                   <div
                     key={d}
-                    className={`p-2.5 border text-center ${
+                    className={`p-2.5 rounded-lg border text-center ${
                       isShort
-                        ? 'border-red-600 bg-red-950/40 text-red-200'
-                        : 'border-white/10 bg-black text-neutral-300'
+                        ? 'border-red-500/60 bg-red-950/30 text-red-200'
+                        : 'border-[var(--border)] bg-[var(--surface-card)] text-[var(--ink)]'
                     }`}
                   >
-                    <div className="text-[9px] font-black uppercase tracking-wider text-neutral-400">
-                      {d === 'PRIVATE' ? 'PRIVATE (ECCD+LSB)' : d}
+                    <div className="text-[9px] font-black uppercase tracking-wider text-[var(--ink-muted)]">
+                      {d === 'PRIVATE' ? 'PRIVATE' : d}
                     </div>
-                    <div className="text-base font-black text-white font-mono mt-0.5">
+                    <div className="text-base font-black text-[var(--ink)] font-mono mt-0.5">
                       {count}
                     </div>
-                    <div className="text-[9px] text-neutral-500 uppercase font-bold">
+                    <div className="text-[9px] text-[var(--ink-muted)] uppercase font-bold">
                       {distributionMode === 'EQUAL_PER_DISTRICT' ? `draw ${winnersPerDistrict}` : 'pool'}
                     </div>
                   </div>
@@ -373,15 +375,15 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
             </div>
           </div>
 
-          {/* 5. BIG DRAW ACTION BUTTON (Directly as in reference image) */}
+          {/* 5. BIG DRAW ACTION BUTTON */}
           <button
             id="btn-admin-draw"
             disabled={isButtonDisabled}
             onClick={onLaunchDraw}
-            className={`w-full py-4 font-black text-base uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2.5 transition-all ${
+            className={`btn-draw w-full py-4 rounded-xl font-black text-base uppercase tracking-wider shadow-2xl flex items-center justify-center gap-2.5 transition-all ${
               isButtonDisabled
-                ? 'bg-neutral-900 text-neutral-600 border border-white/10 cursor-not-allowed'
-                : 'bg-[#FF6A00] hover:bg-[#FF7E1D] text-white hover:scale-[1.01] active:scale-[0.99] shadow-[#FF6A00]/30'
+                ? 'opacity-40 cursor-not-allowed shadow-none'
+                : 'active:scale-98'
             }`}
           >
             <Sparkles className="w-5 h-5" />
@@ -395,14 +397,14 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
           </button>
 
           {/* Calculation and Warning details */}
-          <div className="flex flex-wrap items-center justify-between text-xs border-t border-white/10 pt-4 text-neutral-400">
+          <div className="flex flex-wrap items-center justify-between text-xs border-t border-[var(--border)] pt-4 text-[var(--ink-muted)]">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider">Status: </span>
-              <strong className="text-white">Live Configured</strong>
+              <strong className="text-[var(--ink)]">Ready to Draw</strong>
             </div>
             <div>
-              <span>Remaining after draw: </span>
-              <strong className="text-white font-mono">
+              <span>Remaining after round: </span>
+              <strong className="text-[var(--accent)] font-mono">
                 {Math.max(0, availableQty - totalWinnersToDraw)} / {currentPrize?.quantity || 0}
               </strong>
             </div>

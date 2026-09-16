@@ -772,52 +772,52 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   return (
     <div id="attendance-station-container" className="w-full flex flex-col gap-5">
       {/* Top Header & Operational Banner */}
-      <div className="bg-[#18181b] border border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
+          <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)] shrink-0">
             <QrCode className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-mono font-bold tracking-tight text-white uppercase">
+              <h1 className="text-xl font-mono font-bold tracking-tight text-[var(--ink)] uppercase">
                 Attendance &amp; Eligibility Station
               </h1>
-              <span className="px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 LIVE GATE SCANNER
               </span>
             </div>
-            <p className="text-xs text-[#a1a1aa] mt-0.5">
-              Only scanned attendees become <strong className="text-white">ELIGIBLE</strong> for the Municipal Teachers&apos; Day 2026 raffle.
+            <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+              Only scanned attendees become <strong className="text-[var(--ink)]">ELIGIBLE</strong> for the Municipal Teachers&apos; Day 2026 raffle.
             </p>
           </div>
         </div>
 
         {/* Station Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#3f3f46] text-xs">
-            <span className="text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Station:</span>
+          <div className="flex items-center gap-2 bg-[var(--surface-elevated)] px-3 py-1.5 rounded-xl border border-[var(--border)] text-xs text-[var(--ink)]">
+            <span className="text-[var(--ink-muted)] text-[11px] uppercase tracking-wider font-mono">Station:</span>
             {isStandaloneGate ? (
-              <span className="text-[#22c55e] font-mono font-bold text-xs max-w-[200px] truncate" title={stationId}>
+              <span className="text-emerald-400 font-mono font-bold text-xs max-w-[200px] truncate" title={stationId}>
                 {stationId}
               </span>
             ) : (
               <select
                 value={stationId}
                 onChange={(e) => setStationId(e.target.value)}
-                className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
+                className="bg-transparent text-[var(--ink)] font-mono text-xs focus:outline-none cursor-pointer"
               >
-                <option value="Station 1 - Main Entrance" className="bg-[#18181b]">Station 1 - Main Entrance</option>
-                <option value="Station 2 - North Gate" className="bg-[#18181b]">Station 2 - North Gate</option>
-                <option value="Station 3 - South Gate" className="bg-[#18181b]">Station 3 - South Gate</option>
-                <option value="Station 4 - VIP / Fast Track" className="bg-[#18181b]">Station 4 - VIP / Fast Track</option>
+                <option value="Station 1 - Main Entrance" className="bg-[var(--surface-card)] text-[var(--ink)]">Station 1 - Main Entrance</option>
+                <option value="Station 2 - North Gate" className="bg-[var(--surface-card)] text-[var(--ink)]">Station 2 - North Gate</option>
+                <option value="Station 3 - South Gate" className="bg-[var(--surface-card)] text-[var(--ink)]">Station 3 - South Gate</option>
+                <option value="Station 4 - VIP / Fast Track" className="bg-[var(--surface-card)] text-[var(--ink)]">Station 4 - VIP / Fast Track</option>
               </select>
             )}
           </div>
 
-          <div className="flex items-center gap-2 bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#3f3f46] text-xs">
-            <span className="text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Officer:</span>
+          <div className="flex items-center gap-2 bg-[var(--surface-elevated)] px-3 py-1.5 rounded-xl border border-[var(--border)] text-xs text-[var(--ink)]">
+            <span className="text-[var(--ink-muted)] text-[11px] uppercase tracking-wider font-mono">Officer:</span>
             {isStandaloneGate ? (
-              <span className="text-white font-mono font-bold text-xs max-w-[140px] truncate" title={officerName}>
+              <span className="text-[var(--ink)] font-mono font-bold text-xs max-w-[140px] truncate" title={officerName}>
                 {officerName}
               </span>
             ) : (
@@ -826,7 +826,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                 value={officerName}
                 onChange={(e) => setOfficerName(e.target.value)}
                 placeholder="Officer Name"
-                className="bg-transparent text-white font-mono text-xs focus:outline-none w-28"
+                className="bg-transparent text-[var(--ink)] font-mono text-xs focus:outline-none w-28 placeholder:text-[var(--ink-muted)]/50"
               />
             )}
           </div>
@@ -834,10 +834,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           <button
             onClick={() => setAudioFeedback((prev) => !prev)}
             title="Toggle Audio Feedback"
-            className={`p-2 rounded-sm border text-xs flex items-center gap-1 transition-colors ${
+            className={`p-2 rounded-xl border text-xs flex items-center gap-1 transition-colors ${
               audioFeedback
-                ? 'bg-[#ff6a00]/15 border-[#ff6a00]/40 text-[#ff6a00]'
-                : 'bg-[#27272a] border-[#3f3f46] text-[#71717a]'
+                ? 'bg-[var(--accent)]/15 border-[var(--accent)]/40 text-[var(--accent)]'
+                : 'bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--ink-muted)]'
             }`}
           >
             {audioFeedback ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -847,64 +847,64 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
       {/* Live Statistics Overview Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-        <div className="bg-[#18181b] border border-[#27272a] p-3.5 rounded-sm">
-          <div className="flex items-center justify-between text-[#71717a] text-[11px] font-mono uppercase">
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] p-4 rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-[var(--ink-muted)] text-[11px] font-mono uppercase">
             <span>Registered</span>
             <Users className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-mono font-bold text-white mt-1">{stats.total}</div>
-          <div className="text-[11px] text-[#a1a1aa] mt-0.5">Imported Profiling</div>
+          <div className="text-2xl font-mono font-bold text-[var(--ink)] mt-1">{stats.total}</div>
+          <div className="text-[11px] text-[var(--ink-muted)] mt-0.5">Imported Profiling</div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#22c55e]/30 p-3.5 rounded-sm bg-gradient-to-br from-[#18181b] to-[#22c55e]/10">
-          <div className="flex items-center justify-between text-[#22c55e] text-[11px] font-mono uppercase font-semibold">
+        <div className="bg-[var(--surface-card)] border border-emerald-500/30 p-4 rounded-xl shadow-xs bg-gradient-to-br from-[var(--surface-card)] to-emerald-500/10">
+          <div className="flex items-center justify-between text-emerald-400 text-[11px] font-mono uppercase font-semibold">
             <span>Checked In (Present)</span>
             <UserCheck className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-mono font-bold text-[#22c55e] mt-1">{stats.present}</div>
-          <div className="text-[11px] text-[#22c55e]/80 mt-0.5">Active Raffle Pool</div>
+          <div className="text-2xl font-mono font-bold text-emerald-400 mt-1">{stats.present}</div>
+          <div className="text-[11px] text-emerald-400/80 mt-0.5">Active Raffle Pool</div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] p-3.5 rounded-sm">
-          <div className="flex items-center justify-between text-[#71717a] text-[11px] font-mono uppercase">
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] p-4 rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-[var(--ink-muted)] text-[11px] font-mono uppercase">
             <span>Absent (Ineligible)</span>
             <UserX className="w-4 h-4" />
           </div>
-          <div className="text-2xl font-mono font-bold text-[#a1a1aa] mt-1">{stats.absent}</div>
-          <div className="text-[11px] text-[#71717a] mt-0.5">Pending Entrance Scan</div>
+          <div className="text-2xl font-mono font-bold text-[var(--ink-muted)] mt-1">{stats.absent}</div>
+          <div className="text-[11px] text-[var(--ink-muted)] mt-0.5">Pending Entrance Scan</div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] p-3.5 rounded-sm">
-          <div className="flex items-center justify-between text-[#71717a] text-[11px] font-mono uppercase">
+        <div className="bg-[var(--surface-card)] border border-[var(--border)] p-4 rounded-xl shadow-xs">
+          <div className="flex items-center justify-between text-[var(--ink-muted)] text-[11px] font-mono uppercase">
             <span>Attendance Rate</span>
-            <Sparkles className="w-4 h-4 text-[#ff6a00]" />
+            <Sparkles className="w-4 h-4 text-[var(--accent)]" />
           </div>
-          <div className="text-2xl font-mono font-bold text-[#ff6a00] mt-1">{stats.rate}%</div>
-          <div className="text-[11px] text-[#a1a1aa] mt-0.5">Turnout Percentage</div>
+          <div className="text-2xl font-mono font-bold text-[var(--accent)] mt-1">{stats.rate}%</div>
+          <div className="text-[11px] text-[var(--ink-muted)] mt-0.5">Turnout Percentage</div>
         </div>
 
-        <div className="col-span-2 sm:col-span-4 lg:col-span-1 bg-[#18181b] border border-[#22c55e]/40 p-3 rounded-sm flex flex-col justify-between gap-1.5 shadow-sm">
-          <div className="text-[11px] text-[#22c55e] font-mono uppercase font-bold flex items-center justify-between">
+        <div className="col-span-2 sm:col-span-4 lg:col-span-1 bg-[var(--surface-card)] border border-[var(--border)] p-3.5 rounded-xl flex flex-col justify-between gap-2 shadow-xs">
+          <div className="text-[11px] text-emerald-400 font-mono uppercase font-bold flex items-center justify-between">
             <span>OFFLINE SYNC / CSV</span>
-            <FileSpreadsheet className="w-4 h-4 text-[#22c55e]" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
           </div>
-          <p className="text-[10px] text-[#a1a1aa] font-sans leading-tight">
+          <p className="text-[10px] text-[var(--ink-muted)] font-sans leading-tight">
             Backup or transfer scans without internet
           </p>
           <div className="grid grid-cols-2 gap-1.5 mt-0.5">
             <button
               onClick={handleExportAttendanceCsv}
               title="Download CSV of all scanned attendees from this device"
-              className="py-1.5 px-2 bg-[#22c55e]/20 hover:bg-[#22c55e]/30 text-[#22c55e] border border-[#22c55e]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95"
+              className="py-1.5 px-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-[#22c55e]" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
               <span>Export</span>
             </button>
             <label
               title="Merge attendance CSV from other offline scanner devices"
-              className="py-1.5 px-2 bg-[#38bdf8]/20 hover:bg-[#38bdf8]/30 text-[#38bdf8] border border-[#38bdf8]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className="py-1.5 px-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/40 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
               <span>Merge</span>
               <input
                 type="file"
@@ -918,34 +918,34 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       </div>
 
       {/* District Attendance Breakdown Pills */}
-      <div className="bg-[#18181b] border border-[#27272a] px-4 py-2.5 rounded-sm flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-        <span className="text-[#71717a] text-[11px] uppercase tracking-wider">Districts Turnout:</span>
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] px-4 py-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-xs">
+        <span className="text-[var(--ink-muted)] text-[11px] uppercase tracking-wider font-semibold">Districts Turnout:</span>
         {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => {
           const dStat = stats.districts[d] || { total: 0, present: 0 };
           const pct = dStat.total > 0 ? Math.round((dStat.present / dStat.total) * 100) : 0;
           return (
-            <div key={d} className="flex items-center gap-1.5 bg-[#27272a]/60 px-2.5 py-1 rounded-xs border border-[#3f3f46]">
-              <span className="font-bold text-white">{d}:</span>
-              <span className="text-[#22c55e]">{dStat.present}</span>
-              <span className="text-[#71717a]">/</span>
-              <span className="text-[#a1a1aa]">{dStat.total}</span>
-              <span className="text-[10px] text-[#ff6a00] ml-1">({pct}%)</span>
+            <div key={d} className="flex items-center gap-1.5 bg-[var(--surface-elevated)] px-3 py-1.5 rounded-lg border border-[var(--border)]">
+              <span className="font-bold text-[var(--ink)]">{d}:</span>
+              <span className="text-emerald-400 font-bold">{dStat.present}</span>
+              <span className="text-[var(--ink-muted)]">/</span>
+              <span className="text-[var(--ink-muted)]">{dStat.total}</span>
+              <span className="text-[10px] text-[var(--accent)] font-semibold ml-1">({pct}%)</span>
             </div>
           );
         })}
       </div>
 
       {/* Module Navigation Tabs */}
-      <div className="flex border-b border-[#27272a] gap-1 overflow-x-auto pb-0">
+      <div className="flex border-b border-[var(--border)] gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => {
             soundSynthesizer.playClick();
             setActiveTab('camera');
           }}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'camera'
-              ? 'bg-[#18181b] text-[#ff6a00] border-[#3f3f46] border-b-transparent'
-              : 'border-transparent text-[#a1a1aa] hover:text-white'
+              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm font-bold'
+              : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--accent)]/40'
           }`}
         >
           <Camera className="w-4 h-4" />
@@ -957,10 +957,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             soundSynthesizer.playClick();
             setActiveTab('gun');
           }}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'gun'
-              ? 'bg-[#18181b] text-[#ff6a00] border-[#3f3f46] border-b-transparent'
-              : 'border-transparent text-[#a1a1aa] hover:text-white'
+              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm font-bold'
+              : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--accent)]/40'
           }`}
         >
           <Barcode className="w-4 h-4" />
@@ -972,10 +972,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             soundSynthesizer.playClick();
             setActiveTab('manual');
           }}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'manual'
-              ? 'bg-[#18181b] text-[#ff6a00] border-[#3f3f46] border-b-transparent'
-              : 'border-transparent text-[#a1a1aa] hover:text-white'
+              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm font-bold'
+              : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--accent)]/40'
           }`}
         >
           <Search className="w-4 h-4" />
@@ -987,10 +987,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             soundSynthesizer.playClick();
             setActiveTab('badges');
           }}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'badges'
-              ? 'bg-[#18181b] text-[#ff6a00] border-[#3f3f46] border-b-transparent'
-              : 'border-transparent text-[#a1a1aa] hover:text-white'
+              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm font-bold'
+              : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--accent)]/40'
           }`}
         >
           <Printer className="w-4 h-4" />
@@ -1002,10 +1002,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             soundSynthesizer.playClick();
             setActiveTab('logs');
           }}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'logs'
-              ? 'bg-[#18181b] text-[#ff6a00] border-[#3f3f46] border-b-transparent'
-              : 'border-transparent text-[#a1a1aa] hover:text-white'
+              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm font-bold'
+              : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--accent)]/40'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -1018,10 +1018,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
               soundSynthesizer.playClick();
               setActiveTab('supabase');
             }}
-            className={`px-4 py-2 text-xs font-mono font-medium rounded-t-sm border-t border-x transition-colors flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 text-xs font-mono font-semibold rounded-xl border transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'supabase'
-                ? 'bg-[#18181b] text-[#38bdf8] border-[#3f3f46] border-b-transparent'
-                : 'border-transparent text-[#a1a1aa] hover:text-white'
+                ? 'bg-sky-500 text-slate-950 border-sky-500 shadow-sm font-bold'
+                : 'bg-[var(--surface-card)] border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-sky-500/40'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -1036,14 +1036,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         <div className="lg:col-span-8 flex flex-col gap-4">
           {/* TAB 1: Camera QR Scanner */}
           {activeTab === 'camera' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-[#ff6a00]" />
+                  <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[var(--accent)]" />
                     <span>Real-Time Camera Scanner</span>
                   </h2>
-                  <p className="text-xs text-[#a1a1aa]">
+                  <p className="text-xs text-[var(--ink-muted)]">
                     Position the participant&apos;s QR code in front of the camera lens for immediate verification.
                   </p>
                 </div>
@@ -1052,10 +1052,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     soundSynthesizer.playClick();
                     setCameraActive((prev) => !prev);
                   }}
-                  className={`px-4 py-2 rounded-sm font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2 ${
+                  className={`px-4 py-2 rounded-xl font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2 cursor-pointer shadow-sm ${
                     cameraActive
-                      ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
-                      : 'bg-[#ff6a00] hover:bg-[#e05d00] text-white'
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white'
+                      : 'bg-[var(--accent)] hover:brightness-110 text-[var(--accent-ink)]'
                   }`}
                 >
                   <Camera className="w-4 h-4" />
@@ -1064,16 +1064,16 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
               </div>
 
               {/* Camera Scanner Viewport */}
-              <div className="w-full bg-[#09090b] border-2 border-dashed border-[#27272a] rounded-sm min-h-[300px] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+              <div className="w-full bg-[var(--surface-elevated)] border-2 border-dashed border-[var(--border)] rounded-xl min-h-[300px] flex flex-col items-center justify-center p-4 relative overflow-hidden">
                 <div id={scannerContainerId} className="w-full max-w-md mx-auto" />
 
                 {!cameraActive && (
                   <div className="text-center p-8 flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-[#27272a] flex items-center justify-center text-[#71717a] mb-3">
-                      <Camera className="w-8 h-8" />
+                    <div className="w-16 h-16 rounded-2xl bg-[var(--surface-card)] border border-[var(--border)] flex items-center justify-center text-[var(--ink-muted)] mb-3 shadow-xs">
+                      <Camera className="w-8 h-8 text-[var(--accent)]" />
                     </div>
-                    <div className="text-sm font-mono font-bold text-white mb-1">Camera Scanner Offline</div>
-                    <p className="text-xs text-[#71717a] max-w-sm mb-4">
+                    <div className="text-sm font-mono font-bold text-[var(--ink)] mb-1">Camera Scanner Offline</div>
+                    <p className="text-xs text-[var(--ink-muted)] max-w-sm mb-4">
                       Click the &quot;Start Camera&quot; button above to activate the device camera and scan QR codes from ID cards or mobile screens.
                     </p>
                     <button
@@ -1081,7 +1081,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                         soundSynthesizer.playClick();
                         setCameraActive(true);
                       }}
-                      className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2"
+                      className="px-5 py-2.5 bg-[var(--accent)] hover:brightness-110 text-[var(--accent-ink)] rounded-xl font-mono text-xs font-bold uppercase flex items-center gap-2 cursor-pointer shadow-sm"
                     >
                       <Camera className="w-4 h-4" />
                       <span>Activate Camera</span>
@@ -1090,15 +1090,15 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                 )}
 
                 {cameraError && (
-                  <div className="absolute inset-0 bg-[#09090b]/90 flex flex-col items-center justify-center p-6 text-center">
-                    <AlertTriangle className="w-10 h-10 text-[#ef4444] mb-2" />
-                    <div className="text-sm font-mono font-bold text-white mb-1">Camera Access Restricted</div>
-                    <p className="text-xs text-[#a1a1aa] max-w-md mb-4">{cameraError}</p>
+                  <div className="absolute inset-0 bg-[var(--surface)]/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                    <AlertTriangle className="w-10 h-10 text-rose-500 mb-2" />
+                    <div className="text-sm font-mono font-bold text-[var(--ink)] mb-1">Camera Access Restricted</div>
+                    <p className="text-xs text-[var(--ink-muted)] max-w-md mb-4">{cameraError}</p>
                     <button
                       onClick={() => setActiveTab('gun')}
-                      className="px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-sm text-xs font-mono flex items-center gap-2"
+                      className="px-4 py-2 bg-[var(--surface-elevated)] hover:bg-[var(--surface-card)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono flex items-center gap-2 cursor-pointer"
                     >
-                      <Barcode className="w-4 h-4 text-[#ff6a00]" />
+                      <Barcode className="w-4 h-4 text-[var(--accent)]" />
                       <span>Switch to Barcode Gun Mode</span>
                     </button>
                   </div>
@@ -1109,27 +1109,27 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           {/* TAB 2: Barcode / USB Gun Wedge */}
           {activeTab === 'gun' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
               <div>
-                <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                  <Barcode className="w-4 h-4 text-[#ff6a00]" />
+                <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                  <Barcode className="w-4 h-4 text-[var(--accent)]" />
                   <span>High-Speed Handheld Barcode Gun Terminal</span>
                 </h2>
-                <p className="text-xs text-[#a1a1aa]">
+                <p className="text-xs text-[var(--ink-muted)]">
                   Connect your USB or Bluetooth barcode scanner gun. The cursor remains locked in the active input box for sub-second beep scanning.
                 </p>
               </div>
 
-              <div className="bg-[#09090b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-3">
-                <label className="text-xs font-mono text-[#a1a1aa] uppercase flex items-center justify-between">
+              <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-5 rounded-xl flex flex-col gap-3">
+                <label className="text-xs font-mono text-[var(--ink-muted)] uppercase flex items-center justify-between font-semibold">
                   <span>Awaiting Scanner Signal...</span>
-                  <span className="text-[10px] text-[#22c55e] font-mono flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
+                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     KEYBOARD WEDGE ACTIVE
                   </span>
                 </label>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     ref={gunInputRef}
                     type="text"
@@ -1145,7 +1145,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       }
                     }}
                     placeholder="Scan barcode or type Profiling ID (e.g. S-2026-03004) and press Enter..."
-                    className="flex-1 bg-[#18181b] border-2 border-[#ff6a00] text-white font-mono text-base px-4 py-3 rounded-sm focus:outline-none focus:ring-2 focus:ring-[#ff6a00]/30 tracking-wider"
+                    className="flex-1 bg-[var(--surface-card)] border-2 border-[var(--accent)] text-[var(--ink)] font-mono text-base px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 tracking-wider placeholder:text-[var(--ink-muted)]/40"
                     autoFocus
                   />
                   <button
@@ -1155,18 +1155,18 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                         setGunInputValue('');
                       }
                     }}
-                    className="px-5 py-3 bg-[#ff6a00] hover:bg-[#e05d00] text-white font-mono text-xs font-bold uppercase rounded-sm flex items-center gap-2"
+                    className="px-5 py-3 bg-[var(--accent)] hover:brightness-110 text-[var(--accent-ink)] font-mono text-xs font-bold uppercase rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                   >
                     <ArrowRight className="w-4 h-4" />
                     <span>Process</span>
                   </button>
                 </div>
 
-                <div className="text-[11px] text-[#71717a] font-mono flex items-center justify-between">
+                <div className="text-[11px] text-[var(--ink-muted)] font-mono flex items-center justify-between">
                   <span>Auto-processes on barcode terminator (CR / Enter).</span>
                   <button
                     onClick={() => gunInputRef.current?.focus()}
-                    className="text-[#ff6a00] hover:underline"
+                    className="text-[var(--accent)] hover:underline cursor-pointer font-semibold"
                   >
                     Re-focus input
                   </button>
@@ -1177,75 +1177,75 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           {/* TAB 3: Manual Lookup & Check-In */}
           {activeTab === 'manual' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                    <Search className="w-4 h-4 text-[#ff6a00]" />
+                  <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <Search className="w-4 h-4 text-[var(--accent)]" />
                     <span>Manual Profiling Roster Search</span>
                   </h2>
-                  <p className="text-xs text-[#a1a1aa]">
+                  <p className="text-xs text-[var(--ink-muted)]">
                     Find teachers without printed tickets and manually activate their raffle eligibility.
                   </p>
                 </div>
-                <div className="text-xs font-mono text-[#71717a]">
-                  Showing <strong className="text-white">{manualFiltered.length}</strong> of {participants.length}
+                <div className="text-xs font-mono text-[var(--ink-muted)]">
+                  Showing <strong className="text-[var(--ink)]">{manualFiltered.length}</strong> of {participants.length}
                 </div>
               </div>
 
               {/* Filters */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#71717a] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-[var(--ink-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={manualSearch}
                     onChange={(e) => setManualSearch(e.target.value)}
                     placeholder="Search by name, ID, school..."
-                    className="w-full bg-[#27272a] border border-[#3f3f46] text-white text-xs pl-9 pr-3 py-2 rounded-sm focus:outline-none focus:border-[#ff6a00]"
+                    className="w-full bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:border-[var(--accent)] placeholder:text-[var(--ink-muted)]/50"
                   />
                 </div>
 
                 <select
                   value={selectedDistrict}
                   onChange={(e) => setSelectedDistrict(e.target.value)}
-                  className="bg-[#27272a] border border-[#3f3f46] text-white text-xs px-3 py-2 rounded-sm focus:outline-none focus:border-[#ff6a00]"
+                  className="bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs px-3 py-2.5 rounded-xl focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                 >
-                  <option value="ALL">All Districts</option>
-                  <option value="NORTH">North District</option>
-                  <option value="EAST">East District</option>
-                  <option value="WEST">West District</option>
-                  <option value="SOUTH">South District</option>
-                  <option value="PRIVATE">Private (ECCD + Private School + LSB)</option>
+                  <option value="ALL" className="bg-[var(--surface-card)] text-[var(--ink)]">All Districts</option>
+                  <option value="NORTH" className="bg-[var(--surface-card)] text-[var(--ink)]">North District</option>
+                  <option value="EAST" className="bg-[var(--surface-card)] text-[var(--ink)]">East District</option>
+                  <option value="WEST" className="bg-[var(--surface-card)] text-[var(--ink)]">West District</option>
+                  <option value="SOUTH" className="bg-[var(--surface-card)] text-[var(--ink)]">South District</option>
+                  <option value="PRIVATE" className="bg-[var(--surface-card)] text-[var(--ink)]">Private (ECCD + Private School + LSB)</option>
                 </select>
 
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as any)}
-                  className="bg-[#27272a] border border-[#3f3f46] text-white text-xs px-3 py-2 rounded-sm focus:outline-none focus:border-[#ff6a00]"
+                  className="bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs px-3 py-2.5 rounded-xl focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                 >
-                  <option value="ALL">All Attendance Statuses</option>
-                  <option value="INELIGIBLE">Absent / Pending Scan</option>
-                  <option value="ELIGIBLE">Checked In / Eligible</option>
+                  <option value="ALL" className="bg-[var(--surface-card)] text-[var(--ink)]">All Attendance Statuses</option>
+                  <option value="INELIGIBLE" className="bg-[var(--surface-card)] text-[var(--ink)]">Absent / Pending Scan</option>
+                  <option value="ELIGIBLE" className="bg-[var(--surface-card)] text-[var(--ink)]">Checked In / Eligible</option>
                 </select>
               </div>
 
               {/* Roster List */}
-              <div className="border border-[#27272a] rounded-sm overflow-hidden max-h-[480px] overflow-y-auto">
+              <div className="border border-[var(--border)] rounded-xl overflow-hidden max-h-[480px] overflow-y-auto">
                 <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-[#27272a] text-[#a1a1aa] uppercase text-[10px] sticky top-0 z-10">
+                  <thead className="bg-[var(--surface-elevated)] text-[var(--ink-muted)] uppercase text-[10px] sticky top-0 z-10 font-bold border-b border-[var(--border)]">
                     <tr>
-                      <th className="p-2.5">Teacher Name</th>
-                      <th className="p-2.5">Profiling / DepEd ID</th>
-                      <th className="p-2.5">District &amp; School</th>
-                      <th className="p-2.5 text-center">Status</th>
-                      <th className="p-2.5 text-right">Action</th>
+                      <th className="p-3">Teacher Name</th>
+                      <th className="p-3">Profiling / DepEd ID</th>
+                      <th className="p-3">District &amp; School</th>
+                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#27272a]">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {manualFiltered.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-[#71717a]">
+                        <td colSpan={5} className="p-8 text-center text-[var(--ink-muted)]">
                           No participants found matching the query.
                         </td>
                       </tr>
@@ -1253,32 +1253,32 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       manualFiltered.map((p) => {
                         const isPresent = p.eligible === 'ELIGIBLE' || p.attendedAt;
                         return (
-                          <tr key={p.id} className="hover:bg-[#27272a]/50 transition-colors">
-                            <td className="p-2.5 font-medium text-white">
+                          <tr key={p.id} className="hover:bg-[var(--surface-elevated)]/50 transition-colors">
+                            <td className="p-3 font-medium text-[var(--ink)]">
                               {p.fullName}
-                              <div className="text-[10px] text-[#71717a] font-normal">{p.position}</div>
+                              <div className="text-[10px] text-[var(--ink-muted)] font-normal">{p.position}</div>
                             </td>
-                            <td className="p-2.5 text-[#a1a1aa]">
+                            <td className="p-3 text-[var(--ink-muted)]">
                               <div>{p.id}</div>
-                              {p.depedId && <div className="text-[10px] text-[#71717a]">DepEd: {p.depedId}</div>}
+                              {p.depedId && <div className="text-[10px] text-[var(--ink-muted)]/70">DepEd: {p.depedId}</div>}
                             </td>
-                            <td className="p-2.5 text-[#a1a1aa]">
-                              <span className="text-[#ff6a00] font-semibold">{p.district}</span>
-                              <div className="text-[10px] text-[#71717a] truncate max-w-[180px]">{p.school}</div>
+                            <td className="p-3 text-[var(--ink-muted)]">
+                              <span className="text-[var(--accent)] font-semibold">{p.district}</span>
+                              <div className="text-[10px] text-[var(--ink-muted)] truncate max-w-[180px]">{p.school}</div>
                             </td>
-                            <td className="p-2.5 text-center">
+                            <td className="p-3 text-center">
                               {isPresent ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                                   <CheckCircle2 className="w-3 h-3" />
                                   ELIGIBLE
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#71717a]/20 text-[#a1a1aa] border border-[#71717a]/30">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--surface-elevated)] text-[var(--ink-muted)] border border-[var(--border)]">
                                   ABSENT
                                 </span>
                               )}
                             </td>
-                            <td className="p-2.5 text-right">
+                            <td className="p-3 text-right">
                               {isPresent ? (
                                 <button
                                   onClick={() => {
@@ -1291,14 +1291,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                                     };
                                     onUpdateParticipant(reverted);
                                   }}
-                                  className="px-2.5 py-1 bg-[#27272a] hover:bg-[#3f3f46] text-[#ef4444] border border-[#3f3f46] rounded-xs text-[11px] transition-colors"
+                                  className="px-2.5 py-1 bg-[var(--surface-elevated)] hover:bg-rose-500/15 text-rose-400 border border-[var(--border)] hover:border-rose-500/40 rounded-lg text-[11px] transition-colors cursor-pointer"
                                 >
                                   Undo Check-in
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleProcessScan(p.id, 'MANUAL_ENTRY')}
-                                  className="px-2.5 py-1 bg-[#22c55e] hover:bg-[#16a34a] text-black font-bold rounded-xs text-[11px] transition-colors flex items-center gap-1 ml-auto"
+                                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-lg text-[11px] transition-colors flex items-center gap-1 ml-auto cursor-pointer shadow-xs"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                   <span>Mark Present</span>
@@ -1317,14 +1317,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           {/* TAB 4: Printable Badges / QR Slips */}
           {activeTab === 'badges' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                    <Printer className="w-4 h-4 text-[#ff6a00]" />
+                  <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <Printer className="w-4 h-4 text-[var(--accent)]" />
                     <span>Printable QR Code Badges &amp; Slips</span>
                   </h2>
-                  <p className="text-xs text-[#a1a1aa]">
+                  <p className="text-xs text-[var(--ink-muted)]">
                     Print attendee cards with scannable QR codes for distribution prior to venue entrance.
                   </p>
                 </div>
@@ -1333,7 +1333,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     soundSynthesizer.playClick();
                     window.print();
                   }}
-                  className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2"
+                  className="px-4 py-2 bg-[var(--accent)] hover:brightness-110 text-[var(--accent-ink)] rounded-xl font-mono text-xs font-bold uppercase flex items-center gap-2 cursor-pointer shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Badges Page</span>
@@ -1347,19 +1347,19 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   value={badgeSearch}
                   onChange={(e) => setBadgeSearch(e.target.value)}
                   placeholder="Filter teachers for printing..."
-                  className="bg-[#27272a] border border-[#3f3f46] text-white text-xs px-3 py-2 rounded-sm focus:outline-none"
+                  className="bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs px-3 py-2.5 rounded-xl focus:outline-none focus:border-[var(--accent)] placeholder:text-[var(--ink-muted)]/50"
                 />
                 <select
                   value={badgeDistrict}
                   onChange={(e) => setBadgeDistrict(e.target.value)}
-                  className="bg-[#27272a] border border-[#3f3f46] text-white text-xs px-3 py-2 rounded-sm focus:outline-none"
+                  className="bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs px-3 py-2.5 rounded-xl focus:outline-none focus:border-[var(--accent)] cursor-pointer"
                 >
-                  <option value="ALL">All Districts</option>
-                  <option value="NORTH">North District</option>
-                  <option value="EAST">East District</option>
-                  <option value="WEST">West District</option>
-                  <option value="SOUTH">South District</option>
-                  <option value="PRIVATE">Private (ECCD + Private School + LSB)</option>
+                  <option value="ALL" className="bg-[var(--surface-card)] text-[var(--ink)]">All Districts</option>
+                  <option value="NORTH" className="bg-[var(--surface-card)] text-[var(--ink)]">North District</option>
+                  <option value="EAST" className="bg-[var(--surface-card)] text-[var(--ink)]">East District</option>
+                  <option value="WEST" className="bg-[var(--surface-card)] text-[var(--ink)]">West District</option>
+                  <option value="SOUTH" className="bg-[var(--surface-card)] text-[var(--ink)]">South District</option>
+                  <option value="PRIVATE" className="bg-[var(--surface-card)] text-[var(--ink)]">Private (ECCD + Private School + LSB)</option>
                 </select>
               </div>
 
@@ -1370,15 +1370,15 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   return (
                     <div
                       key={p.id}
-                      className="bg-white text-black p-4 rounded-sm border-2 border-black flex items-center gap-4 relative shadow-sm"
+                      className="bg-white text-black p-4 rounded-xl border-2 border-black flex items-center gap-4 relative shadow-sm"
                     >
                       {/* Left: QR Code */}
                       <div className="flex flex-col items-center justify-center">
                         {qr ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={qr} alt={p.id} className="w-24 h-24 object-contain border border-gray-300" />
+                          <img src={qr} alt={p.id} className="w-24 h-24 object-contain border border-gray-300 rounded-md" />
                         ) : (
-                          <div className="w-24 h-24 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
+                          <div className="w-24 h-24 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 rounded-md">
                             Generating...
                           </div>
                         )}
@@ -1421,30 +1421,30 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           {/* TAB 5: Attendance Scan Audit Logs */}
           {activeTab === 'logs' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#ff6a00]" />
+                  <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[var(--accent)]" />
                     <span>Real-Time Scan Audit Logs</span>
                   </h2>
-                  <p className="text-xs text-[#a1a1aa]">
+                  <p className="text-xs text-[var(--ink-muted)]">
                     Chronological record of every check-in scan performed at gate entrance stations.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleExportAttendanceCsv}
-                    className="px-3 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-sm text-xs font-mono flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 bg-[var(--surface-elevated)] hover:bg-[var(--surface-card)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#22c55e]" />
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Export Logs</span>
                   </button>
                   <label
                     title="Merge attendance CSV from another offline gate scanner device"
-                    className="px-3 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-sm text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-1.5 bg-[var(--surface-elevated)] hover:bg-[var(--surface-card)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <UploadCloud className="w-3.5 h-3.5 text-[#38bdf8]" />
+                    <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
                     <span>Merge CSV</span>
                     <input
                       type="file"
@@ -1456,22 +1456,22 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                 </div>
               </div>
 
-              <div className="border border-[#27272a] rounded-sm overflow-hidden max-h-[450px] overflow-y-auto">
+              <div className="border border-[var(--border)] rounded-xl overflow-hidden max-h-[450px] overflow-y-auto">
                 <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-[#27272a] text-[#a1a1aa] uppercase text-[10px] sticky top-0 z-10">
+                  <thead className="bg-[var(--surface-elevated)] text-[var(--ink-muted)] uppercase text-[10px] sticky top-0 z-10 font-bold border-b border-[var(--border)]">
                     <tr>
-                      <th className="p-2.5">Time</th>
-                      <th className="p-2.5">Log ID</th>
-                      <th className="p-2.5">Teacher Name</th>
-                      <th className="p-2.5">District &amp; School</th>
-                      <th className="p-2.5">Station &amp; Officer</th>
-                      <th className="p-2.5 text-right">Method</th>
+                      <th className="p-3">Time</th>
+                      <th className="p-3">Log ID</th>
+                      <th className="p-3">Teacher Name</th>
+                      <th className="p-3">District &amp; School</th>
+                      <th className="p-3">Station &amp; Officer</th>
+                      <th className="p-3 text-right">Method</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#27272a]">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {uniqueAttendanceRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-6 text-center text-[#71717a]">
+                        <td colSpan={6} className="p-8 text-center text-[var(--ink-muted)]">
                           No scan records logged yet today. Start scanning to see live activity.
                         </td>
                       </tr>
@@ -1479,18 +1479,18 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       uniqueAttendanceRecords.slice(-50).reverse().map((rec) => {
                         const cleanTime = rec.scannedAt ? rec.scannedAt.slice(11, 19) : '';
                         return (
-                          <tr key={rec.id} className="hover:bg-[#27272a]/50">
-                            <td className="p-2.5 text-[#a1a1aa] whitespace-nowrap">{cleanTime}</td>
-                            <td className="p-2.5 text-white font-bold">{rec.id}</td>
-                            <td className="p-2.5 font-medium text-white">{rec.name}</td>
-                            <td className="p-2.5 text-[#a1a1aa]">
-                              <span className="text-[#ff6a00] font-semibold">{rec.district}</span> - {rec.school}
+                          <tr key={rec.id} className="hover:bg-[var(--surface-elevated)]/50 transition-colors">
+                            <td className="p-3 text-[var(--ink-muted)] whitespace-nowrap">{cleanTime}</td>
+                            <td className="p-3 text-[var(--ink)] font-bold">{rec.id}</td>
+                            <td className="p-3 font-medium text-[var(--ink)]">{rec.name}</td>
+                            <td className="p-3 text-[var(--ink-muted)]">
+                              <span className="text-[var(--accent)] font-semibold">{rec.district}</span> - {rec.school}
                             </td>
-                            <td className="p-2.5 text-[#71717a]">
+                            <td className="p-3 text-[var(--ink-muted)]">
                               {rec.stationId} ({rec.scannerOfficer})
                             </td>
-                            <td className="p-2.5 text-right">
-                              <span className="px-2 py-0.5 rounded-xs text-[9px] font-bold bg-[#27272a] border border-[#3f3f46] text-[#38bdf8]">
+                            <td className="p-3 text-right">
+                              <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-[var(--surface-elevated)] border border-[var(--border)] text-sky-400">
                                 {rec.method}
                               </span>
                             </td>
@@ -1506,30 +1506,30 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           {/* TAB 6: Supabase Cloud Sync */}
           {activeTab === 'supabase' && (
-            <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4">
+            <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 sm:p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
               <div>
-                <h2 className="text-base font-mono font-bold text-white uppercase flex items-center gap-2">
-                  <Database className="w-4 h-4 text-[#38bdf8]" />
+                <h2 className="text-base font-mono font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                  <Database className="w-4 h-4 text-sky-400" />
                   <span>Supabase Backend Configuration</span>
                 </h2>
-                <p className="text-xs text-[#a1a1aa]">
+                <p className="text-xs text-[var(--ink-muted)]">
                   Connect your live PostgreSQL / Supabase cloud project so all entrance scanner devices stay synchronized across multiple mobile phones, laptops, and tablets.
                 </p>
               </div>
 
               {/* Connection Status Card */}
-              <div className="bg-[#09090b] border border-[#27272a] p-4 rounded-sm flex items-center justify-between">
+              <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-4 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-3 h-3 rounded-full ${
-                      supabaseUrl && supabaseAnonKey ? 'bg-[#22c55e] animate-pulse' : 'bg-[#eab308]'
+                      supabaseUrl && supabaseAnonKey ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                     }`}
                   />
                   <div>
-                    <div className="text-xs font-mono font-bold text-white">
+                    <div className="text-xs font-mono font-bold text-[var(--ink)]">
                       {supabaseUrl && supabaseAnonKey ? 'Supabase Cloud Connected' : 'Supabase Not Configured (Using Local Storage)'}
                     </div>
-                    <div className="text-[11px] text-[#71717a] font-mono">
+                    <div className="text-[11px] text-[var(--ink-muted)] font-mono">
                       {supabaseUrl && supabaseAnonKey
                         ? `Live sync active with ${supabaseUrl}`
                         : 'Connect your Supabase project below to synchronize multiple entrance devices.'}
@@ -1539,10 +1539,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
                 <div className="text-right">
                   <span
-                    className={`px-2 py-1 rounded-xs text-[10px] font-mono font-bold uppercase ${
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
                       supabaseUrl && supabaseAnonKey
-                        ? 'bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30'
-                        : 'bg-[#eab308]/20 text-[#eab308] border border-[#eab308]/30'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     }`}
                   >
                     {supabaseUrl && supabaseAnonKey ? 'ONLINE' : 'LOCAL OFFLINE READY'}
@@ -1551,14 +1551,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
               </div>
 
               {/* Supabase Connection Setup & Credentials */}
-              <div className="bg-[#09090b] border border-[#27272a] p-4 rounded-sm space-y-4 text-xs font-mono">
-                <div className="flex items-center justify-between border-b border-[#27272a] pb-2">
-                  <span className="text-xs font-bold text-white uppercase flex items-center gap-2">
-                    <Database className="w-4 h-4 text-[#22c55e]" />
+              <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-4 sm:p-5 rounded-xl space-y-4 text-xs font-mono">
+                <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                  <span className="text-xs font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <Database className="w-4 h-4 text-emerald-400" />
                     <span>Project Credentials</span>
                   </span>
                   {supabaseSource !== 'NONE' && (
-                    <span className="text-[10px] text-[#71717a]">
+                    <span className="text-[10px] text-[var(--ink-muted)]">
                       Source: {supabaseSource === 'LOCAL_STORAGE' ? 'Saved in Browser' : 'Build Environment'}
                     </span>
                   )}
@@ -1566,7 +1566,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] text-[#a1a1aa] mb-1 font-bold">
+                    <label className="block text-[11px] text-[var(--ink-muted)] mb-1 font-bold">
                       SUPABASE PROJECT URL:
                     </label>
                     <input
@@ -1574,12 +1574,12 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       placeholder="https://your-project-id.supabase.co"
                       value={supabaseUrl}
                       onChange={(e) => setSupabaseUrl(e.target.value)}
-                      className="w-full bg-[#18181b] border border-[#27272a] px-3 py-2 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] px-3 py-2.5 rounded-xl text-[var(--ink)] font-mono text-xs outline-none focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-[#a1a1aa] mb-1 font-bold">
+                    <label className="block text-[11px] text-[var(--ink-muted)] mb-1 font-bold">
                       SUPABASE ANON PUBLIC KEY:
                     </label>
                     <input
@@ -1587,22 +1587,22 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                       value={supabaseAnonKey}
                       onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                      className="w-full bg-[#18181b] border border-[#27272a] px-3 py-2 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+                      className="w-full bg-[var(--surface-card)] border border-[var(--border)] px-3 py-2.5 rounded-xl text-[var(--ink)] font-mono text-xs outline-none focus:border-emerald-500"
                     />
                   </div>
 
                   {testStatus.message && (
                     <div
-                      className={`p-3 border text-xs flex items-center gap-2 ${
+                      className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
                         testStatus.success
                           ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
-                          : 'bg-red-950/40 border-red-500/50 text-red-200'
+                          : 'bg-rose-950/40 border-rose-500/50 text-rose-200'
                       }`}
                     >
                       {testStatus.success ? (
                         <Check className="w-4 h-4 text-emerald-400 shrink-0" />
                       ) : (
-                        <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                       )}
                       <span>{testStatus.message}</span>
                     </div>
@@ -1613,12 +1613,12 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       type="button"
                       onClick={handleTestSupabase}
                       disabled={testStatus.loading || !supabaseUrl || !supabaseAnonKey}
-                      className="px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] text-xs font-mono font-bold flex items-center gap-2 disabled:opacity-40 transition-colors"
+                      className="px-4 py-2.5 bg-[var(--surface-card)] hover:bg-[var(--surface-elevated)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono font-bold flex items-center gap-2 disabled:opacity-40 transition-colors cursor-pointer"
                     >
                       {testStatus.loading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#22c55e]" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
                       ) : (
-                        <Database className="w-3.5 h-3.5 text-[#22c55e]" />
+                        <Database className="w-3.5 h-3.5 text-emerald-400" />
                       )}
                       <span>Test Connection</span>
                     </button>
@@ -1627,7 +1627,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       type="button"
                       onClick={handleSaveSupabaseCreds}
                       disabled={!supabaseUrl || !supabaseAnonKey}
-                      className="px-5 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-black font-mono font-bold text-xs flex items-center gap-2 disabled:opacity-40 transition-colors"
+                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-mono font-bold text-xs rounded-xl flex items-center gap-2 disabled:opacity-40 transition-colors cursor-pointer shadow-sm"
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Save &amp; Connect Live</span>
@@ -1637,7 +1637,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       <button
                         type="button"
                         onClick={handleClearSupabaseCreds}
-                        className="px-3 py-2 bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-white border border-[#3f3f46] text-xs transition-colors"
+                        className="px-3 py-2.5 bg-[var(--surface-card)] hover:bg-rose-500/15 text-[var(--ink-muted)] hover:text-rose-400 border border-[var(--border)] hover:border-rose-500/40 rounded-xl text-xs transition-colors cursor-pointer"
                         title="Clear credentials"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1648,23 +1648,23 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
               </div>
 
               {/* Data Sync & Push Card */}
-              <div className="bg-[#09090b] border border-[#27272a] p-4 rounded-sm space-y-3 font-mono">
+              <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-4 sm:p-5 rounded-xl space-y-3 font-mono">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white uppercase flex items-center gap-2">
-                    <UploadCloud className="w-4 h-4 text-[#ff6a00]" />
-                    <span>Upload 2,000 Teachers to Cloud Database</span>
+                  <span className="text-xs font-bold text-[var(--ink)] uppercase flex items-center gap-2">
+                    <UploadCloud className="w-4 h-4 text-[var(--accent)]" />
+                    <span>Upload Masterlist to Cloud Database</span>
                   </span>
                   <a
                     href="https://supabase.com/dashboard"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[10px] text-[#71717a] hover:text-white inline-flex items-center gap-1 underline"
+                    className="text-[10px] text-[var(--ink-muted)] hover:text-[var(--ink)] inline-flex items-center gap-1 underline"
                   >
                     Supabase Console <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
 
-                <p className="text-[11px] text-[#a1a1aa]">
+                <p className="text-[11px] text-[var(--ink-muted)]">
                   Syncs the complete municipal teacher masterlist into the cloud so every scanner station recognizes participant badges instantly.
                 </p>
 
@@ -1673,7 +1673,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     type="button"
                     onClick={handlePushAllParticipants}
                     disabled={isSyncingParticipants || !supabaseUrl || !supabaseAnonKey}
-                    className="px-5 py-2.5 bg-[#ff6a00] hover:bg-[#ea580c] text-white font-mono font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-colors"
+                    className="px-5 py-2.5 bg-[var(--accent)] hover:brightness-110 text-[var(--accent-ink)] font-mono font-bold text-xs uppercase tracking-wider rounded-xl disabled:opacity-40 flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
                   >
                     {isSyncingParticipants ? (
                       <>
@@ -1692,14 +1692,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     type="button"
                     onClick={handlePullFromSupabase}
                     disabled={isSyncingParticipants || !supabaseUrl || !supabaseAnonKey}
-                    className="px-5 py-2.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] font-mono font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-colors"
+                    className="px-5 py-2.5 bg-[var(--surface-card)] hover:bg-[var(--surface-elevated)] text-[var(--ink)] border border-[var(--border)] rounded-xl font-mono font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
                   >
-                    <RefreshCw className={`w-4 h-4 text-[#22c55e] ${isSyncingParticipants ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 text-emerald-400 ${isSyncingParticipants ? 'animate-spin' : ''}`} />
                     <span>Pull Live Records from Cloud</span>
                   </button>
 
                   {syncProgress && (
-                    <span className="text-xs font-mono text-[#22c55e]">
+                    <span className="text-xs font-mono text-emerald-400 font-semibold">
                       {syncProgress}
                     </span>
                   )}
@@ -1707,35 +1707,35 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
               </div>
 
               {/* SQL Schema Copy Card */}
-              <div className="bg-[#09090b] border border-[#27272a] p-4 rounded-sm flex flex-col gap-3">
+              <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-4 sm:p-5 rounded-xl flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-mono font-bold text-white uppercase">
+                    <div className="text-xs font-mono font-bold text-[var(--ink)] uppercase">
                       Supabase SQL Schema (1-Click Copy)
                     </div>
-                    <div className="text-[11px] text-[#71717a]">
+                    <div className="text-[11px] text-[var(--ink-muted)]">
                       Paste this into your Supabase Dashboard &gt; SQL Editor &gt; New Query &gt; Run to provision tables.
                     </div>
                   </div>
                   <button
                     onClick={handleCopySchema}
-                    className="px-3 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] text-white border border-[#3f3f46] rounded-sm text-xs font-mono flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-[var(--surface-card)] hover:bg-[var(--surface-elevated)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     {copiedSchema ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-[#22c55e]" />
-                        <span className="text-[#22c55e]">Copied SQL!</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied SQL!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5 text-[#38bdf8]" />
+                        <Copy className="w-3.5 h-3.5 text-sky-400" />
                         <span>Copy SQL</span>
                       </>
                     )}
                   </button>
                 </div>
 
-                <pre className="bg-[#18181b] p-3 rounded-sm text-[10px] font-mono text-[#a1a1aa] overflow-x-auto max-h-48 border border-[#27272a]">
+                <pre className="bg-[var(--surface-card)] p-3 rounded-xl text-[10px] font-mono text-[var(--ink-muted)] overflow-x-auto max-h-48 border border-[var(--border)]">
                   {SUPABASE_SQL_SCHEMA}
                 </pre>
               </div>
@@ -1745,54 +1745,54 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
         {/* Right Verification Card & Scanned Badge Area (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-4">
-          <div className="bg-[#18181b] border border-[#27272a] p-5 rounded-sm flex flex-col gap-4 sticky top-4">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#a1a1aa] flex items-center justify-between">
+          <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 rounded-2xl flex flex-col gap-4 sticky top-4 shadow-sm backdrop-blur-md">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[var(--ink-muted)] flex items-center justify-between font-bold">
               <span>Scan Verification Result</span>
-              <ShieldCheck className="w-4 h-4 text-[#ff6a00]" />
+              <ShieldCheck className="w-4 h-4 text-[var(--accent)]" />
             </h3>
 
             {lastScannedResult ? (
               <div
-                className={`p-4 rounded-sm border flex flex-col gap-3 transition-all ${
+                className={`p-4 rounded-xl border flex flex-col gap-3 transition-all ${
                   lastScannedResult.status === 'SUCCESS'
-                    ? 'bg-[#22c55e]/10 border-[#22c55e]/40'
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
                     : lastScannedResult.status === 'DUPLICATE'
-                    ? 'bg-[#eab308]/10 border-[#eab308]/40'
-                    : 'bg-[#ef4444]/10 border-[#ef4444]/40'
+                    ? 'bg-amber-500/10 border-amber-500/30'
+                    : 'bg-rose-500/10 border-rose-500/30'
                 }`}
               >
                 {/* Result Status Banner */}
                 <div className="flex items-center gap-2">
                   {lastScannedResult.status === 'SUCCESS' && (
                     <>
-                      <CheckCircle2 className="w-6 h-6 text-[#22c55e]" />
+                      <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                       <div>
-                        <div className="text-xs font-mono font-bold text-[#22c55e] uppercase">
+                        <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
                           CHECK-IN CONFIRMED
                         </div>
-                        <div className="text-[10px] text-[#22c55e]/80">ELIGIBLE FOR RAFFLE</div>
+                        <div className="text-[10px] text-emerald-400/80">ELIGIBLE FOR RAFFLE</div>
                       </div>
                     </>
                   )}
                   {lastScannedResult.status === 'DUPLICATE' && (
                     <>
-                      <AlertTriangle className="w-6 h-6 text-[#eab308]" />
+                      <AlertTriangle className="w-6 h-6 text-amber-400" />
                       <div>
-                        <div className="text-xs font-mono font-bold text-[#eab308] uppercase">
+                        <div className="text-xs font-mono font-bold text-amber-400 uppercase">
                           ALREADY CHECKED IN
                         </div>
-                        <div className="text-[10px] text-[#eab308]/80">DUPLICATE SCAN PREVENTED</div>
+                        <div className="text-[10px] text-amber-400/80">DUPLICATE SCAN PREVENTED</div>
                       </div>
                     </>
                   )}
                   {lastScannedResult.status === 'NOT_FOUND' && (
                     <>
-                      <UserX className="w-6 h-6 text-[#ef4444]" />
+                      <UserX className="w-6 h-6 text-rose-400" />
                       <div>
-                        <div className="text-xs font-mono font-bold text-[#ef4444] uppercase">
+                        <div className="text-xs font-mono font-bold text-rose-400 uppercase">
                           UNKNOWN PARTICIPANT
                         </div>
-                        <div className="text-[10px] text-[#ef4444]/80">NOT IN PROFILING DATABASE</div>
+                        <div className="text-[10px] text-rose-400/80">NOT IN PROFILING DATABASE</div>
                       </div>
                     </>
                   )}
@@ -1800,50 +1800,50 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
                 {/* Scanned Teacher Info Card */}
                 {lastScannedResult.participant ? (
-                  <div className="bg-[#18181b]/90 border border-[#27272a] p-3.5 rounded-sm flex flex-col gap-2 font-mono text-xs">
+                  <div className="bg-[var(--surface-elevated)] border border-[var(--border)] p-4 rounded-xl flex flex-col gap-2.5 font-mono text-xs">
                     <div>
-                      <span className="text-[10px] text-[#71717a] uppercase block">Teacher Name</span>
-                      <span className="text-sm font-bold text-white">{lastScannedResult.participant.fullName}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] uppercase block">Teacher Name</span>
+                      <span className="text-base font-bold text-[var(--ink)]">{lastScannedResult.participant.fullName}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#27272a] text-[11px]">
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border)] text-[11px]">
                       <div>
-                        <span className="text-[10px] text-[#71717a] uppercase block">Profiling ID</span>
-                        <span className="text-[#ff6a00] font-bold">{lastScannedResult.participant.id}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] uppercase block">Profiling ID</span>
+                        <span className="text-[var(--accent)] font-bold">{lastScannedResult.participant.id}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-[#71717a] uppercase block">DepEd ID</span>
-                        <span className="text-white">{lastScannedResult.participant.depedId || 'N/A'}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] uppercase block">DepEd ID</span>
+                        <span className="text-[var(--ink)]">{lastScannedResult.participant.depedId || 'N/A'}</span>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-[#27272a] text-[11px]">
-                      <span className="text-[10px] text-[#71717a] uppercase block">District</span>
-                      <span className="text-[#22c55e] font-bold">{lastScannedResult.participant.district} DISTRICT</span>
+                    <div className="pt-2 border-t border-[var(--border)] text-[11px]">
+                      <span className="text-[10px] text-[var(--ink-muted)] uppercase block">District</span>
+                      <span className="text-emerald-400 font-bold">{lastScannedResult.participant.district} DISTRICT</span>
                     </div>
 
                     <div className="text-[11px]">
-                      <span className="text-[10px] text-[#71717a] uppercase block">School</span>
-                      <span className="text-white truncate block">{lastScannedResult.participant.school}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] uppercase block">School</span>
+                      <span className="text-[var(--ink)] truncate block">{lastScannedResult.participant.school}</span>
                     </div>
 
                     <div className="text-[11px]">
-                      <span className="text-[10px] text-[#71717a] uppercase block">Position</span>
-                      <span className="text-[#a1a1aa]">{lastScannedResult.participant.position}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] uppercase block">Position</span>
+                      <span className="text-[var(--ink-muted)]">{lastScannedResult.participant.position}</span>
                     </div>
 
-                    <div className="pt-2 border-t border-[#27272a] text-[10px] text-[#71717a]">
+                    <div className="pt-2 border-t border-[var(--border)] text-[10px] text-[var(--ink-muted)]">
                       Checked in at {lastScannedResult.timestamp}
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-[#a1a1aa] font-mono">{lastScannedResult.message}</p>
+                  <p className="text-xs text-[var(--ink-muted)] font-mono">{lastScannedResult.message}</p>
                 )}
               </div>
             ) : (
-              <div className="border border-dashed border-[#27272a] rounded-sm p-6 text-center text-[#71717a] flex flex-col items-center">
-                <QrCode className="w-10 h-10 mb-2 opacity-40" />
-                <div className="text-xs font-mono text-white mb-1">Awaiting Entrance Scan</div>
+              <div className="border border-dashed border-[var(--border)] rounded-xl p-8 text-center text-[var(--ink-muted)] flex flex-col items-center bg-[var(--surface-elevated)]/30">
+                <QrCode className="w-10 h-10 mb-2 opacity-40 text-[var(--accent)]" />
+                <div className="text-xs font-mono font-bold text-[var(--ink)] mb-1">Awaiting Entrance Scan</div>
                 <div className="text-[11px]">
                   Use the camera or barcode scanner to process arriving teachers.
                 </div>
@@ -1851,8 +1851,8 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             )}
 
             {/* Quick Manual Entry Bar */}
-            <div className="pt-2 border-t border-[#27272a] flex flex-col gap-1.5">
-              <label className="text-[10px] font-mono text-[#71717a] uppercase">
+            <div className="pt-2 border-t border-[var(--border)] flex flex-col gap-1.5">
+              <label className="text-[10px] font-mono text-[var(--ink-muted)] uppercase font-semibold">
                 Quick ID Verification
               </label>
               <div className="flex gap-1.5">
@@ -1868,7 +1868,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       }
                     }
                   }}
-                  className="flex-1 bg-[#27272a] border border-[#3f3f46] text-white text-xs px-2.5 py-1.5 rounded-sm font-mono focus:outline-none focus:border-[#ff6a00]"
+                  className="flex-1 bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] text-xs px-3 py-2 rounded-xl font-mono focus:outline-none focus:border-[var(--accent)] placeholder:text-[var(--ink-muted)]/50"
                 />
                 <button
                   onClick={(e) => {
@@ -1878,7 +1878,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       input.value = '';
                     }
                   }}
-                  className="px-2.5 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] text-white rounded-sm text-xs font-mono"
+                  className="px-3.5 py-2 bg-[var(--surface-elevated)] hover:bg-[var(--accent)] hover:text-[var(--accent-ink)] text-[var(--ink)] border border-[var(--border)] rounded-xl text-xs font-mono font-semibold transition-colors cursor-pointer"
                 >
                   Verify
                 </button>

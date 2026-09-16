@@ -148,14 +148,14 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   };
 
   return (
-    <div className="space-y-4 animate-fade-in text-[#1a1a1a]">
+    <div className="space-y-4 animate-fade-in font-mono text-[var(--ink)]">
       {/* Offline Alert */}
       {!isSupabaseConfigured() && (
-        <div className="bg-yellow-50 border border-yellow-300 p-3.5 text-xs flex items-start gap-2.5 text-yellow-900 font-mono">
-          <CloudOff className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+        <div className="bg-amber-950/30 border border-amber-500/30 p-3.5 rounded-xl text-xs flex items-start gap-2.5 text-amber-300">
+          <CloudOff className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <span className="font-bold uppercase tracking-wider">Offline Mode Active (Supabase Disconnected):</span>
-            <p className="text-neutral-600 text-[11px] leading-relaxed">
+            <p className="text-[var(--ink-muted)] text-[11px] leading-relaxed">
               Imported participants are stored only in your local browser cache. To sync them into your live Supabase database so that entrance check-in stations and projector devices can see them, configure your <strong>Supabase URL &amp; Anon Key</strong> in the <strong>Settings</strong> tab.
             </p>
           </div>
@@ -165,53 +165,53 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       {/* Cloud Sync Feedback Banner */}
       {cloudMsg && (
         <div
-          className={`p-3 text-xs font-mono flex items-center justify-between border ${
+          className={`p-3 rounded-xl text-xs flex items-center justify-between border ${
             cloudMsg.error
-              ? 'bg-red-50 border-red-300 text-red-700'
-              : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              ? 'bg-red-950/40 border-red-500/50 text-red-300'
+              : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
           }`}
         >
           <div className="flex items-center gap-2">
             {cloudMsg.error ? (
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
             ) : (
-              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
             )}
             <span className="font-bold">{cloudMsg.text}</span>
           </div>
-          <button onClick={() => setCloudMsg(null)} className="text-neutral-500 hover:text-black p-1">
+          <button onClick={() => setCloudMsg(null)} className="text-[var(--ink-muted)] hover:text-[var(--ink)] p-1">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {/* Header & Filter Bar */}
-      <div className="bg-white border-2 border-[#1a1a1a] p-5 shadow-sm space-y-4 relative">
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] p-5 rounded-xl shadow-md space-y-4 relative">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display font-bold text-xl sm:text-2xl text-[#1a1a1a] uppercase tracking-tight leading-none">
-                TEACHERS & STAFF PROFILING ROSTER
+              <h3 className="font-display font-black text-xl sm:text-2xl text-[var(--ink)] uppercase tracking-tight leading-none">
+                TEACHERS &amp; STAFF PROFILING ROSTER
               </h3>
-              <span className="font-mono text-[10px] bg-[#1a1a1a] text-white px-2 py-0.5 font-bold uppercase tracking-wider">
+              <span className="text-[10px] bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--ink)] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                 {participants.length} TOTAL
               </span>
               <span
-                className={`font-mono text-[9px] px-2 py-0.5 border font-bold uppercase tracking-wider flex items-center gap-1 ${
+                className={`text-[9px] px-2.5 py-0.5 rounded-full border font-bold uppercase tracking-wider flex items-center gap-1.5 ${
                   isSupabaseConfigured()
-                    ? 'border-emerald-500/40 text-emerald-700 bg-emerald-50'
-                    : 'border-yellow-500/40 text-yellow-800 bg-yellow-50'
+                    ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30'
+                    : 'border-amber-500/40 text-amber-300 bg-amber-950/30'
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    isSupabaseConfigured() ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
+                    isSupabaseConfigured() ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                   }`}
                 />
-                {isSupabaseConfigured() ? 'Cloud Live' : 'Offline Mode'}
+                {isSupabaseConfigured() ? 'Cloud Live' : 'Offline'}
               </span>
             </div>
-            <p className="font-mono text-[10px] text-neutral-600 uppercase tracking-widest mt-1">
+            <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest mt-1">
               Showing {filtered.length.toLocaleString()} of {participants.length.toLocaleString()} verified personnel
             </p>
           </div>
@@ -222,19 +222,19 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
               <button
                 onClick={handlePushAllToCloud}
                 disabled={syncingCloud}
-                className="px-3.5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                className="px-3.5 py-2 bg-[var(--surface-elevated)] hover:bg-[var(--accent)] hover:text-black border border-[var(--border)] rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap text-[var(--ink)]"
                 title="Push all participants to Supabase Cloud database"
               >
-                <UploadCloud className={`w-4 h-4 text-[#ff6a00] hover:text-white ${syncingCloud ? 'animate-bounce' : ''}`} />
-                <span>{syncingCloud ? (syncProgress || 'Syncing...') : 'Sync to Cloud'}</span>
+                <UploadCloud className={`w-4 h-4 text-[var(--accent)] ${syncingCloud ? 'animate-bounce' : ''}`} />
+                <span>{syncingCloud ? (syncProgress || 'Syncing...') : 'Sync Cloud'}</span>
               </button>
             )}
 
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="px-3.5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
+              className="px-3.5 py-2 bg-[var(--surface-elevated)] hover:bg-[var(--accent)] hover:text-black border border-[var(--border)] rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap text-[var(--ink)]"
             >
-              <FileSpreadsheet className="w-4 h-4 text-[#ff6a00] hover:text-white" />
+              <FileSpreadsheet className="w-4 h-4 text-[var(--accent)]" />
               <span>Import Sheet</span>
             </button>
 
@@ -244,7 +244,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   setIsPurgeModalOpen(true);
                   setPurgeInput('');
                 }}
-                className="px-3 py-2 bg-red-950/40 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                className="px-3 py-2 bg-red-950/30 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 rounded-lg transition-colors whitespace-nowrap"
                 title="Completely purge all participants from Supabase Cloud and local storage"
               >
                 <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -253,7 +253,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             )}
 
             <div className="relative flex-1 md:w-64">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[var(--ink-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search name, ID, school..."
@@ -262,16 +262,16 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/30 pl-9 pr-3 py-1.5 text-xs font-mono font-bold text-[#1a1a1a] focus:border-[#1a1a1a] outline-none uppercase"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-2 text-xs font-bold text-[var(--ink)] focus:border-[var(--accent)] outline-none uppercase"
               />
             </div>
           </div>
         </div>
 
         {/* Dropdown Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-[#1a1a1a]/15 font-mono text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-[var(--border)] text-xs">
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] mb-1">
               District:
             </label>
             <select
@@ -280,7 +280,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 setDistrictFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/30 px-2 py-1.5 font-bold text-[#1a1a1a] outline-none uppercase"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 font-bold text-[var(--ink)] outline-none uppercase cursor-pointer"
             >
               <option value="ALL">All Districts</option>
               <option value="NORTH">North District</option>
@@ -294,7 +294,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] mb-1">
               Personnel Type:
             </label>
             <select
@@ -303,7 +303,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 setTypeFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/30 px-2 py-1.5 font-bold text-[#1a1a1a] outline-none uppercase"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 font-bold text-[var(--ink)] outline-none uppercase cursor-pointer"
             >
               <option value="ALL">All Personnel Types</option>
               <option value="TEACHING">Teaching</option>
@@ -312,7 +312,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] mb-1">
               Eligibility:
             </label>
             <select
@@ -321,7 +321,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 setEligibleFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/30 px-2 py-1.5 font-bold text-[#1a1a1a] outline-none uppercase"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 font-bold text-[var(--ink)] outline-none uppercase cursor-pointer"
             >
               <option value="ALL">All Eligibility</option>
               <option value="ELIGIBLE">Eligible (In Pool)</option>
@@ -330,7 +330,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] mb-1">
               Winner Status:
             </label>
             <select
@@ -339,7 +339,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 setWinnerFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[#f8f7f4] border border-[#1a1a1a]/30 px-2 py-1.5 font-bold text-[#1a1a1a] outline-none uppercase"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 font-bold text-[var(--ink)] outline-none uppercase cursor-pointer"
             >
               <option value="ALL">All Status</option>
               <option value="NO">Not Won Yet</option>
@@ -350,11 +350,11 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       </div>
 
       {/* Participants Table */}
-      <div className="bg-white border-2 border-[#1a1a1a] overflow-hidden shadow-sm">
+      <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-md">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#1a1a1a] border-b border-[#1a1a1a] text-white uppercase font-mono font-bold tracking-wider text-[10px]">
+              <tr className="bg-[var(--header-bg)] border-b border-[var(--border)] text-[var(--ink-muted)] uppercase font-bold tracking-wider text-[10px]">
                 <th className="p-3">Profiling ID</th>
                 <th className="p-3">Full Name</th>
                 <th className="p-3">District</th>
@@ -367,55 +367,55 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1a1a1a]/15 font-sans">
+            <tbody className="divide-y divide-[var(--border-subtle)]">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-neutral-500 font-mono font-bold uppercase tracking-wider">
+                  <td colSpan={10} className="p-8 text-center text-[var(--ink-muted)] font-bold uppercase tracking-wider">
                     No participants found matching the current criteria.
                   </td>
                 </tr>
               ) : (
                 paginated.map((p) => (
-                  <tr key={p.id} className="hover:bg-[#f8f7f4] transition-colors">
-                    <td className="p-3 font-mono font-bold text-[#1a1a1a] text-[11px] whitespace-nowrap">
+                  <tr key={p.id} className="hover:bg-[var(--surface-elevated)]/50 transition-colors">
+                    <td className="p-3 font-mono font-bold text-[var(--accent)] text-[11px] whitespace-nowrap">
                       {p.id}
                     </td>
                     <td className="p-3">
-                      <div className="font-display font-bold text-sm text-[#1a1a1a] uppercase whitespace-nowrap">
+                      <div className="font-winner font-bold text-sm text-[var(--ink)] uppercase whitespace-nowrap">
                         {p.fullName}
                       </div>
                       {p.sex && (
-                        <div className="font-mono text-[10px] text-neutral-500 uppercase">
+                        <div className="text-[10px] text-[var(--ink-muted)] uppercase">
                           {p.sex}
                         </div>
                       )}
                     </td>
                     <td className="p-3">
-                      <span className="bg-[#1a1a1a] text-white font-mono font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider whitespace-nowrap">
+                      <span className="bg-[var(--surface-elevated)] text-[var(--ink)] border border-[var(--border)] font-bold text-[10px] px-2 py-0.5 rounded-md uppercase tracking-wider whitespace-nowrap">
                         {p.district === 'PRIVATE' ? `PRIVATE (${p.originalDistrict || 'LSB/ECCD'})` : `${p.district}`}
                       </span>
                     </td>
                     <td className="p-3">
-                      <div className="font-bold text-[#1a1a1a] text-xs uppercase">{p.position}</div>
-                      <div className="font-mono text-[10px] text-neutral-500 uppercase">
+                      <div className="font-bold text-[var(--ink)] text-xs uppercase">{p.position}</div>
+                      <div className="text-[10px] text-[var(--ink-muted)] uppercase">
                         {p.typeOfPersonnel || p.personnelType}
                       </div>
                     </td>
-                    <td className="p-3 font-medium text-neutral-800 whitespace-nowrap max-w-xs truncate">
+                    <td className="p-3 font-medium text-[var(--ink-muted)] whitespace-nowrap max-w-xs truncate">
                       {p.school}
                     </td>
-                    <td className="p-3 font-mono text-[11px] text-neutral-600">
+                    <td className="p-3 text-[11px] text-[var(--ink-muted)]">
                       {p.depedId || '—'}
                     </td>
-                    <td className="p-3 font-mono text-[11px] text-neutral-600 whitespace-nowrap">
+                    <td className="p-3 text-[11px] text-[var(--ink-muted)] whitespace-nowrap">
                       {p.contactNumber ? `0${p.contactNumber.replace(/^0+/, '')}` : '—'}
                     </td>
                     <td className="p-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 font-mono font-bold text-[9px] uppercase tracking-widest ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-widest ${
                           p.eligible === 'ELIGIBLE'
-                            ? 'bg-[#1a1a1a] text-white'
-                            : 'bg-red-100 text-red-700 border border-red-300'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-red-500/20 text-red-300 border border-red-500/40'
                         }`}
                       >
                         {p.eligible}
@@ -423,18 +423,18 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                     </td>
                     <td className="p-3 text-center">
                       {p.winner === 'YES' ? (
-                        <span className="inline-flex items-center gap-1 text-[#ff6a00] font-mono font-bold text-[11px] tracking-wider">
+                        <span className="inline-flex items-center gap-1 text-[var(--accent)] font-bold text-[11px] tracking-wider">
                           <Trophy className="w-3.5 h-3.5" />
                           <span>WON</span>
                         </span>
                       ) : (
-                        <span className="font-mono text-neutral-400 text-[10px] uppercase">—</span>
+                        <span className="text-[var(--ink-muted)] text-[10px] uppercase">—</span>
                       )}
                     </td>
                     <td className="p-3 text-right">
                       <button
                         onClick={() => onToggleEligibility(p.id)}
-                        className="text-[10px] px-2.5 py-1 bg-white hover:bg-[#1a1a1a] hover:text-white border border-[#1a1a1a] font-mono font-bold uppercase tracking-wider transition-colors whitespace-nowrap"
+                        className="text-[10px] px-2.5 py-1 bg-[var(--surface-elevated)] hover:bg-[var(--accent)] hover:text-black border border-[var(--border)] rounded-md font-bold uppercase tracking-wider transition-colors whitespace-nowrap text-[var(--ink)]"
                         title="Toggle Eligibility"
                       >
                         {p.eligible === 'ELIGIBLE' ? 'Flag Ineligible' : 'Set Eligible'}
@@ -448,22 +448,22 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
         </div>
 
         {/* Pagination Bar */}
-        <div className="bg-[#f8f7f4] px-4 py-3 border-t border-[#1a1a1a]/15 flex items-center justify-between text-xs text-neutral-600 font-mono">
+        <div className="bg-[var(--surface)] px-4 py-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--ink-muted)]">
           <div className="font-bold uppercase tracking-wider text-[10px]">
-            Page <strong className="text-[#1a1a1a]">{currentPage}</strong> of <strong className="text-[#1a1a1a]">{totalPages}</strong> ({filtered.length} entries)
+            Page <strong className="text-[var(--ink)]">{currentPage}</strong> of <strong className="text-[var(--ink)]">{totalPages}</strong> ({filtered.length} entries)
           </div>
           <div className="flex items-center gap-2">
             <button
               disabled={currentPage <= 1}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="p-1.5 border border-[#1a1a1a] bg-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1a1a1a] hover:text-white transition-colors"
+              className="p-1.5 border border-[var(--border)] rounded-md bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--surface-elevated)] text-[var(--ink)] transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               disabled={currentPage >= totalPages}
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              className="p-1.5 border border-[#1a1a1a] bg-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1a1a1a] hover:text-white transition-colors"
+              className="p-1.5 border border-[var(--border)] rounded-md bg-[var(--surface-card)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--surface-elevated)] text-[var(--ink)] transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -473,55 +473,55 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
 
       {/* Import / Paste Profiling Modal */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] max-w-2xl w-full shadow-2xl relative text-[#1a1a1a] overflow-hidden">
-            <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-[var(--surface-elevated)] border-2 border-[var(--border-accent)] max-w-2xl w-full shadow-2xl rounded-2xl relative text-[var(--ink)] overflow-hidden">
+            <div className="bg-[var(--header-bg)] px-6 py-4 flex items-center justify-between border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-[#ff6a00]" />
-                <h3 className="font-display font-bold text-lg uppercase tracking-tight">
+                <FileSpreadsheet className="w-5 h-5 text-[var(--accent)]" />
+                <h3 className="font-display font-black text-lg uppercase tracking-tight text-[var(--ink)]">
                   IMPORT PROFILING DATA (TSV / GOOGLE SHEETS)
                 </h3>
               </div>
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-white/60 hover:text-white p-1"
+                className="text-[var(--ink-muted)] hover:text-[var(--ink)] p-1 rounded-md"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="font-mono text-xs text-neutral-600 leading-relaxed uppercase tracking-wider">
+              <p className="text-xs text-[var(--ink-muted)] leading-relaxed uppercase tracking-wider">
                 Paste your tab-separated teacher profiling rows copied from Google Sheets or Excel with columns:
                 <br />
-                <span className="text-[#1a1a1a] font-bold">
+                <span className="text-[var(--accent)] font-bold">
                   TIMESTAMP • PROFILING ID • Deped Employee ID • TYPE OF PERSONNEL • DISTRICT • SCHOOL ASSIGNED • POSITION • LAST NAME • FIRST NAME • MIDDLE NAME • SUFFIX • SEX • CONTACT NUMBER • EMAIL
                 </span>
               </p>
 
-              <div className="bg-neutral-100 p-3 border border-[#1a1a1a]/20">
-                <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1a1a1a] mb-2">
+              <div className="bg-[var(--surface-card)] p-3.5 rounded-xl border border-[var(--border)]">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink)] mb-2">
                   Initial Raffle Eligibility for Imported Batch:
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <button
                     type="button"
                     onClick={() => setImportEligibilityMode('INELIGIBLE')}
-                    className={`p-2.5 text-left border-2 flex items-start gap-2 transition-all ${
+                    className={`p-3 text-left rounded-xl border-2 flex items-start gap-2.5 transition-all ${
                       importEligibilityMode === 'INELIGIBLE'
-                        ? 'border-[#ff6a00] bg-white text-[#1a1a1a] shadow-xs'
-                        : 'border-transparent bg-white/70 text-neutral-600 hover:bg-white'
+                        ? 'border-[var(--accent)] bg-[var(--surface-elevated)] text-[var(--ink)] shadow-xs'
+                        : 'border-[var(--border)] bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--surface-elevated)]'
                     }`}
                   >
-                    <span className={`w-3.5 h-3.5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      importEligibilityMode === 'INELIGIBLE' ? 'border-[#ff6a00]' : 'border-neutral-400'
+                    <span className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      importEligibilityMode === 'INELIGIBLE' ? 'border-[var(--accent)]' : 'border-[var(--border)]'
                     }`}>
-                      {importEligibilityMode === 'INELIGIBLE' && <span className="w-1.5 h-1.5 rounded-full bg-[#ff6a00]" />}
+                      {importEligibilityMode === 'INELIGIBLE' && <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />}
                     </span>
                     <div>
-                      <div className="font-bold text-[#1a1a1a]">INELIGIBLE (Default)</div>
-                      <div className="text-[10px] text-neutral-500 leading-tight mt-0.5">
-                        Requires scanning teacher QR code at Attendance station to become eligible for raffle draw.
+                      <div className="font-bold text-[var(--ink)]">INELIGIBLE (Default)</div>
+                      <div className="text-[10px] text-[var(--ink-muted)] leading-tight mt-0.5">
+                        Requires scanning teacher QR code at Entrance Station to become eligible for raffle draw.
                       </div>
                     </div>
                   </button>
@@ -529,20 +529,20 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   <button
                     type="button"
                     onClick={() => setImportEligibilityMode('ELIGIBLE')}
-                    className={`p-2.5 text-left border-2 flex items-start gap-2 transition-all ${
+                    className={`p-3 text-left rounded-xl border-2 flex items-start gap-2.5 transition-all ${
                       importEligibilityMode === 'ELIGIBLE'
-                        ? 'border-[#22c55e] bg-white text-[#1a1a1a] shadow-xs'
-                        : 'border-transparent bg-white/70 text-neutral-600 hover:bg-white'
+                        ? 'border-emerald-500 bg-[var(--surface-elevated)] text-[var(--ink)] shadow-xs'
+                        : 'border-[var(--border)] bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--surface-elevated)]'
                     }`}
                   >
-                    <span className={`w-3.5 h-3.5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      importEligibilityMode === 'ELIGIBLE' ? 'border-[#22c55e]' : 'border-neutral-400'
+                    <span className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      importEligibilityMode === 'ELIGIBLE' ? 'border-emerald-500' : 'border-[var(--border)]'
                     }`}>
-                      {importEligibilityMode === 'ELIGIBLE' && <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />}
+                      {importEligibilityMode === 'ELIGIBLE' && <span className="w-2 h-2 rounded-full bg-emerald-400" />}
                     </span>
                     <div>
-                      <div className="font-bold text-[#1a1a1a]">INSTANTLY ELIGIBLE</div>
-                      <div className="text-[10px] text-neutral-500 leading-tight mt-0.5">
+                      <div className="font-bold text-[var(--ink)]">INSTANTLY ELIGIBLE</div>
+                      <div className="text-[10px] text-[var(--ink-muted)] leading-tight mt-0.5">
                         Marks all imported teachers as eligible immediately without gate QR attendance check-in.
                       </div>
                     </div>
@@ -555,28 +555,28 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 onChange={(e) => setPastedTsv(e.target.value)}
                 placeholder="Paste tab-separated rows here..."
                 rows={8}
-                className="w-full bg-white border-2 border-[#1a1a1a] p-3 text-xs font-mono text-[#1a1a1a] focus:outline-none"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3 text-xs text-[var(--ink)] focus:border-[var(--accent)] outline-none"
               />
 
               {importStatus && (
-                <div className="p-3 bg-white border border-[#1a1a1a] font-mono text-xs font-bold text-[#1a1a1a]">
+                <div className="p-3 bg-[var(--surface-card)] border border-[var(--border-accent)] rounded-lg text-xs font-bold text-[var(--accent)]">
                   {importStatus}
                 </div>
               )}
             </div>
 
-            <div className="bg-white px-6 py-3.5 border-t border-[#1a1a1a]/15 flex justify-end gap-3 font-mono text-xs font-bold uppercase">
+            <div className="bg-[var(--surface)] px-6 py-3.5 border-t border-[var(--border)] flex justify-end gap-3 text-xs font-bold uppercase">
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 border border-[#1a1a1a] hover:bg-[#f8f7f4]"
+                className="px-4 py-2 border border-[var(--border)] rounded-lg text-[var(--ink)] hover:bg-[var(--surface-elevated)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleProcessImport}
-                className="px-5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white transition-colors"
+                className="px-5 py-2 bg-[var(--accent)] hover:brightness-110 text-black font-black rounded-lg transition-colors"
               >
-                Process & Load Sheet
+                Process &amp; Load Sheet
               </button>
             </div>
           </div>
@@ -585,24 +585,24 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
 
       {/* Purge Confirmation Modal */}
       {isPurgeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="bg-[#121212] border-2 border-red-500 max-w-md w-full p-5 space-y-4 shadow-2xl text-white font-mono text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-[var(--surface-elevated)] border-2 border-red-500 max-w-md w-full p-6 rounded-2xl space-y-4 shadow-2xl text-[var(--ink)] text-xs">
             <div className="flex items-center gap-2 text-red-400 font-black text-sm uppercase">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
               <span>DANGER: PURGE ENTIRE PARTICIPANTS ROSTER</span>
             </div>
 
-            <p className="text-neutral-300 leading-relaxed">
+            <p className="text-[var(--ink-muted)] leading-relaxed">
               This action will permanently delete all <strong>{participants.length.toLocaleString()} participants</strong> from your browser local cache and Supabase Cloud database.
             </p>
 
-            <div className="bg-red-950/40 border border-red-500/30 p-3 text-[11px] text-red-200 leading-relaxed">
+            <div className="bg-red-950/40 border border-red-500/40 p-3 rounded-xl text-[11px] text-red-200 leading-relaxed">
               ⚠️ Warning: This cannot be undone. You will need to re-import your masterlist TSV/CSV file to load participants again.
             </div>
 
             <div className="space-y-1.5 pt-1">
-              <label className="block text-neutral-300 font-bold uppercase text-[10px] tracking-wider">
-                Type <strong className="text-white font-mono">PURGE</strong> to confirm:
+              <label className="block text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">
+                Type <strong className="text-[var(--ink)] font-mono">PURGE</strong> to confirm:
               </label>
               <input
                 type="text"
@@ -610,7 +610,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 value={purgeInput}
                 onChange={(e) => setPurgeInput(e.target.value)}
                 disabled={isPurging}
-                className="w-full bg-black border border-red-500 p-2.5 text-white font-mono text-xs outline-none uppercase font-bold"
+                className="w-full bg-[var(--surface)] border border-red-500 rounded-lg p-2.5 text-[var(--ink)] text-xs outline-none uppercase font-bold"
               />
             </div>
 
@@ -622,7 +622,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   setIsPurgeModalOpen(false);
                   setPurgeInput('');
                 }}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 text-xs font-bold uppercase"
+                className="px-4 py-2 bg-[var(--surface-card)] hover:bg-[var(--surface)] border border-[var(--border)] rounded-lg text-[var(--ink)] text-xs font-bold uppercase"
               >
                 Cancel
               </button>
@@ -630,7 +630,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 type="button"
                 disabled={purgeInput !== 'PURGE' || isPurging}
                 onClick={handleConfirmPurge}
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-xs font-bold uppercase flex items-center gap-1.5"
+                className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white rounded-lg text-xs font-bold uppercase flex items-center gap-1.5"
               >
                 {isPurging ? 'Purging...' : 'Permanently Purge'}
               </button>
