@@ -378,8 +378,8 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         <div className="bg-neutral-950 border border-white/10 p-4 space-y-2.5 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-wider">Participants Loaded:</span>
-            <span className="text-white font-black">
-              YES ({totalParticipants.toLocaleString()} PERSONNEL)
+            <span className={totalParticipants > 0 ? "text-white font-black" : "text-amber-400 font-bold"}>
+              {totalParticipants > 0 ? `YES (${totalParticipants.toLocaleString()} PERSONNEL)` : '0 PERSONNEL (ROSTER EMPTY)'}
             </span>
           </div>
 
@@ -390,8 +390,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
           <div className="flex justify-between items-center">
             <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-wider">System Status:</span>
-            <span className="bg-neutral-900 text-white font-black px-2 py-0.5 border border-white/20 text-[10px] uppercase tracking-widest">
-              READY FOR EVENT
+            <span className={`px-2 py-0.5 border text-[10px] uppercase tracking-widest font-black ${
+              totalParticipants > 0
+                ? 'bg-neutral-900 text-white border-white/20'
+                : 'bg-amber-950/60 text-amber-300 border-amber-500/40'
+            }`}>
+              {totalParticipants > 0 ? 'READY FOR EVENT' : 'AWAITING PARTICIPANTS ROSTER'}
             </span>
           </div>
         </div>

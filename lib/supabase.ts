@@ -1058,19 +1058,19 @@ export async function executeFullEventResetInSupabase(options: {
     const logsRes = await clearRaffleLogsFromSupabase();
     if (!logsRes.success) throw new Error(`Raffle logs reset failed: ${logsRes.error}`);
 
-    // 3. Either completely purge participants or reset participant winner flags
+    // 3. Clear Attendance Scan Records table if requested or when purging participants
+    if (options.resetAttendance || options.deleteParticipants) {
+      const attRes = await clearAttendanceRecordsFromSupabase();
+      if (!attRes.success) throw new Error(`Attendance records reset failed: ${attRes.error}`);
+    }
+
+    // 4. Either completely purge participants or reset participant winner flags
     if (options.deleteParticipants) {
       const delPartRes = await clearAllParticipantsFromSupabase();
       if (!delPartRes.success) throw new Error(`Participants purge failed: ${delPartRes.error}`);
     } else {
       const partRes = await resetParticipantsInSupabase({ resetAttendance: options.resetAttendance });
       if (!partRes.success) throw new Error(`Participants reset failed: ${partRes.error}`);
-    }
-
-    // 4. Optionally clear Attendance Scan Records table
-    if (options.resetAttendance || options.deleteParticipants) {
-      const attRes = await clearAttendanceRecordsFromSupabase();
-      if (!attRes.success) throw new Error(`Attendance records reset failed: ${attRes.error}`);
     }
 
     // 5. Reset prizes inventory if provided

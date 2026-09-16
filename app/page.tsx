@@ -319,40 +319,66 @@ export default function Home() {
         fetchLogsFromSupabase()
       ])
         .then(([cloudParts, cloudAtt, cloudWinners, cloudPrizes, cloudLogs]) => {
-          if (cloudParts && cloudParts.length > 0) {
-            const normalized = normalizeParticipantList(cloudParts);
-            setParticipants(normalized);
-            try {
-              localStorage.setItem('td26_profiling_participants', JSON.stringify(normalized));
-            } catch (e) {
-              console.error(e);
+          if (Array.isArray(cloudParts)) {
+            if (cloudParts.length > 0) {
+              const normalized = normalizeParticipantList(cloudParts);
+              setParticipants(normalized);
+              try {
+                localStorage.setItem('td26_profiling_participants', JSON.stringify(normalized));
+              } catch (e) {
+                console.error(e);
+              }
+            } else {
+              setParticipants([]);
+              try {
+                localStorage.removeItem('td26_profiling_participants');
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
 
-          if (cloudAtt && cloudAtt.length > 0) {
+          if (Array.isArray(cloudAtt)) {
             setAttendanceRecords(cloudAtt);
             try {
-              localStorage.setItem('td26_attendance_records', JSON.stringify(cloudAtt));
+              if (cloudAtt.length > 0) {
+                localStorage.setItem('td26_attendance_records', JSON.stringify(cloudAtt));
+              } else {
+                localStorage.removeItem('td26_attendance_records');
+              }
             } catch (e) {
               console.error(e);
             }
           }
 
-          if (cloudWinners && cloudWinners.length > 0) {
+          if (Array.isArray(cloudWinners)) {
             setWinners(cloudWinners);
             try {
-              localStorage.setItem('td26_winners', JSON.stringify(cloudWinners));
+              if (cloudWinners.length > 0) {
+                localStorage.setItem('td26_winners', JSON.stringify(cloudWinners));
+              } else {
+                localStorage.removeItem('td26_winners');
+              }
             } catch (e) {
               console.error(e);
             }
           }
 
-          if (cloudPrizes && cloudPrizes.length > 0) {
+          if (Array.isArray(cloudPrizes) && cloudPrizes.length > 0) {
             setPrizes(cloudPrizes);
           }
 
-          if (cloudLogs && cloudLogs.length > 0) {
+          if (Array.isArray(cloudLogs)) {
             setLogs(cloudLogs);
+            try {
+              if (cloudLogs.length > 0) {
+                localStorage.setItem('td26_raffle_logs', JSON.stringify(cloudLogs));
+              } else {
+                localStorage.removeItem('td26_raffle_logs');
+              }
+            } catch (e) {
+              console.error(e);
+            }
           }
         })
         .catch((err) => console.warn('Supabase hydration warning:', err));
@@ -1399,16 +1425,22 @@ export default function Home() {
       setParticipants([]);
     } else {
       // Update participants: preserve personnel profiles, but reset winner & claimed flags
-      setParticipants((prev) =>
-        prev.map((p) => ({
+      setParticipants((prev) => {
+        const next = prev.map((p) => ({
           ...p,
-          winner: 'NO',
-          claimed: 'NO',
+          winner: 'NO' as const,
+          claimed: 'NO' as const,
           ...(options?.resetAttendance
-            ? { eligible: 'INELIGIBLE', attendedAt: undefined, attendedBy: undefined }
+            ? { eligible: 'INELIGIBLE' as const, attendedAt: undefined, attendedBy: undefined }
             : {})
-        }))
-      );
+        }));
+        try {
+          localStorage.setItem('td26_profiling_participants', JSON.stringify(next));
+        } catch (e) {
+          console.error('LocalStorage update notice:', e);
+        }
+        return next;
+      });
     }
 
     if (options?.resetAttendance || options?.deleteParticipants) {
