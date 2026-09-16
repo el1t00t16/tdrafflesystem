@@ -425,6 +425,62 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
           </div>
 
+          {/* Pre-Draw Reel Animation Duration */}
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 p-4 border border-[#1a1a1a]/20 dark:border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-black text-[#1a1a1a] dark:text-white text-sm uppercase tracking-wide">
+                  PRE-DRAW REEL ANIMATION DURATION
+                </div>
+                <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
+                  Duration of 5-district shuffle reel during pre-draw station batches (1 to 15 seconds)
+                </p>
+              </div>
+              <span className="text-indigo-600 font-black text-base font-mono">
+                {localSettings.preDrawDuration || 3} SECONDS
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="15"
+              step="1"
+              value={localSettings.preDrawDuration || 3}
+              onChange={(e) =>
+                setLocalSettings({
+                  ...localSettings,
+                  preDrawDuration: Number(e.target.value)
+                })
+              }
+              className="w-full accent-indigo-600 cursor-pointer"
+            />
+            {/* Quick Duration Preset Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono uppercase mr-1">
+                Presets:
+              </span>
+              {[1, 2, 3, 5, 8, 10, 15].map((sec) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() =>
+                    setLocalSettings({
+                      ...localSettings,
+                      preDrawDuration: sec
+                    })
+                  }
+                  className={`px-2.5 py-1 text-xs font-mono font-bold transition-all border ${
+                    (localSettings.preDrawDuration || 3) === sec
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1a1a1a] dark:text-neutral-300 border-[#1a1a1a]/20 dark:border-white/10'
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
             className="w-full py-3.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-sm uppercase tracking-wider shadow transition-all rounded-none"

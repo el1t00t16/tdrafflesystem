@@ -186,6 +186,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           logs={logs}
           onConfirmPreDrawBatch={onConfirmPreDrawBatch}
           allowMultipleWins={settings.allowMultipleWins}
+          initialReelDuration={settings.preDrawDuration || 3}
         />
       )}
 

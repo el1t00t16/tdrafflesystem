@@ -58,6 +58,7 @@ interface PreDrawStationProps {
   logs: RaffleLog[];
   onConfirmPreDrawBatch: (batch: TemporaryDrawResult) => void;
   allowMultipleWins: boolean;
+  initialReelDuration?: number;
 }
 
 export const PreDrawStation: React.FC<PreDrawStationProps> = ({
@@ -66,7 +67,8 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   winners,
   logs,
   onConfirmPreDrawBatch,
-  allowMultipleWins
+  allowMultipleWins,
+  initialReelDuration = 3
 }) => {
   // Local states
   const [selectedPrizeId, setSelectedPrizeId] = useState<string>(() => {
@@ -81,6 +83,27 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'console' | 'history'>('console');
+
+  // Animation Duration for Pre-Draw Reel
+  const [reelDuration, setReelDuration] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('td26_predraw_reel_duration');
+      if (saved) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 1 && parsed <= 30) return parsed;
+      }
+    } catch (e) {}
+    return initialReelDuration || 3;
+  });
+  const [shuffleProgress, setShuffleProgress] = useState<number>(0);
+
+  const handleReelDurationChange = (sec: number) => {
+    const val = Math.max(1, Math.min(20, sec));
+    setReelDuration(val);
+    try {
+      localStorage.setItem('td26_predraw_reel_duration', String(val));
+    } catch (e) {}
+  };
 
   // 5 Cards Shuffle States
   const [isShuffling, setIsShuffling] = useState(false);
@@ -254,21 +277,26 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     // 2. Start Audio Reel
     soundSynthesizer.startSpinning();
 
-    // 3. Shuffle Reel on 5 Cards (2.6 seconds)
-    const durationMs = 2600;
+    // 3. Shuffle Reel on 5 Cards (User-configured duration)
+    const durationMs = Math.max(1000, Math.round(reelDuration * 1000));
     const startTime = Date.now();
     let isDeceleratingSound = false;
+
+    setShuffleProgress(0);
 
     const stepReel = () => {
       const now = Date.now();
       const elapsed = now - startTime;
       const remaining = durationMs - elapsed;
 
+      setShuffleProgress(Math.min(100, Math.round((elapsed / durationMs) * 100)));
+
       // When finished: reveal cards and open review table
       if (remaining <= 0) {
         soundSynthesizer.stopSpinning();
         soundSynthesizer.playCelebrationFanfare();
 
+        setShuffleProgress(100);
         setIsShuffling(false);
         setHasDrawnRound(true);
         setRevealedWinnersByDistrict(selectedByDistrict);
@@ -501,9 +529,23 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 <span>5-DISTRICT SHUFFLE DISPLAY (PRE-DRAW REEL)</span>
               </div>
               <span className="font-mono text-[10px] text-neutral-500 uppercase">
-                {isShuffling ? '⚡ SHUFFLING IN PROGRESS...' : hasDrawnRound ? '🏆 WINNERS REVEALED' : 'READY TO SHUFFLE'}
+                {isShuffling
+                  ? `⚡ SHUFFLING... (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
+                  : hasDrawnRound
+                  ? '🏆 WINNERS REVEALED'
+                  : 'READY TO SHUFFLE'}
               </span>
             </div>
+
+            {/* Dynamic Reel Progress Bar */}
+            {isShuffling && (
+              <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 overflow-hidden rounded-full">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 via-[#ff6a00] to-emerald-500 transition-all duration-75"
+                  style={{ width: `${shuffleProgress}%` }}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
               {DISTRICT_CONFIG.map(({ id, title, isPrivate }) => {
@@ -769,7 +811,67 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               </div>
             )}
 
-            {/* 4. Action Execute Button with Shuffle Reel */}
+            {/* 4. Pre-Draw Reel Animation Duration */}
+            <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-400">
+                    PRE-DRAW REEL ANIMATION DURATION:
+                  </label>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-base">
+                    {reelDuration}s
+                  </span>
+                  <span className="text-[10px] text-neutral-500 uppercase font-mono">
+                    ({reelDuration <= 1.5 ? 'Fast' : reelDuration <= 3.5 ? 'Balanced' : 'Dramatic'})
+                  </span>
+                </div>
+              </div>
+
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="0.5"
+                value={reelDuration}
+                disabled={isShuffling}
+                onChange={(e) => handleReelDurationChange(parseFloat(e.target.value))}
+                className="w-full accent-indigo-600 cursor-pointer disabled:opacity-50"
+              />
+
+              {/* Quick Duration Preset Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono uppercase mr-1">
+                  Presets:
+                </span>
+                {[
+                  { sec: 1, label: '1s (Fast)' },
+                  { sec: 2, label: '2s (Snappy)' },
+                  { sec: 3, label: '3s (Default)' },
+                  { sec: 5, label: '5s (Stage)' },
+                  { sec: 8, label: '8s (Suspense)' },
+                  { sec: 10, label: '10s (Dramatic)' }
+                ].map(({ sec, label }) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    disabled={isShuffling}
+                    onClick={() => handleReelDurationChange(sec)}
+                    className={`px-2.5 py-1 text-xs font-mono font-bold transition-all border ${
+                      reelDuration === sec
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1a1a1a] dark:text-neutral-300 border-[#1a1a1a]/20 dark:border-white/10'
+                    } disabled:opacity-50`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. Action Execute Button with Shuffle Reel */}
             <button
               type="button"
               disabled={isButtonDisabled}
@@ -783,7 +885,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <Sparkles className="w-5 h-5" />
               <span>
                 {isShuffling
-                  ? 'SHUFFLING CANDIDATES ACROSS 5 DISTRICTS...'
+                  ? `SHUFFLING CANDIDATES... (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
                   : `EXECUTE PRE-DRAW BATCH (${totalWinnersToDraw} ${totalWinnersToDraw === 1 ? 'WINNER' : 'WINNERS'})`}
               </span>
             </button>

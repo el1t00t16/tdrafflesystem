@@ -249,6 +249,7 @@ export const INITIAL_SETTINGS: SystemSettings = {
   organization: 'Municipality of Malungon & DepEd Malungon Districts',
   allowMultipleWins: false,
   animationDuration: 6, // 6 seconds projector animation
+  preDrawDuration: 3, // 3 seconds pre-draw reel animation
   soundEnabled: true,
   raffleStatus: 'READY',
   gateAccessPin: '2026',

@@ -130,6 +130,7 @@ export interface SystemSettings {
   organization: string;
   allowMultipleWins: boolean;
   animationDuration: number; // in seconds (e.g. 6)
+  preDrawDuration?: number; // in seconds for pre-draw reel (e.g. 3)
   soundEnabled: boolean;
   raffleStatus: 'READY' | 'DRAWING' | 'COMPLETED';
   gateAccessPin?: string; // Default: '2026'
