@@ -6,6 +6,7 @@ import {
   Search,
   Trophy,
   Download,
+  Printer,
   CheckCircle2,
   Clock,
   ChevronLeft,
@@ -100,7 +101,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
   return (
     <div className="space-y-4 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5]">
       {/* Header & Controls */}
-      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl space-y-4 relative border-t-4 border-t-[#FF1E1E]">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl space-y-4 relative border-t-4 border-t-[#FF1E1E] print:hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h3 className="font-black text-lg sm:text-xl text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">OFFICIAL WINNERS HISTORY</h3>
@@ -114,8 +115,9 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
             <button
               onClick={() => window.print()}
               disabled={winners.length === 0}
-              className="px-3.5 py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none"
+              className="px-3.5 py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed border border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none cursor-pointer"
             >
+              <Printer className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               <span>Print Sheet</span>
             </button>
 
@@ -194,7 +196,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       </div>
 
       {/* Winners Table */}
-      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 overflow-hidden shadow-sm dark:shadow-xl">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 overflow-hidden shadow-sm dark:shadow-xl print:hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1150px] text-left text-xs border-collapse">
             <thead>
@@ -352,6 +354,128 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 <ChevronsRight className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PRINT-ONLY OFFICIAL WINNERS MASTERLIST SHEET (Rendered on window.print()) */}
+      <div className="hidden print:block bg-white text-black p-4">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @media print {
+              @page {
+                size: letter landscape;
+                margin: 0.35in;
+              }
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+            }
+          `
+        }} />
+        <div className="text-center border-b-2 border-black pb-3 mb-3">
+          <p className="text-xs uppercase font-serif tracking-widest">Republic of the Philippines</p>
+          <p className="text-sm font-bold uppercase font-serif">Department of Education • Region XII</p>
+          <p className="text-xs uppercase font-serif">Schools Division of Sarangani • Municipality of Malungon</p>
+          <h1 className="text-xl font-black uppercase tracking-tight mt-2">
+            OFFICIAL EVENT WINNERS MASTERLIST
+          </h1>
+          <p className="text-xs uppercase font-mono font-bold mt-0.5">
+            Municipal Teachers&apos; Day 2026 Celebration • Master Record Sheet
+          </p>
+          <div className="flex justify-between items-center text-[10px] font-mono text-neutral-700 mt-2 pt-1 border-t border-dashed border-neutral-400">
+            <span>Generated: {new Date().toLocaleString()}</span>
+            <span>
+              Scope: {drawTypeFilter === 'ALL' ? 'All Draws' : drawTypeFilter} • {districtFilter === 'ALL' ? 'All Districts' : districtFilter} • {claimFilter === 'ALL' ? 'All Claim Statuses' : claimFilter}
+            </span>
+            <span>Total Records: {filtered.length} of {winners.length}</span>
+          </div>
+        </div>
+
+        {/* Summary Metric Strip */}
+        <div className="grid grid-cols-5 gap-2 mb-3 text-center text-[10px] font-mono border border-black p-1.5 bg-neutral-100">
+          <div>
+            <span className="text-neutral-500 block uppercase text-[8px]">Total Filtered:</span>
+            <strong className="text-black font-black text-xs">{filtered.length}</strong>
+          </div>
+          <div>
+            <span className="text-neutral-500 block uppercase text-[8px]">Claimed:</span>
+            <strong className="text-black font-black text-xs">{filtered.filter((w) => w.claimStatus === 'CLAIMED').length}</strong>
+          </div>
+          <div>
+            <span className="text-neutral-500 block uppercase text-[8px]">Unclaimed:</span>
+            <strong className="text-black font-black text-xs">{filtered.filter((w) => w.claimStatus === 'UNCLAIMED').length}</strong>
+          </div>
+          <div>
+            <span className="text-neutral-500 block uppercase text-[8px]">Forfeited:</span>
+            <strong className="text-black font-black text-xs">{filtered.filter((w) => w.claimStatus === 'FORFEITED').length}</strong>
+          </div>
+          <div>
+            <span className="text-neutral-500 block uppercase text-[8px]">Total Value:</span>
+            <strong className="text-black font-black text-xs">₱{filtered.reduce((sum, w) => sum + (w.unitValue || 0), 0).toLocaleString()}</strong>
+          </div>
+        </div>
+
+        {/* Full Filtered Winners Table (Unpaginated) */}
+        <table className="w-full text-left text-[9px] border border-black border-collapse">
+          <thead>
+            <tr className="bg-neutral-200 border-b border-black font-bold uppercase font-mono text-[8.5px]">
+              <th className="p-1 border border-black">#</th>
+              <th className="p-1 border border-black">Batch #</th>
+              <th className="p-1 border border-black">Winner ID</th>
+              <th className="p-1 border border-black">Profiling ID</th>
+              <th className="p-1 border border-black">Winner Name</th>
+              <th className="p-1 border border-black">District</th>
+              <th className="p-1 border border-black">Position</th>
+              <th className="p-1 border border-black">School / Station</th>
+              <th className="p-1 border border-black">Prize Won</th>
+              <th className="p-1 border border-black">Draw Time</th>
+              <th className="p-1 border border-black">Claim Status</th>
+              <th className="p-1 border border-black min-w-[110px]">Signature / Claimed By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((w, idx) => (
+              <tr key={w.winnerId} className="border-b border-neutral-300">
+                <td className="p-1 border border-black font-mono">{idx + 1}</td>
+                <td className="p-1 border border-black font-mono font-bold">{w.drawNumber}</td>
+                <td className="p-1 border border-black font-mono">{w.winnerId}</td>
+                <td className="p-1 border border-black font-mono font-bold">{w.participantId || 'N/A'}</td>
+                <td className="p-1 border border-black font-bold uppercase">{w.name}</td>
+                <td className="p-1 border border-black uppercase">{w.district}</td>
+                <td className="p-1 border border-black">{w.position}</td>
+                <td className="p-1 border border-black truncate max-w-[140px]">{w.school}</td>
+                <td className="p-1 border border-black font-bold">{w.prizeName}</td>
+                <td className="p-1 border border-black font-mono text-[8px] whitespace-nowrap">{w.time || w.date}</td>
+                <td className="p-1 border border-black font-mono font-bold uppercase text-[8px]">
+                  {w.claimStatus}
+                </td>
+                <td className="p-1 border border-black text-[8px] font-mono">
+                  {w.claimStatus === 'CLAIMED' ? (w.claimedBy || 'Claimed') : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Audit Certification Signatures (2 Signatures) */}
+        <div className="mt-8 pt-4 border-t border-black grid grid-cols-2 max-w-2xl mx-auto gap-12 text-center text-xs">
+          <div>
+            <div className="border-b border-black h-10"></div>
+            <p className="font-bold uppercase mt-1">Raffle Committee Chair</p>
+            <p className="text-[10px] text-neutral-600 uppercase">Secretariat &amp; Records</p>
+          </div>
+          <div>
+            <div className="border-b border-black h-10"></div>
+            <p className="font-bold uppercase mt-1">LGU Representative</p>
+            <p className="text-[10px] text-neutral-600 uppercase">Municipality of Malungon</p>
           </div>
         </div>
       </div>

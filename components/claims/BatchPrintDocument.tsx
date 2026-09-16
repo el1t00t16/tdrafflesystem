@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { Winner } from '../../lib/types';
 import { WinnerVerificationStub } from './WinnerVerificationStub';
-import { Printer, X, CheckCheck, FileText, Scissors } from 'lucide-react';
+import { Printer, X, CheckCheck, FileText } from 'lucide-react';
 
 interface BatchPrintDocumentProps {
   batchNumber: string;
@@ -20,13 +20,6 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   onClose,
   onMarkBatchPrinted
 }) => {
-  // Group winners into pages of 4 (2x2 grid on Letter paper)
-  const pageSize = 4;
-  const pages: Winner[][] = [];
-  for (let i = 0; i < winners.length; i += pageSize) {
-    pages.push(winners.slice(i, i + pageSize));
-  }
-
   // Keyboard shortcut: Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,21 +50,19 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 BATCH {batchNumber}
               </span>
               <span className="text-[11px] bg-neutral-800 text-neutral-300 font-mono px-2 py-0.5 border border-white/10 uppercase">
-                {winners.length} {winners.length === 1 ? 'Stub' : 'Stubs'} ({pages.length} {pages.length === 1 ? 'Page' : 'Pages'})
+                {winners.length} {winners.length === 1 ? 'Stub' : 'Stubs'} ({winners.length} {winners.length === 1 ? 'Sheet' : 'Sheets'})
+              </span>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 border border-amber-500/30 uppercase font-bold">
+                1-by-1 Pre-Cut 1/4 Letter
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 truncate max-w-md font-sans mt-0.5">
-              {prizeName} • 1/4 Letter Sheet format (4 stubs per Letter page)
+              {prizeName} • 1 Stub per 1/4 Letter Sheet (4.25&quot; × 5.5&quot;)
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="hidden md:flex items-center gap-1.5 text-neutral-400 font-mono text-[11px] mr-2">
-            <Scissors className="w-3.5 h-3.5 text-neutral-500" />
-            <span>Dashed lines guide paper cut</span>
-          </div>
-
           <button
             type="button"
             onClick={handlePrintAll}
@@ -109,29 +100,53 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
       </div>
 
       {/* Sheet Previews / Printable Document */}
-      <div className="w-full max-w-4xl p-4 sm:p-8 space-y-8 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0">
+      <div className="batch-print-wrapper w-full max-w-3xl p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0">
         <style dangerouslySetInnerHTML={{
           __html: `
             @media print {
               @page {
-                size: letter portrait;
-                margin: 0.25in;
+                size: 4.25in 5.5in portrait;
+                margin: 0.15in;
               }
               body {
                 background: white !important;
                 color: black !important;
+                margin: 0 !important;
+                padding: 0 !important;
               }
-              .print-letter-page {
+              body * {
+                visibility: hidden !important;
+              }
+              .batch-print-wrapper,
+              .batch-print-wrapper * {
+                visibility: visible !important;
+              }
+              .batch-print-wrapper {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .stub-sheet-page {
+                width: 3.95in !important;
+                height: 5.18in !important;
+                max-width: 3.95in !important;
+                max-height: 5.18in !important;
                 page-break-after: always !important;
                 break-after: page !important;
-                width: 8in !important;
-                min-height: 10.5in !important;
-                max-height: 10.5in !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
                 margin: 0 auto !important;
                 padding: 0 !important;
                 box-sizing: border-box !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
               }
-              .print-letter-page:last-child {
+              .stub-sheet-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
               }
@@ -139,36 +154,21 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           `
         }} />
 
-        {pages.map((pageWinners, pageIdx) => (
+        {winners.map((winner, idx) => (
           <div
-            key={pageIdx}
-            className="print-letter-page bg-white shadow-2xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-4 box-border"
-            style={{ width: '8.5in', minHeight: '11in' }}
+            key={winner.winnerId}
+            className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center"
           >
-            {/* Screen Page Header Indicator */}
-            <div className="pb-2 mb-2 border-b border-neutral-200 text-neutral-400 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
-              <span>Sheet {pageIdx + 1} of {pages.length} (4 Stubs per Letter Page)</span>
-              <span>Batch {batchNumber}</span>
+            {/* Screen Header Indicator */}
+            <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
+              <span className="font-bold text-indigo-900">
+                Sheet {idx + 1} of {winners.length} (Pre-Cut 1/4 Letter)
+              </span>
+              <span>Ticket: {winner.winnerId}</span>
             </div>
 
-            {/* 2x2 Grid of 1/4 Letter Stubs */}
-            <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full items-stretch justify-items-stretch">
-              {pageWinners.map((winner) => (
-                <div key={winner.winnerId} className="flex justify-center items-center w-full h-full">
-                  <WinnerVerificationStub winner={winner} isModal={false} />
-                </div>
-              ))}
-
-              {/* Empty placeholder slots if page has less than 4 winners */}
-              {Array.from({ length: 4 - pageWinners.length }).map((_, emptyIdx) => (
-                <div
-                  key={`empty-${emptyIdx}`}
-                  className="w-full max-w-[4.25in] min-h-[5.3in] p-4 border-2 border-dashed border-neutral-300 print:border-neutral-200 flex flex-col justify-center items-center text-neutral-300 print:text-transparent font-mono text-xs uppercase"
-                >
-                  <span>[ Empty Slot • Cut Line ]</span>
-                </div>
-              ))}
-            </div>
+            {/* Verification Stub */}
+            <WinnerVerificationStub winner={winner} isModal={false} isBatchChild={true} />
           </div>
         ))}
       </div>

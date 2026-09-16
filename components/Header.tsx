@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Technical Navigation Bar (Variation 3 .admin-nav) */}
-      <div className="admin-nav bg-[#1a1a1a] px-4 sm:px-12 py-2 flex flex-wrap items-center justify-between text-[#f8f7f4] border-b border-black select-none">
+      <div className="admin-nav bg-[#1a1a1a] px-4 sm:px-12 py-2 flex flex-wrap items-center justify-between text-[#f8f7f4] border-b border-black select-none print:hidden">
         <div className="flex items-center gap-1 flex-wrap">
           <button
             id="nav-btn-display"
@@ -210,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Editorial Style Layout Header */}
-      <header className="bg-[#f8f7f4] dark:bg-[#121215] text-[#1a1a1a] dark:text-[#f4f4f5] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a] dark:border-white/15 transition-colors">
+      <header className="bg-[#f8f7f4] dark:bg-[#121215] text-[#1a1a1a] dark:text-[#f4f4f5] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a] dark:border-white/15 transition-colors print:hidden">
         <div className="header-title">
           <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 dark:text-neutral-400 mb-0.5">
             SARANGANI PROVINCE / REGION XII

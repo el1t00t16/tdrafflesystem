@@ -387,7 +387,7 @@ export default function ClaimsPage() {
   return (
     <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-white">
       {/* Top Station Header */}
-      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
+      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none print:hidden">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
             <Gift className="w-5 h-5" />
@@ -484,7 +484,7 @@ export default function ClaimsPage() {
       </header>
 
       {/* Station Module Selector Bar */}
-      <div className="bg-white dark:bg-[#121215] border-b-2 border-[#1a1a1a] dark:border-white/10 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 select-none">
+      <div className="bg-white dark:bg-[#121215] border-b-2 border-[#1a1a1a] dark:border-white/10 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 select-none print:hidden">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveStationTab('claims')}
@@ -585,7 +585,7 @@ export default function ClaimsPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#121215] border-t border-white/10 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2">
+      <footer className="bg-[#121215] border-t border-white/10 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2 print:hidden">
         <span>Municipal Teachers&apos; Day 2026 • Official Prize Claim &amp; Disbursement Desk</span>
         <span className="text-neutral-400 text-[10px]">Station: {claimSession.stationId}</span>
       </footer>

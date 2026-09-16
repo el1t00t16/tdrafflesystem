@@ -453,7 +453,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
-                Advance 5-District Shuffling Reel • COA &amp; Raffle Committee Secretariat
+                Advance 5-District Shuffling Reel • Raffle Committee Secretariat &amp; LGU Observers
               </p>
             </div>
           </div>
@@ -1186,12 +1186,32 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
       )}
 
       {/* PRINT-ONLY OFFICIAL SHEET LAYOUT (Hidden on screen, rendered on window.print()) */}
-      <div className="hidden print:block fixed inset-0 bg-white text-black p-8 z-[9999]">
-        <div className="text-center border-b-2 border-black pb-4 mb-6">
+      <div className="hidden print:block bg-white text-black p-4">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @media print {
+              @page {
+                size: letter landscape;
+                margin: 0.35in;
+              }
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+            }
+          `
+        }} />
+        <div className="text-center border-b-2 border-black pb-3 mb-4">
           <p className="text-xs uppercase font-serif tracking-widest">Republic of the Philippines</p>
           <p className="text-sm font-bold uppercase font-serif">Department of Education • Region XII</p>
           <p className="text-xs uppercase font-serif">Schools Division of Sarangani • Municipality of Malungon</p>
-          <h1 className="text-xl font-black uppercase tracking-tight mt-3">
+          <h1 className="text-xl font-black uppercase tracking-tight mt-2">
             {masterlistScope === 'PRE_DRAW_ONLY' ? 'OFFICIAL PRE-DRAW WINNERS MASTERLIST' : 'OFFICIAL WINNERS MASTERLIST (ALL BATCHES)'}
           </h1>
           <p className="text-xs uppercase font-mono font-bold mt-0.5">
@@ -1235,22 +1255,17 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           </tbody>
         </table>
 
-        {/* Audit Certification Signatures */}
-        <div className="mt-12 pt-6 border-t border-black grid grid-cols-3 gap-8 text-center text-xs">
+        {/* Audit Certification Signatures (2 Signatures: Committee Chair & LGU Representative) */}
+        <div className="mt-10 pt-4 border-t border-black grid grid-cols-2 max-w-2xl mx-auto gap-12 text-center text-xs">
           <div>
-            <div className="border-b border-black h-12"></div>
+            <div className="border-b border-black h-10"></div>
             <p className="font-bold uppercase mt-1">Raffle Committee Chair</p>
             <p className="text-[10px] text-neutral-600 uppercase">Secretariat &amp; Records</p>
           </div>
           <div>
-            <div className="border-b border-black h-12"></div>
+            <div className="border-b border-black h-10"></div>
             <p className="font-bold uppercase mt-1">LGU Representative</p>
             <p className="text-[10px] text-neutral-600 uppercase">Municipality of Malungon</p>
-          </div>
-          <div>
-            <div className="border-b border-black h-12"></div>
-            <p className="font-bold uppercase mt-1">COA / Audit Observer</p>
-            <p className="text-[10px] text-neutral-600 uppercase">Commission on Audit</p>
           </div>
         </div>
       </div>

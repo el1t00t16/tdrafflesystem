@@ -44,24 +44,69 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5] print:bg-white print:text-black">
-      {/* Header Bar */}
-      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl flex justify-between items-center relative border-t-4 border-t-[#FF1E1E] print:border-none print:bg-transparent">
+    <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5] print:bg-white print:text-black print:space-y-4">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            @page {
+              size: letter portrait;
+              margin: 0.4in;
+            }
+            body {
+              background: white !important;
+              color: black !important;
+            }
+            .print-card {
+              border: 1px solid black !important;
+              box-shadow: none !important;
+              background: white !important;
+              page-break-inside: avoid !important;
+            }
+            .print-table {
+              border-collapse: collapse !important;
+              width: 100% !important;
+            }
+            .print-table th, .print-table td {
+              border: 1px solid black !important;
+              color: black !important;
+            }
+          }
+        `
+      }} />
+
+      {/* Screen Header Bar */}
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl flex justify-between items-center relative border-t-4 border-t-[#FF1E1E] print:hidden">
         <div>
-          <h3 className="font-black text-xl text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none print:text-black">
+          <h3 className="font-black text-xl text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">
             OFFICIAL EVENT RAFFLE REPORT
           </h3>
-          <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1 print:text-slate-600">
+          <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
             Municipal Teachers&apos; Day 2026 • Malungon, Sarangani Province
           </p>
         </div>
         <button
           onClick={handlePrint}
-          className="px-4 py-2.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 print:hidden rounded-none"
+          className="px-4 py-2.5 bg-[#FF1E1E] hover:bg-[#ff3838] text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none cursor-pointer"
         >
           <Printer className="w-4 h-4" />
           <span>Print Report</span>
         </button>
+      </div>
+
+      {/* Print-Only Official Government Header */}
+      <div className="hidden print:block text-center border-b-2 border-black pb-3 mb-4">
+        <p className="text-xs uppercase font-serif tracking-widest">Republic of the Philippines</p>
+        <p className="text-sm font-bold uppercase font-serif">Department of Education • Region XII</p>
+        <p className="text-xs uppercase font-serif">Schools Division of Sarangani • Municipality of Malungon</p>
+        <h1 className="text-xl font-black uppercase tracking-tight mt-2">
+          OFFICIAL EVENT RAFFLE REPORT &amp; AUDIT SUMMARY
+        </h1>
+        <p className="text-xs uppercase font-mono font-bold mt-0.5">
+          Municipal Teachers&apos; Day 2026 Celebration • Grand Raffle System
+        </p>
+        <p className="text-[10px] text-neutral-600 font-mono mt-1">
+          Generated on: {new Date().toLocaleString()} • Certified Official Audit Report
+        </p>
       </div>
 
       {/* 1. Overall Metrics Summary */}
@@ -188,6 +233,25 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Print-Only Official Audit Certification Signatures */}
+      <div className="hidden print:grid grid-cols-3 gap-8 mt-8 pt-4 border-t-2 border-black text-center text-xs">
+        <div>
+          <div className="border-b border-black h-10"></div>
+          <p className="font-bold uppercase mt-1">Prepared By:</p>
+          <p className="text-[10px] text-neutral-600 uppercase">Raffle Committee Secretariat</p>
+        </div>
+        <div>
+          <div className="border-b border-black h-10"></div>
+          <p className="font-bold uppercase mt-1">Certified Correct:</p>
+          <p className="text-[10px] text-neutral-600 uppercase">Raffle Committee Chair</p>
+        </div>
+        <div>
+          <div className="border-b border-black h-10"></div>
+          <p className="font-bold uppercase mt-1">Attested &amp; Observed:</p>
+          <p className="text-[10px] text-neutral-600 uppercase">LGU Representative</p>
         </div>
       </div>
     </div>
