@@ -10,6 +10,7 @@ import {
   TemporaryDrawResult,
   Winner
 } from '../../lib/types';
+import { soundSynthesizer } from '../../lib/sound';
 import {
   Sparkles,
   Users,
@@ -28,7 +29,27 @@ import {
   Search
 } from 'lucide-react';
 
+const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
+  { id: 'NORTH', number: '01', title: 'North' },
+  { id: 'EAST', number: '02', title: 'East' },
+  { id: 'WEST', number: '03', title: 'West' },
+  { id: 'SOUTH', number: '04', title: 'South' },
+  { id: 'PRIVATE', number: '05', title: 'Private (ECCD + Private School + LSB)', isPrivate: true }
+];
+
 const DISTRICTS: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
+
+// Helper to parse numeric peso value from prize name if unitValue is 0
+function getPrizeDisplayValue(prize: Prize | null): number {
+  if (!prize) return 0;
+  if (prize.unitValue > 0) return prize.unitValue;
+  const match = prize.name.replace(/,/g, '').match(/\d+(\.\d+)?/);
+  if (match) {
+    const val = parseFloat(match[0]);
+    if (!isNaN(val) && val > 0) return val;
+  }
+  return 0;
+}
 
 interface PreDrawStationProps {
   prizes: Prize[];
@@ -61,14 +82,33 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   const [searchFilter, setSearchFilter] = useState('');
   const [activeTab, setActiveTab] = useState<'console' | 'history'>('console');
 
+  // 5 Cards Shuffle States
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [hasDrawnRound, setHasDrawnRound] = useState(false);
+  const [shufflingNames, setShufflingNames] = useState<Record<District, { name: string; school: string }>>({
+    NORTH: { name: 'Awaiting pre-draw...', school: '' },
+    EAST: { name: 'Awaiting pre-draw...', school: '' },
+    WEST: { name: 'Awaiting pre-draw...', school: '' },
+    SOUTH: { name: 'Awaiting pre-draw...', school: '' },
+    PRIVATE: { name: 'Awaiting pre-draw...', school: '' }
+  });
+  const [revealedWinnersByDistrict, setRevealedWinnersByDistrict] = useState<Record<District, Participant[]>>({
+    NORTH: [],
+    EAST: [],
+    WEST: [],
+    SOUTH: [],
+    PRIVATE: []
+  });
+
   // Currently selected prize
   const currentPrize = useMemo(() => {
     return prizes.find((p) => p.id === selectedPrizeId) || prizes[0] || null;
   }, [prizes, selectedPrizeId]);
 
   const availableQty = currentPrize ? currentPrize.remainingQuantity : 0;
+  const currentUnitVal = getPrizeDisplayValue(currentPrize);
 
-  // Filter eligible participants (active, verified eligible, and not already winners if multiple wins disabled)
+  // Filter eligible participants
   const eligiblePool = useMemo(() => {
     return participants.filter((p) => {
       if (p.eligible !== 'ELIGIBLE') return false;
@@ -112,6 +152,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     distributionMode === 'COMBINED_POOL' && combinedWinnersCount > eligiblePool.length;
   const isQuantityExceeded = totalWinnersToDraw > availableQty || totalWinnersToDraw <= 0;
   const isButtonDisabled =
+    isShuffling ||
     availableQty <= 0 ||
     isDistrictPoolInsufficient ||
     isCombinedPoolInsufficient ||
@@ -127,24 +168,24 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     return logs.filter((l) => l.drawType === 'PRE_DRAW');
   }, [logs]);
 
-  // Execute RNG batch selection
+  // Execute Pre-Draw with Animated 5 Cards Shuffling Reel
   const handleExecuteRng = () => {
-    if (!currentPrize || availableQty <= 0) return;
+    if (!currentPrize || availableQty <= 0 || isShuffling) return;
 
+    // 1. Unbiased RNG selection
     let selectedWinners: Participant[] = [];
+    const selectedByDistrict: Record<District, Participant[]> = {
+      NORTH: [],
+      EAST: [],
+      WEST: [],
+      SOUTH: [],
+      PRIVATE: []
+    };
 
     if (distributionMode === 'EQUAL_PER_DISTRICT') {
-      const selectedByDistrict: Record<District, Participant[]> = {
-        NORTH: [],
-        EAST: [],
-        WEST: [],
-        SOUTH: [],
-        PRIVATE: []
-      };
-
       DISTRICTS.forEach((d) => {
         const districtPool = eligiblePool.filter((p) => p.district === d);
-        // Unbiased Fisher-Yates shuffle
+        // Fisher-Yates
         for (let i = districtPool.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [districtPool[i], districtPool[j]] = [districtPool[j], districtPool[i]];
@@ -163,6 +204,12 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
         [poolCopy[i], poolCopy[j]] = [poolCopy[j], poolCopy[i]];
       }
       selectedWinners = poolCopy.slice(0, count);
+
+      selectedWinners.forEach((w) => {
+        if (selectedByDistrict[w.district]) {
+          selectedByDistrict[w.district].push(w);
+        }
+      });
     }
 
     const nextBatchNum = `PRE-${String(preDrawLogs.length + 1).padStart(4, '0')}`;
@@ -170,7 +217,10 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
     const result: TemporaryDrawResult = {
       drawNumber: nextBatchNum,
-      prize: currentPrize,
+      prize: {
+        ...currentPrize,
+        unitValue: currentUnitVal
+      },
       winners: selectedWinners,
       timestamp,
       eligiblePoolSize: eligiblePool.length,
@@ -180,11 +230,83 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     };
 
     setProvisionalBatch(result);
-    setIsReviewOpen(true);
+    setIsReviewOpen(false);
+    setIsShuffling(true);
+    setHasDrawnRound(false);
+
+    // Filter participants by district for authentic reel cycling
+    const participantsByDistrict: Record<District, Participant[]> = {
+      NORTH: eligiblePool.filter((p) => p.district === 'NORTH'),
+      EAST: eligiblePool.filter((p) => p.district === 'EAST'),
+      WEST: eligiblePool.filter((p) => p.district === 'WEST'),
+      SOUTH: eligiblePool.filter((p) => p.district === 'SOUTH'),
+      PRIVATE: eligiblePool.filter((p) => p.district === 'PRIVATE')
+    };
+
+    // 2. Start Audio Reel
+    soundSynthesizer.startSpinning();
+
+    // 3. Shuffle Reel on 5 Cards (2.6 seconds)
+    const durationMs = 2600;
+    const startTime = Date.now();
+    let isDeceleratingSound = false;
+
+    const stepReel = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const remaining = durationMs - elapsed;
+
+      // When finished: reveal cards and open review table
+      if (remaining <= 0) {
+        soundSynthesizer.stopSpinning();
+        soundSynthesizer.playCelebrationFanfare();
+
+        setIsShuffling(false);
+        setHasDrawnRound(true);
+        setRevealedWinnersByDistrict(selectedByDistrict);
+
+        // Open batch review modal after 700ms so user sees the 5 cards light up with winners
+        setTimeout(() => {
+          setIsReviewOpen(true);
+        }, 700);
+        return;
+      }
+
+      // Roll names on all 5 district cards
+      const nextNames: Record<District, { name: string; school: string }> = { ...shufflingNames };
+      DISTRICTS.forEach((d) => {
+        const pool = participantsByDistrict[d];
+        if (pool && pool.length > 0) {
+          const rand = pool[Math.floor(Math.random() * pool.length)];
+          nextNames[d] = { name: rand.fullName, school: rand.school };
+        }
+      });
+      setShufflingNames(nextNames);
+
+      // Deceleration curve
+      const progress = Math.min(1, elapsed / durationMs);
+      let nextDelay = 45;
+      if (progress > 0.65) {
+        const decelProgress = (progress - 0.65) / 0.35;
+        nextDelay = Math.round(45 + Math.pow(decelProgress, 2.3) * 450);
+        if (nextDelay >= 85) {
+          if (!isDeceleratingSound) {
+            soundSynthesizer.stopSpinning();
+            isDeceleratingSound = true;
+          }
+          soundSynthesizer.playClick();
+        }
+      }
+
+      setTimeout(stepReel, Math.min(nextDelay, Math.max(25, remaining)));
+    };
+
+    stepReel();
   };
 
-  // Re-run RNG for current batch
-  const handleRedrawCurrentBatch = () => {
+  // Redraw action from modal (closes modal and re-shuffles 5 cards)
+  const handleRedrawFromModal = () => {
+    setIsReviewOpen(false);
     handleExecuteRng();
   };
 
@@ -194,6 +316,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     onConfirmPreDrawBatch(provisionalBatch);
     setIsReviewOpen(false);
     setProvisionalBatch(null);
+    setHasDrawnRound(false);
 
     // Auto-adjust combined count if remaining prize reduced
     const remainingAfter = availableQty - provisionalBatch.winners.length;
@@ -210,7 +333,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
       (w) =>
         w.name.toLowerCase().includes(q) ||
         w.winnerId.toLowerCase().includes(q) ||
-        w.depedId?.toLowerCase().includes(q) ||
+        w.participantId.toLowerCase().includes(q) ||
         w.school.toLowerCase().includes(q) ||
         w.prizeName.toLowerCase().includes(q) ||
         w.drawNumber.toLowerCase().includes(q)
@@ -222,7 +345,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     const headers = [
       'Batch #',
       'Winner ID',
-      'DepEd ID',
+      'Profiling ID',
       'Name',
       'District',
       'School',
@@ -236,7 +359,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     const rows = preDrawWinners.map((w) => [
       w.drawNumber,
       w.winnerId,
-      w.depedId || 'N/A',
+      w.participantId || 'N/A',
       `"${w.name}"`,
       w.district,
       `"${w.school}"`,
@@ -262,11 +385,6 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     document.body.removeChild(link);
   };
 
-  // Trigger Print-friendly Official Masterlist View
-  const handlePrintOfficialMasterlist = () => {
-    window.print();
-  };
-
   return (
     <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5]">
       {/* Station Sub-Navigation & Header */}
@@ -286,7 +404,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
-                Advance RNG for minor &amp; consolation prizes • COA &amp; Raffle Committee Secretariat
+                Advance 5-District Shuffling Reel • COA &amp; Raffle Committee Secretariat
               </p>
             </div>
           </div>
@@ -301,7 +419,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                   : 'bg-white dark:bg-neutral-900 text-[#1a1a1a] dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
               }`}
             >
-              Batch Drawer
+              5-Card Batch Drawer
             </button>
             <button
               type="button"
@@ -361,7 +479,87 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
       </div>
 
       {activeTab === 'console' && (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="space-y-6">
+          {/* THE 5 DISTRICT CARDS SHUFFLE DISPLAY (User requested: North, East, West, South, Private) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2 font-mono text-xs font-black uppercase tracking-widest text-[#1a1a1a] dark:text-white">
+                <Sparkles className="w-4 h-4 text-[#ff6a00]" />
+                <span>5-DISTRICT SHUFFLE DISPLAY (PRE-DRAW REEL)</span>
+              </div>
+              <span className="font-mono text-[10px] text-neutral-500 uppercase">
+                {isShuffling ? '⚡ SHUFFLING IN PROGRESS...' : hasDrawnRound ? '🏆 WINNERS REVEALED' : 'READY TO SHUFFLE'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+              {DISTRICT_CONFIG.map(({ id, title, isPrivate }) => {
+                const districtWinners = revealedWinnersByDistrict[id] || [];
+                const hasWinners = hasDrawnRound && districtWinners.length > 0;
+
+                return (
+                  <div
+                    key={id}
+                    className={`bg-white dark:bg-[#141416] border-2 rounded-2xl p-4 transition-all flex flex-col justify-between min-h-[140px] shadow-sm ${
+                      isShuffling
+                        ? 'border-[#ff6a00] bg-orange-50/80 dark:bg-orange-950/20 ring-4 ring-[#ff6a00]/25 shadow-md'
+                        : hasWinners
+                        ? 'border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-md'
+                        : 'border-[#1a1a1a]/20 dark:border-white/10'
+                    } ${isPrivate ? 'sm:col-span-2 sm:w-1/2 sm:mx-auto w-full' : ''}`}
+                  >
+                    {/* Card Header with Orange Underline Border */}
+                    <div className="text-center pb-2 mb-2 border-b-2 border-[#ff6a00]/30 relative flex items-center justify-center">
+                      <h4 className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#ff6a00]">
+                        {title}
+                      </h4>
+                      {hasWinners && (
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 rounded-full">
+                          {districtWinners.length} 🏆
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="flex-1 flex flex-col justify-center items-center py-2 text-center min-h-[70px]">
+                      {isShuffling ? (
+                        <div className="w-full space-y-1 overflow-hidden">
+                          <div className="font-winner font-black text-lg sm:text-xl md:text-2xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight animate-reel-slide">
+                            {shufflingNames[id]?.name || 'DepEd Participant'}
+                          </div>
+                          <div className="font-mono text-[10px] text-[#ff6a00] font-bold uppercase tracking-widest animate-pulse">
+                            [ SHUFFLING {districtEligibleCounts[id] || 0} CANDIDATES... ]
+                          </div>
+                        </div>
+                      ) : hasWinners ? (
+                        <div className="w-full space-y-1.5 overflow-y-auto max-h-[140px] pr-1">
+                          {districtWinners.map((w, idx) => (
+                            <div key={idx} className="border-b border-neutral-200 dark:border-white/10 pb-1 last:border-b-0">
+                              <div className="font-winner font-black text-base sm:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-snug">
+                                {w.fullName}
+                              </div>
+                              <div className="text-[10px] font-mono text-neutral-500 truncate">
+                                {w.school} • <span className="font-bold text-indigo-600 dark:text-indigo-400">{w.id}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-neutral-400 font-mono text-xs uppercase tracking-wider space-y-0.5">
+                          <div className="font-semibold">Waiting for pre-draw...</div>
+                          <div className="text-[10px] text-neutral-400">
+                            Pool: {districtEligibleCounts[id] || 0} eligible teachers
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* BATCH CONTROLS CONSOLE */}
           <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm dark:shadow-2xl relative border-t-4 border-t-indigo-600 space-y-6">
             {/* 1. Select Prize */}
             <div>
@@ -370,6 +568,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               </label>
               <select
                 value={selectedPrizeId}
+                disabled={isShuffling}
                 onChange={(e) => {
                   setSelectedPrizeId(e.target.value);
                   const p = prizes.find((x) => x.id === e.target.value);
@@ -384,18 +583,21 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     No prizes registered in inventory
                   </option>
                 )}
-                {prizes.map((p) => (
-                  <option
-                    key={p.id}
-                    value={p.id}
-                    disabled={p.remainingQuantity <= 0}
-                    className="bg-white dark:bg-neutral-900 text-black dark:text-white py-2"
-                  >
-                    {p.name} — (Remaining: {p.remainingQuantity} / {p.quantity})
-                    {p.unitValue > 0 ? ` • ₱${p.unitValue.toLocaleString()} each` : ''}
-                    {p.remainingQuantity <= 0 ? ' [EXHAUSTED]' : ''}
-                  </option>
-                ))}
+                {prizes.map((p) => {
+                  const val = getPrizeDisplayValue(p);
+                  return (
+                    <option
+                      key={p.id}
+                      value={p.id}
+                      disabled={p.remainingQuantity <= 0}
+                      className="bg-white dark:bg-neutral-900 text-black dark:text-white py-2"
+                    >
+                      {p.name} — (Remaining: {p.remainingQuantity} / {p.quantity})
+                      {val > 0 ? ` • ₱${val.toLocaleString()} each` : ''}
+                      {p.remainingQuantity <= 0 ? ' [EXHAUSTED]' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -407,6 +609,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
+                  disabled={isShuffling}
                   onClick={() => setDistributionMode('COMBINED_POOL')}
                   className={`px-4 py-3 border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
                     distributionMode === 'COMBINED_POOL'
@@ -420,6 +623,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
                 <button
                   type="button"
+                  disabled={isShuffling}
                   onClick={() => setDistributionMode('EQUAL_PER_DISTRICT')}
                   className={`px-4 py-3 border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all ${
                     distributionMode === 'EQUAL_PER_DISTRICT'
@@ -444,7 +648,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                   <div className="flex items-center border border-[#1a1a1a]/30 dark:border-white/20 bg-white dark:bg-black">
                     <button
                       type="button"
-                      disabled={combinedWinnersCount <= 1}
+                      disabled={combinedWinnersCount <= 1 || isShuffling}
                       onClick={() => setCombinedWinnersCount(Math.max(1, combinedWinnersCount - 1))}
                       className="p-3 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:text-neutral-400 dark:disabled:text-neutral-600 transition-colors"
                     >
@@ -455,7 +659,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     </span>
                     <button
                       type="button"
-                      disabled={combinedWinnersCount >= availableQty || combinedWinnersCount >= eligiblePool.length}
+                      disabled={combinedWinnersCount >= availableQty || combinedWinnersCount >= eligiblePool.length || isShuffling}
                       onClick={() => setCombinedWinnersCount(combinedWinnersCount + 1)}
                       className="p-3 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:text-neutral-400 dark:disabled:text-neutral-600 transition-colors"
                     >
@@ -465,9 +669,11 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
                   <div className="px-4 py-2.5 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/15 text-[#1a1a1a] dark:text-white font-black text-xs uppercase tracking-wider flex items-center gap-2">
                     <span className="text-indigo-600 font-bold">{combinedWinnersCount} WINNERS</span>
-                    <span className="text-neutral-500 font-normal">
-                      (₱{((currentPrize?.unitValue || 0) * combinedWinnersCount).toLocaleString()})
-                    </span>
+                    {currentUnitVal > 0 && (
+                      <span className="text-neutral-500 font-normal">
+                        (₱{(currentUnitVal * combinedWinnersCount).toLocaleString()})
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -484,6 +690,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                         <button
                           key={preset}
                           type="button"
+                          disabled={isShuffling}
                           onClick={() => setCombinedWinnersCount(preset)}
                           className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
                             isCurrent
@@ -498,6 +705,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     {availableQty > 0 && (
                       <button
                         type="button"
+                        disabled={isShuffling}
                         onClick={() => setCombinedWinnersCount(availableQty)}
                         className={`px-3 py-1.5 border text-[11px] font-black uppercase tracking-wider transition-colors ${
                           combinedWinnersCount === availableQty
@@ -521,7 +729,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                   <div className="flex items-center border border-[#1a1a1a]/30 dark:border-white/20 bg-white dark:bg-black">
                     <button
                       type="button"
-                      disabled={winnersPerDistrict <= 1}
+                      disabled={winnersPerDistrict <= 1 || isShuffling}
                       onClick={() => setWinnersPerDistrict(Math.max(1, winnersPerDistrict - 1))}
                       className="p-3 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:text-neutral-400 dark:disabled:text-neutral-600 transition-colors"
                     >
@@ -532,7 +740,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     </span>
                     <button
                       type="button"
-                      disabled={winnersPerDistrict >= maxPerDistrict || (winnersPerDistrict + 1) * 5 > availableQty}
+                      disabled={winnersPerDistrict >= maxPerDistrict || (winnersPerDistrict + 1) * 5 > availableQty || isShuffling}
                       onClick={() => setWinnersPerDistrict(winnersPerDistrict + 1)}
                       className="p-3 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:text-neutral-400 dark:disabled:text-neutral-600 transition-colors"
                     >
@@ -545,34 +753,10 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     <span className="text-neutral-500 font-normal">({winnersPerDistrict} × 5 districts)</span>
                   </div>
                 </div>
-
-                {/* District breakdown pill cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
-                  {DISTRICTS.map((d) => {
-                    const count = districtEligibleCounts[d] || 0;
-                    const isShort = count < winnersPerDistrict;
-                    return (
-                      <div
-                        key={d}
-                        className={`p-2 border text-center ${
-                          isShort
-                            ? 'border-red-500 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-200'
-                            : 'border-[#1a1a1a]/20 dark:border-white/10 bg-white dark:bg-black text-neutral-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        <div className="text-[9px] font-black uppercase tracking-wider text-neutral-500">
-                          {d === 'PRIVATE' ? 'PRIVATE' : d}
-                        </div>
-                        <div className="text-sm font-black font-mono mt-0.5">{count}</div>
-                        <div className="text-[8px] text-neutral-400 uppercase font-bold">eligible</div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             )}
 
-            {/* 4. Action Execute Button */}
+            {/* 4. Action Execute Button with Shuffle Reel */}
             <button
               type="button"
               disabled={isButtonDisabled}
@@ -585,7 +769,9 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
             >
               <Sparkles className="w-5 h-5" />
               <span>
-                EXECUTE PRE-DRAW BATCH ({totalWinnersToDraw} {totalWinnersToDraw === 1 ? 'WINNER' : 'WINNERS'})
+                {isShuffling
+                  ? 'SHUFFLING CANDIDATES ACROSS 5 DISTRICTS...'
+                  : `EXECUTE PRE-DRAW BATCH (${totalWinnersToDraw} ${totalWinnersToDraw === 1 ? 'WINNER' : 'WINNERS'})`}
               </span>
             </button>
           </div>
@@ -619,7 +805,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
                 <button
                   type="button"
-                  onClick={handlePrintOfficialMasterlist}
+                  onClick={() => window.print()}
                   disabled={preDrawWinners.length === 0}
                   className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all"
                 >
@@ -634,7 +820,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search pre-draw winner name, ID, school, prize, batch #..."
+                placeholder="Search pre-draw winner name, Profiling ID, school, prize, batch #..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/10 pl-9 pr-3 py-2 text-xs font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-indigo-600 uppercase"
@@ -651,7 +837,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     <th className="p-3">#</th>
                     <th className="p-3 whitespace-nowrap">Batch #</th>
                     <th className="p-3 whitespace-nowrap">Winner ID</th>
-                    <th className="p-3 whitespace-nowrap">DepEd ID</th>
+                    <th className="p-3 whitespace-nowrap">Profiling ID</th>
                     <th className="p-3 whitespace-nowrap">Winner Name</th>
                     <th className="p-3 whitespace-nowrap">District</th>
                     <th className="p-3 whitespace-nowrap">School</th>
@@ -676,8 +862,8 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                         <td className="p-3 font-mono text-neutral-500 text-[11px]">{idx + 1}</td>
                         <td className="p-3 font-mono font-black text-indigo-600 whitespace-nowrap">{w.drawNumber}</td>
                         <td className="p-3 font-mono font-black text-[#FF1E1E] whitespace-nowrap">{w.winnerId}</td>
-                        <td className="p-3 font-mono text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
-                          {w.depedId || 'N/A'}
+                        <td className="p-3 font-mono font-bold text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                          {w.participantId || 'N/A'}
                         </td>
                         <td className="p-3 font-black text-[#1a1a1a] dark:text-white uppercase whitespace-nowrap">
                           {w.name}
@@ -757,24 +943,26 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <div>
                 <span className="text-[10px] uppercase font-bold text-neutral-500 block">Unit Value:</span>
                 <span className="font-mono font-bold text-indigo-900 dark:text-indigo-200">
-                  ₱{provisionalBatch.prize.unitValue.toLocaleString()} each
+                  {currentUnitVal > 0 ? `₱${currentUnitVal.toLocaleString()} each` : 'Token / Item'}
                 </span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-neutral-500 block">Total Batch Value:</span>
                 <span className="font-mono font-bold text-indigo-900 dark:text-indigo-200">
-                  ₱{(provisionalBatch.prize.unitValue * provisionalBatch.winners.length).toLocaleString()}
+                  {currentUnitVal > 0
+                    ? `₱${(currentUnitVal * provisionalBatch.winners.length).toLocaleString()}`
+                    : '—'}
                 </span>
               </div>
             </div>
 
-            {/* Winners List */}
+            {/* Winners List (REQUEST 1: PROFILING ID instead of Deped ID) */}
             <div className="p-4 overflow-y-auto flex-1 space-y-2">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-neutral-100 dark:bg-neutral-900 border-b border-[#1a1a1a]/15 text-[10px] uppercase font-mono font-bold text-neutral-600 dark:text-neutral-400">
                     <th className="p-2.5">#</th>
-                    <th className="p-2.5">DepEd ID</th>
+                    <th className="p-2.5 whitespace-nowrap">PROFILING ID</th>
                     <th className="p-2.5">Full Name</th>
                     <th className="p-2.5">District</th>
                     <th className="p-2.5">School / Station</th>
@@ -785,8 +973,8 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                   {provisionalBatch.winners.map((w, idx) => (
                     <tr key={w.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/40">
                       <td className="p-2.5 font-mono text-neutral-400 text-[11px]">{idx + 1}</td>
-                      <td className="p-2.5 font-mono font-bold text-neutral-700 dark:text-neutral-300">
-                        {w.depedId || w.id}
+                      <td className="p-2.5 font-mono font-black text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                        {w.id}
                       </td>
                       <td className="p-2.5 font-black uppercase text-[#1a1a1a] dark:text-white">{w.fullName}</td>
                       <td className="p-2.5">
@@ -809,6 +997,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 onClick={() => {
                   setIsReviewOpen(false);
                   setProvisionalBatch(null);
+                  setHasDrawnRound(false);
                 }}
                 className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
               >
@@ -818,17 +1007,17 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <div className="flex items-center gap-2.5 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={handleRedrawCurrentBatch}
-                  className="flex-1 sm:flex-none px-4 py-2.5 border border-[#1a1a1a]/30 dark:border-white/20 bg-white dark:bg-neutral-900 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  onClick={handleRedrawFromModal}
+                  className="flex-1 sm:flex-none px-4 py-2.5 border border-[#1a1a1a]/30 dark:border-white/20 bg-white dark:bg-neutral-900 text-[#1a1a1a] dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4 text-indigo-600" />
-                  <span>Redraw Batch</span>
+                  <span>Redraw Batch (Shuffle)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleConfirmBatch}
-                  className="flex-1 sm:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all"
+                  className="flex-1 sm:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Confirm &amp; Commit Batch</span>
@@ -862,7 +1051,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               <th className="p-1.5 border border-black">#</th>
               <th className="p-1.5 border border-black">Batch #</th>
               <th className="p-1.5 border border-black">Winner ID</th>
-              <th className="p-1.5 border border-black">DepEd ID</th>
+              <th className="p-1.5 border border-black">Profiling ID</th>
               <th className="p-1.5 border border-black">Winner Name</th>
               <th className="p-1.5 border border-black">District</th>
               <th className="p-1.5 border border-black">School / Station</th>
@@ -877,7 +1066,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 <td className="p-1.5 border border-black font-mono">{idx + 1}</td>
                 <td className="p-1.5 border border-black font-mono font-bold">{w.drawNumber}</td>
                 <td className="p-1.5 border border-black font-mono">{w.winnerId}</td>
-                <td className="p-1.5 border border-black font-mono">{w.depedId || 'N/A'}</td>
+                <td className="p-1.5 border border-black font-mono font-bold">{w.participantId || 'N/A'}</td>
                 <td className="p-1.5 border border-black font-bold uppercase">{w.name}</td>
                 <td className="p-1.5 border border-black uppercase">{w.district}</td>
                 <td className="p-1.5 border border-black">{w.school}</td>
