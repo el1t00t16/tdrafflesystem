@@ -90,14 +90,14 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header & Controls */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 sm:p-5 shadow-sm space-y-4">
+      <div className="bg-[#121212] border border-white/10 p-5 shadow-2xl space-y-4 relative border-t-2 border-t-[#FF1E1E]">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h3 className="font-black text-lg sm:text-xl text-[var(--ink)] uppercase tracking-tight leading-none">OFFICIAL WINNERS HISTORY</h3>
-            <p className="text-[11px] text-[var(--ink-muted)] font-medium mt-1">
-              Total Recorded Winners: <span className="font-bold text-[var(--ink)]">{winners.length}</span>
+            <h3 className="font-black text-lg sm:text-xl text-white uppercase tracking-tight leading-none">OFFICIAL WINNERS HISTORY</h3>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+              Total Recorded Winners: {winners.length}
               {filtered.length !== winners.length ? ` • Filtered: ${filtered.length}` : ''}
             </p>
           </div>
@@ -105,17 +105,17 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
           <button
             onClick={exportCSV}
             disabled={winners.length === 0}
-            className="px-4 py-2 rounded-lg bg-[var(--surface-elevated)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed border border-[var(--border)] text-[var(--ink)] font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed border border-white/20 text-white font-black text-xs uppercase tracking-wider shadow transition-all flex items-center gap-2 rounded-none"
           >
-            <Download className="w-4 h-4 text-[var(--accent)]" />
+            <Download className="w-4 h-4 text-[#FF1E1E]" />
             <span>Export Winners CSV ({filtered.length})</span>
           </button>
         </div>
 
         {/* Filter Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[var(--border)]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/10">
           <div className="relative">
-            <Search className="w-4 h-4 text-[var(--ink-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search winner name, ID, prize..."
@@ -124,7 +124,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-2 text-xs font-bold text-[var(--ink)] outline-none focus:border-[var(--accent)] uppercase"
+              className="w-full bg-neutral-950 border border-white/10 pl-9 pr-3 py-2 text-xs font-bold text-white outline-none focus:border-[#FF1E1E] uppercase"
             />
           </div>
 
@@ -134,7 +134,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
               setDistrictFilter(e.target.value);
               setPage(1);
             }}
-            className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs font-bold text-[var(--ink)] outline-none focus:border-[var(--accent)] uppercase cursor-pointer"
+            className="bg-neutral-950 border border-white/10 px-3 py-2 text-xs font-bold text-white outline-none focus:border-[#FF1E1E] uppercase"
           >
             <option value="ALL">All Districts (5)</option>
             <option value="NORTH">NORTH DISTRICT</option>
@@ -152,7 +152,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
               setClaimFilter(e.target.value);
               setPage(1);
             }}
-            className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs font-bold text-[var(--ink)] outline-none focus:border-[var(--accent)] uppercase cursor-pointer"
+            className="bg-neutral-950 border border-white/10 px-3 py-2 text-xs font-bold text-white outline-none focus:border-[#FF1E1E] uppercase"
           >
             <option value="ALL">All Claim Statuses</option>
             <option value="UNCLAIMED">UNCLAIMED</option>
@@ -163,11 +163,11 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       </div>
 
       {/* Winners Table */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] overflow-hidden shadow-sm">
+      <div className="bg-[#121212] border border-white/10 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--ink-muted)] uppercase font-bold tracking-wider text-[10px]">
+              <tr className="bg-black border-b border-white/20 text-neutral-300 uppercase font-black tracking-widest text-[10px]">
                 <th className="p-3">#</th>
                 <th className="p-3">Winner ID</th>
                 <th className="p-3">Participant ID</th>
@@ -181,10 +181,10 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 <th className="p-3 text-center">Claim Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)]">
+            <tbody className="divide-y divide-white/5">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-8 text-center text-[var(--ink-muted)] font-bold uppercase tracking-wider">
+                  <td colSpan={11} className="p-8 text-center text-neutral-500 font-bold uppercase tracking-wider">
                     {winners.length === 0
                       ? 'No official winners recorded yet. Start a draw from the Raffle Console!'
                       : 'No winners matching your filter criteria.'}
@@ -192,33 +192,33 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 </tr>
               ) : (
                 paginatedWinners.map((w, idx) => (
-                  <tr key={w.winnerId} className="hover:bg-[var(--surface-elevated)] transition-colors">
-                    <td className="p-3 font-mono text-[var(--ink-muted)] text-[11px]">{startIndex + idx + 1}</td>
-                    <td className="p-3 font-mono font-bold text-[var(--accent)]">{w.winnerId}</td>
-                    <td className="p-3 font-mono font-bold text-[var(--ink-muted)]">{w.participantId}</td>
-                    <td className="p-3 font-bold text-[var(--ink)] uppercase whitespace-nowrap">{w.name}</td>
+                  <tr key={w.winnerId} className="hover:bg-neutral-900/50 transition-colors">
+                    <td className="p-3 font-mono text-neutral-500 text-[11px]">{startIndex + idx + 1}</td>
+                    <td className="p-3 font-mono font-black text-[#FF1E1E]">{w.winnerId}</td>
+                    <td className="p-3 font-mono font-bold text-neutral-400">{w.participantId}</td>
+                    <td className="p-3 font-black text-white uppercase whitespace-nowrap">{w.name}</td>
                     <td className="p-3">
-                      <span className="bg-[var(--surface-elevated)] text-[var(--ink)] font-bold text-[10px] px-2 py-0.5 rounded-md border border-[var(--border)] uppercase tracking-wider">
+                      <span className="bg-neutral-950 text-white font-black text-[10px] px-2 py-0.5 border border-white/10 uppercase tracking-wider">
                         {w.district}
                       </span>
                     </td>
-                    <td className="p-3 text-[var(--ink-muted)]">{w.personnelType}</td>
-                    <td className="p-3 text-[var(--ink-muted)] truncate max-w-[200px]" title={w.school}>
+                    <td className="p-3 text-neutral-300">{w.personnelType}</td>
+                    <td className="p-3 text-neutral-300 truncate max-w-[200px]" title={w.school}>
                       {w.school}
                     </td>
-                    <td className="p-3 font-bold text-[var(--ink)] whitespace-nowrap">{w.prizeName}</td>
-                    <td className="p-3 font-mono font-bold text-[var(--ink-muted)]">{w.drawNumber}</td>
-                    <td className="p-3 text-[var(--ink-muted)] whitespace-nowrap font-mono text-[11px]">
+                    <td className="p-3 font-bold text-white whitespace-nowrap">{w.prizeName}</td>
+                    <td className="p-3 font-mono font-bold text-neutral-400">{w.drawNumber}</td>
+                    <td className="p-3 text-neutral-400 whitespace-nowrap font-mono text-[11px]">
                       {w.date} {w.time}
                     </td>
                     <td className="p-3 text-center">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider inline-flex items-center gap-1.5 ${
+                        className={`px-2.5 py-0.5 font-black text-[9px] uppercase tracking-widest inline-flex items-center gap-1 ${
                           w.claimStatus === 'CLAIMED'
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-neutral-900 text-white border border-white/30'
                             : w.claimStatus === 'FORFEITED'
-                            ? 'bg-red-500/15 text-red-500 dark:text-red-400 border border-red-500/30 line-through'
-                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                            ? 'bg-red-950/60 text-red-400 border border-red-800 line-through'
+                            : 'bg-[#FF1E1E]/20 text-[#FF1E1E] border border-[#FF1E1E]'
                         }`}
                       >
                         {w.claimStatus === 'CLAIMED' ? (
@@ -244,22 +244,22 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
         </div>
 
         {/* Pagination Controls */}
-        <div className="border-t border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3 text-[var(--ink-muted)] flex-wrap">
+        <div className="bg-black/80 border-t border-white/10 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3 text-neutral-400 flex-wrap">
             <span className="font-medium">
-              Showing <span className="text-[var(--ink)] font-bold">{filtered.length === 0 ? 0 : startIndex + 1}</span> to{' '}
-              <span className="text-[var(--ink)] font-bold">{endIndex}</span> of{' '}
-              <span className="text-[var(--ink)] font-bold">{filtered.length}</span> winners
+              Showing <span className="text-white font-bold">{filtered.length === 0 ? 0 : startIndex + 1}</span> to{' '}
+              <span className="text-white font-bold">{endIndex}</span> of{' '}
+              <span className="text-white font-bold">{filtered.length}</span> winners
             </span>
-            <div className="flex items-center gap-1.5 ml-0 sm:ml-2 border-l-0 sm:border-l border-[var(--border)] sm:pl-3">
-              <span className="text-[11px] uppercase tracking-wider text-[var(--ink-muted)]">Rows:</span>
+            <div className="flex items-center gap-1.5 ml-0 sm:ml-2 border-l-0 sm:border-l border-white/10 sm:pl-3">
+              <span className="text-[11px] uppercase tracking-wider text-neutral-500">Rows:</span>
               <select
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setPage(1);
                 }}
-                className="bg-[var(--surface)] border border-[var(--border)] rounded-md text-[var(--ink)] font-bold px-2 py-1 text-xs outline-none focus:border-[var(--accent)]"
+                className="bg-neutral-900 border border-white/20 text-white font-bold px-2 py-1 text-xs outline-none focus:border-[#FF1E1E]"
               >
                 <option value={10}>10</option>
                 <option value={15}>15</option>
@@ -271,15 +271,15 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[var(--ink-muted)] text-xs mr-2 font-mono">
-              Page <strong className="text-[var(--ink)]">{currentPage}</strong> of <strong className="text-[var(--ink)]">{totalPages}</strong>
+            <span className="text-neutral-400 text-xs mr-2 font-mono">
+              Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
             </span>
-            <div className="inline-flex rounded-lg border border-[var(--border)] overflow-hidden divide-x divide-[var(--border)]">
+            <div className="inline-flex border border-white/20 divide-x divide-white/20">
               <button
                 onClick={() => setPage(1)}
                 disabled={currentPage <= 1}
                 title="First Page"
-                className="p-1.5 bg-[var(--surface-card)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--ink)] transition-colors cursor-pointer"
+                className="p-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
               >
                 <ChevronsLeft className="w-4 h-4" />
               </button>
@@ -287,7 +287,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
                 title="Previous Page"
-                className="p-1.5 bg-[var(--surface-card)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--ink)] transition-colors cursor-pointer"
+                className="p-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -295,7 +295,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
                 title="Next Page"
-                className="p-1.5 bg-[var(--surface-card)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--ink)] transition-colors cursor-pointer"
+                className="p-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -303,7 +303,7 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
                 onClick={() => setPage(totalPages)}
                 disabled={currentPage >= totalPages}
                 title="Last Page"
-                className="p-1.5 bg-[var(--surface-card)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--ink)] transition-colors cursor-pointer"
+                className="p-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors"
               >
                 <ChevronsRight className="w-4 h-4" />
               </button>

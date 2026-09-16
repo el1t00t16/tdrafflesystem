@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { District, DistributionMode, Participant, Prize, TemporaryDrawResult } from '../lib/types';
-import { Trophy, CheckCircle, RotateCcw, AlertTriangle, ShieldAlert, Target, Globe, X, Sparkles } from 'lucide-react';
+import { Trophy, CheckCircle, RotateCcw, AlertTriangle, ShieldAlert, Target, Globe, X } from 'lucide-react';
 
 const DISTRICTS: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
@@ -36,56 +36,53 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
   if (!isOpen || !prize) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-[var(--surface-elevated)] border-2 border-[var(--border-accent)] max-w-lg w-full overflow-hidden shadow-2xl rounded-2xl relative text-[var(--ink)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] max-w-lg w-full overflow-hidden shadow-2xl relative text-[#1a1a1a]">
         {/* Modal Header */}
-        <div className="bg-[var(--header-bg)] px-6 py-4 flex items-center justify-between border-b border-[var(--border)]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[var(--badge-bg)] text-[var(--accent)] border border-[var(--border-accent)]">
-              <Trophy className="w-5 h-5" />
-            </div>
+        <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between text-[#f8f7f4]">
+          <div className="flex items-center gap-2.5">
+            <Trophy className="w-5 h-5 text-[#ff6a00]" />
             <div>
-              <h3 className="font-display text-lg sm:text-xl font-black uppercase tracking-tight text-[var(--ink)] leading-none">
-                READY TO COMMENCE DRAW?
+              <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-white leading-none">
+                READY TO DRAW?
               </h3>
-              <span className="font-mono text-[10px] text-[var(--accent)] font-bold uppercase tracking-widest mt-1 block">
+              <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mt-0.5 block">
                 Malungon Teachers&apos; Day 2026
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors p-1.5 rounded-md hover:bg-white/10"
-            aria-label="Close modal"
+            className="text-neutral-400 hover:text-white transition-colors p-1"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4 font-mono">
-          <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-4 space-y-3 shadow-xs">
+        <div className="p-6 space-y-4">
+          <div className="bg-white border border-[#1a1a1a]/15 p-4 space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Prize:</span>
-              <span className="font-display font-black text-base uppercase text-[var(--ink)]">{prize.name}</span>
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Prize:</span>
+              <span className="font-display font-bold text-base uppercase text-[#1a1a1a]">{prize.name}</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Distribution Criteria:</span>
-              <span className="text-xs uppercase px-2.5 py-1 rounded-md bg-[var(--badge-bg)] text-[var(--badge-text)] border border-[var(--border-accent)] flex items-center gap-1.5 font-bold">
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Distribution Criteria:</span>
+              <span className="font-mono text-xs uppercase px-2 py-0.5 bg-[#1a1a1a] text-white flex items-center gap-1.5 font-bold">
                 {distributionMode === 'EQUAL_PER_DISTRICT' ? (
                   <>
-                    <Target className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <Target className="w-3.5 h-3.5 text-[#ff6a00]" />
                     <span>Equal per District ({winnersPerDistrict} each)</span>
                   </>
                 ) : targetDistrict && targetDistrict !== 'ALL' ? (
                   <>
-                    <Target className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <Target className="w-3.5 h-3.5 text-[#ff6a00]" />
                     <span>{targetDistrict} District Exclusive</span>
                   </>
                 ) : (
                   <>
-                    <Globe className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <Globe className="w-3.5 h-3.5 text-[#ff6a00]" />
                     <span>Combined Pool (All Districts)</span>
                   </>
                 )}
@@ -94,70 +91,70 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
 
             {prize.unitValue > 0 && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Unit Value:</span>
-                <span className="font-display font-black text-[var(--accent)] text-lg">₱{prize.unitValue.toLocaleString()}</span>
+                <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Unit Value:</span>
+                <span className="font-display font-bold text-[#ff6a00] text-lg">₱{prize.unitValue.toLocaleString()}</span>
               </div>
             )}
 
-            <div className="flex justify-between items-center text-sm border-t border-[var(--border)] pt-2.5">
-              <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Winners to Draw:</span>
-              <span className="font-display font-black text-xl text-[var(--accent)]">
+            <div className="flex justify-between items-center text-sm border-t border-[#1a1a1a]/10 pt-2">
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Winners to Draw:</span>
+              <span className="font-display font-bold text-lg text-[#1a1a1a]">
                 {totalWinnersToDraw} WINNER{totalWinnersToDraw > 1 ? 'S' : ''}
               </span>
             </div>
 
             {distributionMode === 'EQUAL_PER_DISTRICT' ? (
-              <div className="border-t border-[var(--border)] pt-2.5 space-y-2">
+              <div className="border-t border-[#1a1a1a]/10 pt-2 space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">District Quotas:</span>
-                  <span className="text-[var(--ink)] font-bold text-[11px]">5 districts × {winnersPerDistrict} winners</span>
+                  <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">District Quotas:</span>
+                  <span className="font-mono text-[#1a1a1a] font-bold text-[11px]">5 districts × {winnersPerDistrict} winners each</span>
                 </div>
-                <div className="grid grid-cols-5 gap-1.5 text-center text-[10px]">
+                <div className="grid grid-cols-5 gap-1 text-center font-mono text-[10px]">
                   {DISTRICTS.map((d) => (
-                    <div key={d} className="bg-[var(--surface)] p-2 rounded-md border border-[var(--border)]">
-                      <div className="text-[var(--ink-muted)] font-bold">{d.slice(0, 3)}</div>
-                      <div className="text-[var(--accent)] font-black text-xs">{winnersPerDistrict}</div>
+                    <div key={d} className="bg-[#f8f7f4] p-1.5 border border-[#1a1a1a]/15">
+                      <div className="text-neutral-500 font-bold">{d.slice(0, 3)}</div>
+                      <div className="text-[#1a1a1a] font-bold">{winnersPerDistrict}</div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="flex justify-between items-center text-sm border-t border-[var(--border)] pt-2.5">
-                <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Pool Structure:</span>
-                <span className="font-bold text-[var(--ink)] text-xs uppercase">Combined Municipal Pool</span>
+              <div className="flex justify-between items-center text-sm border-t border-[#1a1a1a]/10 pt-2">
+                <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Pool Structure:</span>
+                <span className="font-mono font-bold text-[#1a1a1a] text-xs uppercase">Combined Municipal Pool</span>
               </div>
             )}
 
-            <div className="flex justify-between items-center text-sm border-t border-[var(--border)] pt-2.5">
-              <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Eligible Pool:</span>
-              <span className="font-bold text-[var(--ink)] text-xs uppercase">{eligiblePoolCount.toLocaleString()} Qualified</span>
+            <div className="flex justify-between items-center text-sm border-t border-[#1a1a1a]/10 pt-2">
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Eligible Pool Size:</span>
+              <span className="font-mono font-bold text-[#1a1a1a] text-xs uppercase">{eligiblePoolCount.toLocaleString()} Personnel</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">
-              <span className="text-[var(--ink-muted)] font-bold uppercase text-[10px] tracking-wider">Previous Winners Excluded:</span>
-              <span className="text-[var(--ink-muted)] text-xs">{excludedWinnersCount.toLocaleString()}</span>
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Previous Winners Excluded:</span>
+              <span className="font-mono text-neutral-600 text-xs">{excludedWinnersCount.toLocaleString()}</span>
             </div>
           </div>
 
-          <p className="text-[11px] text-[var(--ink-muted)] leading-relaxed uppercase tracking-wider">
+          <p className="font-mono text-[11px] text-[#1a1a1a]/70 leading-relaxed uppercase tracking-wider">
             {distributionMode === 'EQUAL_PER_DISTRICT'
-              ? `All 5 district cards will cycle simultaneously. Exactly ${winnersPerDistrict} winner(s) will be fairly drawn per district.`
-              : `All 5 district cards will cycle simultaneously. ${totalWinnersToDraw} winners will be fairly drawn from the combined pool.`}
+              ? `All 5 district cards will cycle simultaneously. Exactly ${winnersPerDistrict} winner(s) will be fairly chosen per district (${totalWinnersToDraw} total).`
+              : `All 5 district cards will cycle simultaneously. ${totalWinnersToDraw} winners will be fairly chosen from the entire combined pool.`}
           </p>
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-[var(--surface)] px-6 py-4 border-t border-[var(--border)] flex justify-end gap-3">
+        <div className="bg-[#f8f7f4] px-6 py-4 border-t border-[#1a1a1a]/15 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-[var(--border)] text-[var(--ink)] hover:bg-[var(--surface-elevated)] text-xs font-mono font-bold uppercase tracking-wider rounded-lg transition-colors"
+            className="px-4 py-2 border border-[#1a1a1a] text-[#1a1a1a] hover:bg-white text-xs font-mono font-bold uppercase tracking-wider transition-colors"
           >
             CANCEL
           </button>
           <button
             id="btn-confirm-start-draw"
             onClick={onConfirmStart}
-            className="btn-draw px-6 py-2.5 rounded-lg text-xs font-mono font-black uppercase tracking-widest shadow-lg flex items-center gap-2"
+            className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white text-xs font-mono font-bold uppercase tracking-widest transition-all flex items-center gap-2 shadow-sm"
           >
             <span>START DRAW →</span>
           </button>
@@ -193,19 +190,17 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-[var(--surface-elevated)] border-2 border-emerald-500 max-w-2xl w-full overflow-hidden shadow-2xl rounded-2xl relative text-[var(--ink)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] max-w-2xl w-full overflow-hidden shadow-2xl relative text-[#1a1a1a]">
         {/* Header */}
-        <div className="bg-[var(--header-bg)] px-6 py-4 flex items-center justify-between border-b border-[var(--border)]">
+        <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between text-[#f8f7f4]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-              <CheckCircle className="w-6 h-6" />
-            </div>
+            <CheckCircle className="w-6 h-6 text-[#ff6a00]" />
             <div>
-              <h3 className="font-display text-lg sm:text-xl font-black uppercase tracking-tight text-[var(--ink)] leading-none">
-                DRAW RESULTS REVIEW • ROUND {drawResult.drawNumber}
+              <h3 className="font-display text-lg sm:text-xl font-bold uppercase tracking-tight text-white leading-none">
+                DRAW RESULTS REVIEW • {drawResult.drawNumber}
               </h3>
-              <p className="font-mono text-[10px] text-[var(--ink-muted)] uppercase tracking-widest mt-1">
+              <p className="font-mono text-[10px] text-white/60 uppercase tracking-widest mt-1">
                 {drawResult.prize.name} • {drawResult.winners.length} WINNER{drawResult.winners.length > 1 ? 'S' : ''}
                 {isEpd && ` (${drawResult.winnersPerDistrict || Math.round(drawResult.winners.length / 5)} EACH PER DISTRICT)`}
               </p>
@@ -214,19 +209,19 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4 font-mono">
+        <div className="p-6 space-y-4">
           {/* District breakdown pill summary */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-[var(--surface-card)] rounded-xl border border-[var(--border)]">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border border-[#1a1a1a]/15">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Criteria Summary:
             </span>
-            <div className="flex flex-wrap gap-1.5 text-[10px]">
+            <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
               {DISTRICTS.map((d) => (
                 <span
                   key={d}
-                  className="px-2.5 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--ink)] uppercase font-bold"
+                  className="px-2 py-0.5 bg-[#f8f7f4] border border-[#1a1a1a]/20 text-[#1a1a1a] uppercase font-bold"
                 >
-                  {d === 'PRIVATE' ? 'PRIVATE' : d}: <strong className="text-[var(--accent)]">{districtCounts[d] || 0}</strong>
+                  {d === 'PRIVATE' ? 'PRIVATE (ECCD+LSB)' : d}: <strong className="text-[#ff6a00]">{districtCounts[d] || 0}</strong>
                 </span>
               ))}
             </div>
@@ -236,27 +231,27 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
             {drawResult.winners.map((w, idx) => (
               <div
                 key={w.id}
-                className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:border-[var(--border-accent)] transition-colors shadow-xs"
+                className="bg-white border border-[#1a1a1a]/15 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:border-[#1a1a1a]/40 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-lg bg-[var(--surface-elevated)] text-[var(--accent)] border border-[var(--border)] font-mono font-bold text-xs flex items-center justify-center">
+                  <span className="w-7 h-7 bg-[#1a1a1a] text-white font-mono font-bold text-xs flex items-center justify-center">
                     {idx + 1}
                   </span>
                   <div>
-                    <div className="font-winner font-black text-base sm:text-lg text-[var(--ink)] uppercase tracking-tight">
+                    <div className="font-display font-bold text-base sm:text-lg text-[#1a1a1a] uppercase tracking-tight">
                       {w.fullName}
                     </div>
-                    <div className="text-xs text-[var(--ink-muted)]">
+                    <div className="font-mono text-xs text-[#1a1a1a]/70">
                       {w.school} • {w.position}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-center">
-                  <span className="bg-[var(--badge-bg)] text-[var(--badge-text)] border border-[var(--border-accent)] font-bold text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                    {w.district === 'PRIVATE' ? 'PRIVATE' : `${w.district} DIST`}
+                  <span className="bg-[#ff6a00] text-white font-mono font-bold text-xs px-2.5 py-0.5 uppercase tracking-wider">
+                    {w.district === 'PRIVATE' ? 'PRIVATE (ECCD/LSB)' : `${w.district} DISTRICT`}
                   </span>
-                  <span className="bg-[var(--surface)] text-[var(--ink-muted)] border border-[var(--border)] font-bold text-xs px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="bg-[#1a1a1a] text-white font-mono font-bold text-xs px-2 py-0.5 uppercase tracking-wider">
                     {w.personnelType}
                   </span>
                 </div>
@@ -265,26 +260,26 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
           </div>
 
           {/* Safety Notice */}
-          <div className="bg-[var(--surface-card)] border border-amber-500/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-[var(--ink-muted)]">
-            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <p className="leading-relaxed text-[11px]">
-              <strong className="text-amber-400 uppercase font-bold">Event-Day Safety Safeguard:</strong> These winners are temporary. They will <strong>NOT</strong> be recorded permanently or deducted from inventory until you click <strong>CONFIRM WINNERS</strong>.
+          <div className="bg-white border border-[#1a1a1a]/15 p-3 flex items-start gap-2.5 text-xs text-[#1a1a1a]/80">
+            <ShieldAlert className="w-5 h-5 text-[#ff6a00] flex-shrink-0 mt-0.5" />
+            <p className="leading-relaxed font-mono text-[11px]">
+              <strong className="text-[#1a1a1a] uppercase font-bold">Event-Day Safety:</strong> These winners are temporary. They will <strong>NOT</strong> be recorded permanently or removed from the raffle pool until you click <strong>CONFIRM WINNERS</strong>.
             </p>
           </div>
 
           {showRedrawConfirm && (
-            <div className="bg-red-950/30 border-2 border-red-500/60 rounded-xl p-4 animate-fade-in space-y-2">
-              <div className="flex items-center gap-2 text-red-300 font-bold text-sm uppercase tracking-wider">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+            <div className="bg-white border-2 border-[#ff6a00] p-4 animate-fade-in">
+              <div className="flex items-center gap-2 text-[#1a1a1a] font-bold text-sm mb-2 uppercase tracking-wider font-mono">
+                <AlertTriangle className="w-5 h-5 text-[#ff6a00]" />
                 <span>Confirm Redraw Action</span>
               </div>
-              <p className="text-xs text-red-200/80 leading-relaxed">
-                Are you sure you want to discard these temporary results? This round will be recorded as REDRAWN in audit logs.
+              <p className="font-mono text-xs text-[#1a1a1a]/80 mb-3 leading-relaxed">
+                Are you sure you want to discard these temporary results? This round will be marked as REDRAWN in the audit log and won&apos;t count as official winners.
               </p>
-              <div className="flex justify-end gap-2 pt-1">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowRedrawConfirm(false)}
-                  className="px-3.5 py-1.5 rounded-lg border border-white/20 text-xs text-[var(--ink)] hover:bg-white/10 font-bold uppercase tracking-wider"
+                  className="px-3 py-1.5 border border-[#1a1a1a] text-xs text-[#1a1a1a] hover:bg-[#f8f7f4] font-mono font-bold uppercase tracking-wider"
                 >
                   Keep Results
                 </button>
@@ -293,7 +288,7 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
                     setShowRedrawConfirm(false);
                     onRedraw();
                   }}
-                  className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-bold text-white uppercase tracking-wider shadow"
+                  className="px-4 py-1.5 bg-[#ff6a00] hover:bg-[#ff7e1d] text-xs font-mono font-bold text-white uppercase tracking-wider shadow"
                 >
                   Yes, Discard and Redraw
                 </button>
@@ -303,22 +298,22 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-[var(--surface)] px-6 py-4 border-t border-[var(--border)] flex justify-between items-center">
+        <div className="bg-[#f8f7f4] px-6 py-4 border-t border-[#1a1a1a]/15 flex justify-between items-center">
           <button
             id="btn-action-redraw"
             onClick={() => setShowRedrawConfirm(true)}
-            className="px-4 py-2 rounded-lg border border-red-500/40 hover:bg-red-950/30 text-red-400 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2 border border-[#1a1a1a] hover:bg-white text-[#1a1a1a] font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
           >
-            <RotateCcw className="w-4 h-4" />
-            <span>REDRAW ROUND</span>
+            <RotateCcw className="w-4 h-4 text-[#ff6a00]" />
+            <span>REDRAW</span>
           </button>
 
           <button
             id="btn-action-confirm-winners"
             onClick={onConfirmWinners}
-            className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg active:scale-95 animate-pulse"
+            className="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md"
           >
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-4 h-4 text-white" />
             <span>CONFIRM WINNERS</span>
           </button>
         </div>
@@ -326,4 +321,3 @@ export const DrawReviewModal: React.FC<DrawReviewModalProps> = ({
     </div>
   );
 };
-

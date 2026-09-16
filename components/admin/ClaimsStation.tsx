@@ -33,15 +33,15 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-3 text-xs font-mono">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#121215] border border-white/10 p-3 text-xs font-mono">
         <div className="flex items-center gap-2">
-          <span className="text-[var(--ink-muted)] uppercase font-bold">Claim View Mode:</span>
+          <span className="text-neutral-400 uppercase font-bold">Claim View Mode:</span>
           <button
             onClick={() => setViewMode('FAST')}
-            className={`px-3 py-1.5 rounded-lg uppercase font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors ${
               viewMode === 'FAST'
-                ? 'bg-[var(--accent)] text-white shadow-xs'
-                : 'bg-[var(--surface-elevated)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                ? 'bg-[#ff6a00] text-black'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white'
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
@@ -49,10 +49,10 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
           </button>
           <button
             onClick={() => setViewMode('LEGACY')}
-            className={`px-3 py-1.5 rounded-lg uppercase font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors ${
               viewMode === 'LEGACY'
-                ? 'bg-[var(--surface-elevated)] text-[var(--ink)] border border-[var(--border)]'
-                : 'bg-[var(--surface-elevated)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
+                ? 'bg-neutral-700 text-white'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white'
             }`}
           >
             <LayoutList className="w-3.5 h-3.5" />
@@ -64,7 +64,7 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
           href="/claims"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 border border-[var(--accent)]/30 text-[var(--accent)] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+          className="px-3 py-1.5 bg-[#ff6a00]/15 hover:bg-[#ff6a00]/30 border border-[#ff6a00]/40 text-[#ff6a00] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
         >
           <span>Launch Dedicated Station Window (/claims)</span>
           <ExternalLink className="w-3.5 h-3.5" />
