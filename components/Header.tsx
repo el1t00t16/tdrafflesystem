@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Lock, ExternalLink, Palette } from 'lucide-react';
+import { Lock, ExternalLink, Palette, Moon, Sun } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useTheme } from '../lib/theme';
 
@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLock
 }) => {
   const [isMounted, setIsMounted] = React.useState(false);
-  const { theme, setTheme, allThemes, themeConfig } = useTheme();
+  const { theme, setTheme, allThemes, themeConfig, isDark, toggleDarkMode } = useTheme();
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -175,6 +175,33 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline font-mono text-[9px] font-bold uppercase tracking-wider">
                 {themeConfig.name.split('&')[0].trim()}
               </span>
+            </button>
+          )}
+
+          {/* Quick Dark Mode Toggle Button */}
+          {isMounted && (
+            <button
+              id="header-darkmode-toggle"
+              onClick={toggleDarkMode}
+              className={`nav-item flex items-center gap-1.5 border transition-all cursor-pointer ${
+                isDark
+                  ? 'border-white/20 hover:border-amber-400 hover:text-amber-300'
+                  : 'border-white/30 hover:border-neutral-900 bg-white/10 text-white'
+              }`}
+              title={isDark ? 'Current: Dark Mode (Click to switch to Light Mode)' : 'Current: Light Mode (Click to switch to Dark Mode)'}
+              aria-label="Toggle Dark / Light Mode"
+            >
+              {isDark ? (
+                <>
+                  <Moon className="w-3 h-3 text-amber-300" />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider">Dark</span>
+                </>
+              ) : (
+                <>
+                  <Sun className="w-3 h-3 text-amber-400" />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider">Light</span>
+                </>
+              )}
             </button>
           )}
 

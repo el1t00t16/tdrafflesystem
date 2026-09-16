@@ -28,6 +28,13 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                   var saved = localStorage.getItem('td26_theme_preference');
                   var theme = saved || 'royal-gold';
                   document.documentElement.setAttribute('data-theme', theme);
+                  var isDark = theme !== 'editorial';
+                  document.documentElement.setAttribute('data-mode', isDark ? 'dark' : 'light');
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
                 } catch(e) {}
               })();
             `

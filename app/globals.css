@@ -86,6 +86,27 @@
   --winner-card-bg: #FFFFFF;
 }
 
+[data-theme="editorial-dark"] {
+  --theme-id: "editorial-dark";
+  --bg: #0F1015;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #1E202B 0%, #0F1015 85%);
+  --surface: #171821;
+  --surface-card: #1F212C;
+  --surface-elevated: #2A2D3C;
+  --border: rgba(255, 255, 255, 0.15);
+  --border-accent: #FF6A00;
+  --ink: #FFFFFF;
+  --ink-muted: #94A3B8;
+  --ink-faint: rgba(255, 255, 255, 0.08);
+  --accent: #FF6A00;
+  --accent-secondary: #F59E0B;
+  --accent-glow: rgba(255, 106, 0, 0.45);
+  --badge-bg: rgba(255, 106, 0, 0.16);
+  --badge-text: #FFA05C;
+  --header-bg: #12131A;
+  --winner-card-bg: #1F212C;
+}
+
 @layer base {
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;

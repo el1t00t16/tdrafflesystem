@@ -21,7 +21,9 @@ import {
   X,
   Palette,
   Sparkles,
-  Monitor
+  Monitor,
+  Moon,
+  Sun
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useTheme, THEMES, ThemeId } from '../../lib/theme';
@@ -76,8 +78,8 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [copiedQuickSetupUrl, setCopiedQuickSetupUrl] = useState(false);
   const [pinSavedFeedback, setPinSavedFeedback] = useState(false);
 
-  // Dynamic Theme Hook
-  const { theme, setTheme, allThemes, themeConfig } = useTheme();
+  // Dynamic Theme & Dark Mode Hook
+  const { theme, setTheme, allThemes, themeConfig, isDark, setMode, toggleDarkMode } = useTheme();
   const [themeChangedFeedback, setThemeChangedFeedback] = useState<string | null>(null);
 
   const handleSelectTheme = (newThemeId: ThemeId) => {
@@ -269,7 +271,53 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           Select a visual palette below. Changes apply <strong>instantly in real-time</strong> across the <strong>Stage Projector Display</strong>, <strong>Admin Master Console</strong>, and <strong>All Stations</strong>.
         </p>
 
-        {/* 4 Theme Selection Cards */}
+        {/* Dedicated Dark / Light Mode Quick Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-neutral-950 border border-white/15 rounded-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold uppercase text-white tracking-wide">
+                Display Mode:
+              </span>
+              <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${
+                isDark ? 'border-amber-400/40 text-amber-300 bg-amber-400/10' : 'border-blue-400/40 text-blue-300 bg-blue-400/10'
+              }`}>
+                {isDark ? '🌙 Dark Mode Active' : '☀️ Light Mode Active'}
+              </span>
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-0.5">
+              Switch between high-contrast stage dark mode and daylight alabaster light mode with one click.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-black/80 p-1 border border-white/20 rounded-sm self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMode('dark')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                isDark
+                  ? 'bg-amber-500 text-black shadow-xs'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Moon className="w-3.5 h-3.5" />
+              <span>Dark Mode</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('light')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                !isDark
+                  ? 'bg-amber-500 text-black shadow-xs'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Sun className="w-3.5 h-3.5" />
+              <span>Light Mode</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Theme Selection Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {allThemes.map((t) => {
             const isActive = theme === t.id;
@@ -286,11 +334,18 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 border ${
-                      isActive ? 'border-amber-400 text-amber-300 bg-amber-400/10' : 'border-white/20 text-neutral-400'
-                    }`}>
-                      {t.tag}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 border ${
+                        isActive ? 'border-amber-400 text-amber-300 bg-amber-400/10' : 'border-white/20 text-neutral-400'
+                      }`}>
+                        {t.tag}
+                      </span>
+                      <span className={`text-[8px] font-mono font-bold uppercase px-1 py-0.5 border ${
+                        t.mode === 'dark' ? 'border-neutral-700 text-neutral-400 bg-neutral-900' : 'border-amber-400/30 text-amber-300 bg-amber-950/20'
+                      }`}>
+                        {t.mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
+                      </span>
+                    </div>
                     {isActive ? (
                       <span className="flex items-center gap-1 text-[10px] font-mono font-black text-amber-400 uppercase">
                         <Check className="w-3.5 h-3.5 text-amber-400" /> ACTIVE
