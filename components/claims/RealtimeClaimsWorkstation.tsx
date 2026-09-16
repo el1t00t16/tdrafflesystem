@@ -26,11 +26,13 @@ import {
   Bell,
   Camera,
   CameraOff,
-  FlipHorizontal
+  FlipHorizontal,
+  FileText
 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { soundSynthesizer } from '../../lib/sound';
 import { ClaimSlipReceipt } from './ClaimSlipReceipt';
+import { WinnerVerificationStub } from './WinnerVerificationStub';
 import { subscribeToRealtimeUpdates } from '../../lib/supabase';
 
 interface RealtimeClaimsWorkstationProps {
@@ -53,6 +55,8 @@ interface RealtimeClaimsWorkstationProps {
   isStandalone?: boolean;
   onRefreshCloud?: () => Promise<void>;
   isCloudConfigured?: boolean;
+  onOpenPrintQueue?: () => void;
+  onMarkAsPrinted?: (winnerId: string) => void;
 }
 
 export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps> = ({
@@ -64,12 +68,15 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   officerName = 'Disbursing Officer',
   isStandalone = false,
   onRefreshCloud,
-  isCloudConfigured = false
+  isCloudConfigured = false,
+  onOpenPrintQueue,
+  onMarkAsPrinted
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusTab, setStatusTab] = useState<'UNCLAIMED' | 'ALL' | 'CLAIMED' | 'FORFEITED'>('UNCLAIMED');
+  const [statusTab, setStatusTab] = useState<'UNCLAIMED' | 'ALL' | 'CLAIMED' | 'FORFEITED' | 'PENDING_PRINT'>('UNCLAIMED');
   const [districtFilter, setDistrictFilter] = useState<string>('ALL');
   const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null);
+  const [verifyingStubWinner, setVerifyingStubWinner] = useState<Winner | null>(null);
 
   // Smooth scroll reference to Verification card on mobile
   const verificationCardRef = useRef<HTMLDivElement>(null);
@@ -315,7 +322,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   const filteredWinners = useMemo(() => {
     return winners.filter((w) => {
       // Tab filter
-      if (statusTab !== 'ALL' && w.claimStatus !== statusTab) {
+      if (statusTab === 'PENDING_PRINT') {
+        if (w.isPrinted) return false;
+      } else if (statusTab !== 'ALL' && w.claimStatus !== statusTab) {
         return false;
       }
 
@@ -555,6 +564,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
   const unclaimedCount = winners.filter((w) => w.claimStatus === 'UNCLAIMED').length;
   const forfeitedCount = winners.filter((w) => w.claimStatus === 'FORFEITED').length;
+  const pendingPrintCount = winners.filter((w) => !w.isPrinted).length;
   const totalValue = winners.reduce((sum, w) => sum + (w.unitValue || 0), 0);
   const disbursedValue = winners
     .filter((w) => w.claimStatus === 'CLAIMED')
@@ -580,7 +590,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           </div>
           <button
             onClick={() => setNewWinnerAlert(null)}
-            className="p-1 hover:bg-black/10 rounded-full transition-colors"
+            className="p-1 hover:bg-black/10 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -598,7 +608,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           </div>
           <button
             onClick={() => setPrintingWinner(lastClaimedWinner)}
-            className="px-3 py-1 bg-white text-emerald-950 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-50 transition-colors shadow-sm"
+            className="px-3 py-1 bg-white text-emerald-950 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-50 transition-colors shadow-sm cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5 text-emerald-800" />
             <span>Print Voucher</span>
@@ -624,12 +634,29 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             </p>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            {onOpenPrintQueue && (
+              <button
+                type="button"
+                onClick={onOpenPrintQueue}
+                className="px-3.5 py-2 bg-[#1a1a1a] dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-black font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                title="Open Winner Print Queue & Batch Stub Dispatch"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#ff6a00]" />
+                <span>Print Queue</span>
+                {pendingPrintCount > 0 && (
+                  <span className="bg-[#FF1E1E] text-white text-[9px] px-1.5 py-0.2 rounded-full font-black font-mono leading-none animate-pulse">
+                    {pendingPrintCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {onRefreshCloud && isCloudConfigured && (
               <button
                 onClick={onRefreshCloud}
                 title="Refresh winners from Supabase Cloud"
-                className="px-3 py-2 bg-[#f8f7f4] hover:bg-[#eae8e3] dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 font-mono text-xs flex items-center gap-1.5 transition-colors"
+                className="px-3 py-2 bg-[#f8f7f4] hover:bg-[#eae8e3] dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-700 dark:text-neutral-300 font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 <span className="hidden sm:inline">Sync Cloud</span>
@@ -639,7 +666,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             <button
               onClick={handleExportCSV}
               disabled={winners.length === 0}
-              className="px-3.5 py-2 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 disabled:opacity-30 border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-2 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 disabled:opacity-30 border-2 border-[#1a1a1a] dark:border-white/20 text-[#1a1a1a] dark:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-[#ff6a00]" />
               <span>Export CSV</span>
@@ -648,7 +675,25 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
         </div>
 
         {/* Live Counters */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 font-mono text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 font-mono text-xs">
+          <button
+            type="button"
+            onClick={onOpenPrintQueue ? onOpenPrintQueue : () => setStatusTab('PENDING_PRINT')}
+            className="p-3 bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-100/80 dark:hover:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 shadow-xs text-left transition-colors cursor-pointer group"
+            title="View stubs awaiting print"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-amber-800 dark:text-amber-400 uppercase font-bold tracking-wider block">
+                Pending Print
+              </span>
+              <Printer className="w-3 h-3 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="font-serif text-2xl sm:text-3xl font-black text-amber-900 dark:text-amber-200 mt-0.5">
+              {pendingPrintCount}
+            </div>
+            <span className="text-[10px] text-amber-700/80 dark:text-amber-400/80">Stubs to print &amp; dispatch</span>
+          </button>
+
           <div className="p-3 bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 shadow-xs">
             <span className="text-[10px] text-neutral-600 dark:text-neutral-500 uppercase font-bold tracking-wider block">
               Pending Unclaimed
@@ -1059,7 +1104,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => {
                         setProxyModalWinner(selectedWinner);
@@ -1068,25 +1113,64 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                         setProxyAuthConfirmed(false);
                         setClaimNotes('');
                       }}
-                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer"
                     >
                       <UserCheck className="w-3.5 h-3.5 text-[#ff6a00]" />
-                      <span>Proxy Claim</span>
+                      <span>Proxy</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVerifyingStubWinner(selectedWinner)}
+                      className="py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 border border-indigo-300 dark:border-indigo-700/60 text-indigo-900 dark:text-indigo-200 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      title="Print Official 1/4 Letter Verification Stub with QR Code"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>1/4 Stub</span>
                     </button>
 
                     <button
                       onClick={() => setPrintingWinner(selectedWinner)}
-                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/20 text-neutral-800 dark:text-neutral-200 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      title="Preview Claim Slip Voucher"
                     >
-                      <Printer className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-                      <span>Preview Slip</span>
+                      <FileText className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                      <span>Slip</span>
                     </button>
+                  </div>
+
+                  {/* Verification Stub Status Box */}
+                  <div className="flex items-center justify-between p-2 bg-[#f8f7f4] dark:bg-neutral-900 border border-[#1a1a1a]/15 dark:border-white/10 font-mono text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <Printer className="w-3.5 h-3.5 text-neutral-500" />
+                      <span className="text-neutral-600 dark:text-neutral-400 uppercase text-[10px]">Stub:</span>
+                      {selectedWinner.isPrinted ? (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase flex items-center gap-1 text-[10px]">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Printed</span>
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 dark:text-amber-400 font-bold uppercase flex items-center gap-1 text-[10px]">
+                          <Clock className="w-3 h-3" />
+                          <span>Pending Print</span>
+                        </span>
+                      )}
+                    </div>
+                    {onMarkAsPrinted && !selectedWinner.isPrinted && (
+                      <button
+                        type="button"
+                        onClick={() => onMarkAsPrinted(selectedWinner.winnerId)}
+                        className="text-[10px] uppercase font-bold text-neutral-700 dark:text-neutral-300 hover:text-emerald-600 underline cursor-pointer"
+                      >
+                        Mark Done
+                      </button>
+                    )}
                   </div>
 
                   {onForfeitPrize && (
                     <button
                       onClick={() => setForfeitingWinner(selectedWinner)}
-                      className="w-full py-2 bg-[#f8f7f4] hover:bg-red-50 dark:bg-neutral-950 dark:hover:bg-red-950/60 border border-[#1a1a1a]/15 dark:border-white/10 hover:border-red-500/40 text-neutral-600 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-300 font-mono text-[11px] uppercase tracking-wider transition-colors"
+                      className="w-full py-2 bg-[#f8f7f4] hover:bg-red-50 dark:bg-neutral-950 dark:hover:bg-red-950/60 border border-[#1a1a1a]/15 dark:border-white/10 hover:border-red-500/40 text-neutral-600 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-300 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
                     >
                       Mark as Forfeited (Absent / Expired)
                     </button>
@@ -1108,9 +1192,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             <div className="inline-flex border border-[#1a1a1a]/20 dark:border-white/20 divide-x divide-[#1a1a1a]/20 dark:divide-white/20 bg-[#f8f7f4] dark:bg-black overflow-x-auto max-w-full">
               <button
                 onClick={() => setStatusTab('UNCLAIMED')}
-                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 ${
+                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
                   statusTab === 'UNCLAIMED'
-                    ? 'bg-[#ff6a00] text-black'
+                    ? 'bg-[#ff6a00] text-black font-black'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
@@ -1118,10 +1202,21 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                 <span>Unclaimed ({unclaimedCount})</span>
               </button>
               <button
+                onClick={() => setStatusTab('PENDING_PRINT')}
+                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+                  statusTab === 'PENDING_PRINT'
+                    ? 'bg-amber-500 text-black font-black'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Pending Print ({pendingPrintCount})</span>
+              </button>
+              <button
                 onClick={() => setStatusTab('ALL')}
-                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
+                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
                   statusTab === 'ALL'
-                    ? 'bg-[#1a1a1a] text-white dark:bg-neutral-800 dark:text-white'
+                    ? 'bg-[#1a1a1a] text-white dark:bg-neutral-800 dark:text-white font-black'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
                 }`}
               >
@@ -1477,6 +1572,19 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           onClose={() => setPrintingWinner(null)}
           stationId={stationId}
           officerName={officerName}
+        />
+      )}
+
+      {/* Official 1/4 Letter Verification Stub Modal */}
+      {verifyingStubWinner && (
+        <WinnerVerificationStub
+          winner={verifyingStubWinner}
+          isModal={true}
+          onClose={() => setVerifyingStubWinner(null)}
+          onMarkPrinted={(id) => {
+            if (onMarkAsPrinted) onMarkAsPrinted(id);
+            setVerifyingStubWinner(null);
+          }}
         />
       )}
     </div>

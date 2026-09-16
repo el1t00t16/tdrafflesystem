@@ -247,9 +247,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeTab === 'claims' && (
         <ClaimsStation
           winners={winners}
+          prizes={prizes}
+          logs={logs}
           onClaimPrize={onClaimPrize}
           onUnclaimPrize={onUnclaimPrize}
           onForfeitPrize={onForfeitPrize}
+          onMarkAsPrinted={onMarkAsPrinted}
+          onMarkBatchAsPrinted={onMarkBatchAsPrinted}
+          onRequeueWinner={onRequeueWinner}
         />
       )}
 

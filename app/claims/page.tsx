@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, Sun, Moon } from 'lucide-react';
+import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, Sun, Moon, Printer } from 'lucide-react';
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
 import { RealtimeClaimsWorkstation } from '../../components/claims/RealtimeClaimsWorkstation';
+import { PrintQueueStation } from '../../components/admin/PrintQueueStation';
 import { Winner, ClaimStationSession } from '../../lib/types';
 import {
   isSupabaseConfigured,
@@ -22,6 +23,7 @@ export default function ClaimsPage() {
   const [isHydrating, setIsHydrating] = useState(false);
   const [lastSyncStatus, setLastSyncStatus] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeStationTab, setActiveStationTab] = useState<'claims' | 'print-queue'>('claims');
 
   useEffect(() => {
     try {
@@ -294,6 +296,77 @@ export default function ClaimsPage() {
     setClaimSession(null);
   };
 
+  // Print Queue Handlers
+  const handleMarkAsPrinted = (winnerId: string) => {
+    const timestamp = new Date().toISOString();
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (w.winnerId === winnerId) {
+          return {
+            ...w,
+            isPrinted: true,
+            printedAt: timestamp,
+            printedBy: claimSession?.officerName || 'Claims Desk'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving printed winner:', e);
+      }
+      return updated;
+    });
+  };
+
+  const handleMarkBatchAsPrinted = (winnerIds: string[]) => {
+    const timestamp = new Date().toISOString();
+    const idSet = new Set(winnerIds);
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (idSet.has(w.winnerId)) {
+          return {
+            ...w,
+            isPrinted: true,
+            printedAt: timestamp,
+            printedBy: claimSession?.officerName || 'Claims Desk'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving printed batch:', e);
+      }
+      return updated;
+    });
+  };
+
+  const handleRequeueWinner = (winnerId: string) => {
+    soundSynthesizer.playClick();
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (w.winnerId === winnerId) {
+          return {
+            ...w,
+            isPrinted: false,
+            printedAt: undefined,
+            printedBy: undefined
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error requeueing winner:', e);
+      }
+      return updated;
+    });
+  };
+
   if (!sessionChecked) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-neutral-400 font-mono text-xs">
@@ -309,6 +382,7 @@ export default function ClaimsPage() {
 
   const unclaimedCount = winners.filter((w) => w.claimStatus === 'UNCLAIMED').length;
   const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
+  const pendingPrintCount = winners.filter((w) => !w.isPrinted).length;
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-white">
@@ -371,6 +445,22 @@ export default function ClaimsPage() {
             </span>
           </div>
 
+          <button
+            onClick={() => setActiveStationTab('print-queue')}
+            title="Switch to Winner Print Queue"
+            className={`flex items-center gap-1.5 border px-3 py-1.5 rounded-sm transition-colors cursor-pointer ${
+              activeStationTab === 'print-queue'
+                ? 'bg-amber-100 dark:bg-amber-950/70 border-amber-500 text-amber-900 dark:text-amber-200'
+                : 'bg-[#f8f7f4] dark:bg-white/5 border-[#1a1a1a]/20 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:border-amber-500'
+            }`}
+          >
+            <Printer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="text-[11px] uppercase hidden sm:inline">PRINT QUEUE:</span>
+            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold text-xs">
+              {pendingPrintCount}
+            </span>
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleDarkMode}
@@ -392,6 +482,47 @@ export default function ClaimsPage() {
           </button>
         </div>
       </header>
+
+      {/* Station Module Selector Bar */}
+      <div className="bg-white dark:bg-[#121215] border-b-2 border-[#1a1a1a] dark:border-white/10 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 select-none">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveStationTab('claims')}
+            className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all border border-[#1a1a1a] dark:border-white/20 cursor-pointer ${
+              activeStationTab === 'claims'
+                ? 'bg-[#ff6a00] text-black shadow-xs font-black'
+                : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-[#f8f7f4] dark:hover:bg-neutral-800'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Fast Realtime Claiming</span>
+            <span className="bg-black text-white text-[9px] px-1.5 py-0.2 rounded-xs font-mono">
+              {unclaimedCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveStationTab('print-queue')}
+            className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all border border-[#1a1a1a] dark:border-white/20 cursor-pointer ${
+              activeStationTab === 'print-queue'
+                ? 'bg-[#1a1a1a] dark:bg-white text-white dark:text-black shadow-xs font-black'
+                : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-[#f8f7f4] dark:hover:bg-neutral-800'
+            }`}
+          >
+            <Printer className={`w-3.5 h-3.5 ${activeStationTab === 'print-queue' ? 'text-[#ff6a00]' : 'text-neutral-500'}`} />
+            <span>Winner Print Queue &amp; Stub Dispatch</span>
+            {pendingPrintCount > 0 && (
+              <span className="bg-[#FF1E1E] text-white text-[9px] px-1.5 py-0.2 rounded-xs font-mono font-black animate-pulse">
+                {pendingPrintCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="text-[11px] font-mono text-neutral-500 hidden md:block">
+          Official 1/4 Letter Verification Stubs • Real-time QR Camera Interop
+        </div>
+      </div>
 
       {/* Main Workstation Body */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-3 sm:p-6 lg:p-8">
@@ -418,7 +549,7 @@ export default function ClaimsPage() {
               <button
                 onClick={triggerCloudHydration}
                 disabled={isHydrating}
-                className="mt-1 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase text-xs rounded-xs flex items-center gap-2 shadow"
+                className="mt-1 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase text-xs rounded-xs flex items-center gap-2 shadow cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${isHydrating ? 'animate-spin' : ''}`} />
                 <span>Check for Newly Drawn Winners Now</span>
@@ -427,17 +558,30 @@ export default function ClaimsPage() {
           </div>
         )}
 
-        <RealtimeClaimsWorkstation
-          winners={winners}
-          onClaimPrize={handleClaimPrize}
-          onUnclaimPrize={handleUnclaimPrize}
-          onForfeitPrize={handleForfeitPrize}
-          stationId={claimSession.stationId}
-          officerName={claimSession.officerName}
-          isStandalone={true}
-          onRefreshCloud={triggerCloudHydration}
-          isCloudConfigured={isCloudConfigured}
-        />
+        {activeStationTab === 'claims' ? (
+          <RealtimeClaimsWorkstation
+            winners={winners}
+            onClaimPrize={handleClaimPrize}
+            onUnclaimPrize={handleUnclaimPrize}
+            onForfeitPrize={handleForfeitPrize}
+            stationId={claimSession.stationId}
+            officerName={claimSession.officerName}
+            isStandalone={true}
+            onRefreshCloud={triggerCloudHydration}
+            isCloudConfigured={isCloudConfigured}
+            onOpenPrintQueue={() => setActiveStationTab('print-queue')}
+            onMarkAsPrinted={handleMarkAsPrinted}
+          />
+        ) : (
+          <PrintQueueStation
+            winners={winners}
+            prizes={[]}
+            logs={[]}
+            onMarkAsPrinted={handleMarkAsPrinted}
+            onMarkBatchAsPrinted={handleMarkBatchAsPrinted}
+            onRequeueWinner={handleRequeueWinner}
+          />
+        )}
       </main>
 
       {/* Footer */}
