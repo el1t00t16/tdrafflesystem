@@ -933,7 +933,8 @@ export default function Home() {
       drawNumber: temporaryDrawResult.drawNumber,
       date: dateStr,
       time: timeStr,
-      claimStatus: 'UNCLAIMED'
+      claimStatus: 'UNCLAIMED',
+      isPrinted: false
     }));
 
     // Update Participants winner status = YES
@@ -1047,7 +1048,8 @@ export default function Home() {
       date: dateStr,
       time: timeStr,
       claimStatus: 'UNCLAIMED',
-      drawType: 'PRE_DRAW'
+      drawType: 'PRE_DRAW',
+      isPrinted: false
     }));
 
     // Update Participants winner status = YES so they are excluded from future draws
@@ -1499,6 +1501,77 @@ export default function Home() {
     pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase forfeit log push:', err));
   };
 
+  // Print Queue & Verification Stub Handlers
+  const handleMarkAsPrinted = (winnerId: string) => {
+    const timestamp = new Date().toISOString();
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (w.winnerId === winnerId) {
+          return {
+            ...w,
+            isPrinted: true,
+            printedAt: timestamp,
+            printedBy: 'Print Desk'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving printed winner:', e);
+      }
+      return updated;
+    });
+  };
+
+  const handleMarkBatchAsPrinted = (winnerIds: string[]) => {
+    const timestamp = new Date().toISOString();
+    const idSet = new Set(winnerIds);
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (idSet.has(w.winnerId)) {
+          return {
+            ...w,
+            isPrinted: true,
+            printedAt: timestamp,
+            printedBy: 'Print Desk'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving printed batch:', e);
+      }
+      return updated;
+    });
+  };
+
+  const handleRequeueWinner = (winnerId: string) => {
+    soundSynthesizer.playClick();
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (w.winnerId === winnerId) {
+          return {
+            ...w,
+            isPrinted: false,
+            printedAt: undefined,
+            printedBy: undefined
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error requeueing winner:', e);
+      }
+      return updated;
+    });
+  };
+
   // Update Settings
   const handleUpdateSettings = (newSettings: SystemSettings) => {
     soundSynthesizer.playSuccess();
@@ -1741,6 +1814,9 @@ export default function Home() {
             onForfeitPrize={handleForfeitPrize}
             onUpdateSettings={handleUpdateSettings}
             onPrepareNewEvent={handlePrepareNewEvent}
+            onMarkAsPrinted={handleMarkAsPrinted}
+            onMarkBatchAsPrinted={handleMarkBatchAsPrinted}
+            onRequeueWinner={handleRequeueWinner}
             eligiblePoolCount={eligiblePool.length}
             isDrawing={isDrawing}
             distributionMode={distributionMode}

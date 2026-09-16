@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { District, Participant, Prize, Winner } from '../../lib/types';
-import { Users, CheckCircle2, Trophy, Gift, Building2, GraduationCap } from 'lucide-react';
+import { Users, CheckCircle2, Trophy, Gift, Building2, GraduationCap, Printer, Clock } from 'lucide-react';
 
 interface DashboardOverviewProps {
   participants: Participant[];
@@ -22,6 +22,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const winnerCount = winners.length;
   const remainingPrizes = prizes.reduce((sum, p) => sum + p.remainingQuantity, 0);
   const totalPrizeValue = prizes.reduce((sum, p) => sum + p.totalValue, 0);
+
+  // Print Queue & Verification Metrics
+  const pendingPrintCount = winners.filter((w) => !w.isPrinted).length;
+  const printedCount = winners.filter((w) => Boolean(w.isPrinted)).length;
+  const unclaimedCount = winners.filter((w) => w.claimStatus === 'UNCLAIMED').length;
+  const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
 
   // District breakdowns
   const districtCounts: Record<District, { total: number; winners: number }> = {
@@ -106,6 +112,94 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
             <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold mt-1">Valued at ₱{totalPrizeValue.toLocaleString()}</p>
           </div>
+        </div>
+      </div>
+
+      {/* Winner Verification & Stub Dispatch Operations */}
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-[#1a1a1a]/15 dark:border-white/10">
+          <div className="flex items-center gap-2">
+            <Printer className="w-4 h-4 text-[#FF1E1E]" />
+            <h3 className="font-black text-sm sm:text-base text-[#1a1a1a] dark:text-white uppercase tracking-wider">
+              Winner Verification &amp; Stub Dispatch Desk
+            </h3>
+          </div>
+          <button
+            onClick={() => onNavigateToTab('print-queue')}
+            className="text-[11px] font-black uppercase text-[#FF1E1E] hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            Open Print Queue Desk →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Pending Print Card */}
+          <button
+            onClick={() => onNavigateToTab('print-queue')}
+            className="text-left bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700/50 p-3.5 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
+              <span className="text-[10px] font-black uppercase tracking-wider">Pending Print</span>
+              <Printer className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-amber-900 dark:text-amber-200 mt-2 font-mono">
+              {pendingPrintCount}
+            </div>
+            <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 uppercase font-bold mt-0.5">
+              Stubs Awaiting Print
+            </p>
+          </button>
+
+          {/* Printed Card */}
+          <button
+            onClick={() => onNavigateToTab('print-queue')}
+            className="text-left bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-700/50 p-3.5 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between text-blue-700 dark:text-blue-400">
+              <span className="text-[10px] font-black uppercase tracking-wider">Printed</span>
+              <CheckCircle2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-blue-900 dark:text-blue-200 mt-2 font-mono">
+              {printedCount}
+            </div>
+            <p className="text-[10px] text-blue-700/80 dark:text-blue-400/80 uppercase font-bold mt-0.5">
+              Dispatched to Desk
+            </p>
+          </button>
+
+          {/* Unclaimed Card */}
+          <button
+            onClick={() => onNavigateToTab('claims')}
+            className="text-left bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-300 dark:border-purple-700/50 p-3.5 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between text-purple-700 dark:text-purple-400">
+              <span className="text-[10px] font-black uppercase tracking-wider">Unclaimed</span>
+              <Clock className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-purple-900 dark:text-purple-200 mt-2 font-mono">
+              {unclaimedCount}
+            </div>
+            <p className="text-[10px] text-purple-700/80 dark:text-purple-400/80 uppercase font-bold mt-0.5">
+              Awaiting Claimants
+            </p>
+          </button>
+
+          {/* Claimed Card */}
+          <button
+            onClick={() => onNavigateToTab('claims')}
+            className="text-left bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-300 dark:border-emerald-700/50 p-3.5 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400">
+              <span className="text-[10px] font-black uppercase tracking-wider">Claimed</span>
+              <Trophy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-900 dark:text-emerald-200 mt-2 font-mono">
+              {claimedCount}
+            </div>
+            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 uppercase font-bold mt-0.5">
+              Prizes Disbursed
+            </p>
+          </button>
         </div>
       </div>
 

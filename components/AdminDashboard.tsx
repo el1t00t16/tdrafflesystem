@@ -12,6 +12,7 @@ import { RaffleLogsView } from './admin/RaffleLogsView';
 import { ReportsView } from './admin/ReportsView';
 import { SettingsManager } from './admin/SettingsManager';
 import { PreDrawStation } from './admin/PreDrawStation';
+import { PrintQueueStation } from './admin/PrintQueueStation';
 import {
   LayoutDashboard,
   PlayCircle,
@@ -22,7 +23,8 @@ import {
   FileText,
   BarChart3,
   Settings,
-  ListChecks
+  ListChecks,
+  Printer
 } from 'lucide-react';
 import { TemporaryDrawResult } from '../lib/types';
 
@@ -57,6 +59,9 @@ interface AdminDashboardProps {
   onForfeitPrize?: (winnerId: string, reason?: string) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
   onPrepareNewEvent: (options?: { resetAttendance?: boolean; deleteParticipants?: boolean }) => Promise<{ success: boolean; message: string }> | void;
+  onMarkAsPrinted?: (winnerId: string) => void;
+  onMarkBatchAsPrinted?: (winnerIds: string[]) => void;
+  onRequeueWinner?: (winnerId: string) => void;
   eligiblePoolCount: number;
   isDrawing: boolean;
   distributionMode: DistributionMode;
@@ -89,6 +94,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onForfeitPrize,
   onUpdateSettings,
   onPrepareNewEvent,
+  onMarkAsPrinted,
+  onMarkBatchAsPrinted,
+  onRequeueWinner,
   eligiblePoolCount,
   isDrawing,
   distributionMode,
@@ -103,6 +111,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     | 'dash'
     | 'raffle'
     | 'predraw'
+    | 'print-queue'
     | 'participants'
     | 'prizes'
     | 'winners'
@@ -112,10 +121,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     | 'settings'
   >('dash');
 
+  const pendingPrintCount = winners.filter((w) => !w.isPrinted).length;
+
   const navItems = [
     { id: 'dash', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'raffle', label: 'Live Stage', icon: PlayCircle },
     { id: 'predraw', label: 'Pre-Draw Station', icon: ListChecks },
+    { id: 'print-queue', label: 'Print Queue', icon: Printer, badge: pendingPrintCount },
     { id: 'participants', label: 'Participants', icon: Users },
     { id: 'prizes', label: 'Prizes', icon: Gift },
     { id: 'winners', label: 'Winners', icon: Trophy },
@@ -145,6 +157,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#ff6a00]' : 'text-[#1a1a1a] dark:text-neutral-400'}`} />
               <span>{item.label}</span>
+              {item.badge !== undefined && item.badge > 0 && (
+                <span
+                  className={`ml-1 px-1.5 py-0.5 text-[9px] font-black leading-none rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-[#FF1E1E] text-white'
+                      : 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </button>
           );
         })}
@@ -187,6 +210,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onConfirmPreDrawBatch={onConfirmPreDrawBatch}
           allowMultipleWins={settings.allowMultipleWins}
           initialReelDuration={settings.preDrawDuration || 3}
+        />
+      )}
+
+      {activeTab === 'print-queue' && (
+        <PrintQueueStation
+          winners={winners}
+          prizes={prizes}
+          logs={logs}
+          onMarkAsPrinted={onMarkAsPrinted}
+          onMarkBatchAsPrinted={onMarkBatchAsPrinted}
+          onRequeueWinner={onRequeueWinner}
         />
       )}
 

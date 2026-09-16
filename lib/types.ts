@@ -103,6 +103,22 @@ export interface Winner {
   forfeitedAt?: string;
   forfeitReason?: string;
   drawType?: DrawType;
+  isPrinted?: boolean;
+  printedAt?: string;
+  printedBy?: string;
+}
+
+export interface PrintBatchGroup {
+  drawNumber: string;
+  prizeId: string;
+  prizeName: string;
+  unitValue: number;
+  date: string;
+  time: string;
+  drawType?: DrawType;
+  winners: Winner[];
+  pendingCount: number;
+  printedCount: number;
 }
 
 export interface RaffleLog {
