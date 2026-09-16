@@ -108,10 +108,18 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   const availableQty = currentPrize ? currentPrize.remainingQuantity : 0;
   const currentUnitVal = getPrizeDisplayValue(currentPrize);
 
+  const presentCount = useMemo(() => {
+    return participants.filter((p) => p.eligible === 'ELIGIBLE' || p.attendedAt).length;
+  }, [participants]);
+
+  const totalWinnersCount = useMemo(() => {
+    return participants.filter((p) => p.winner === 'YES').length;
+  }, [participants]);
+
   // Filter eligible participants
   const eligiblePool = useMemo(() => {
     return participants.filter((p) => {
-      if (p.eligible !== 'ELIGIBLE') return false;
+      if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
       if (!allowMultipleWins && p.winner === 'YES') return false;
       return true;
     });
@@ -462,9 +470,14 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
             <span className="text-[9px] font-black uppercase tracking-wider text-neutral-500 dark:text-neutral-400 block">
               Eligible Pool Left
             </span>
-            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {eligiblePool.length}
-            </span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                {eligiblePool.length}
+              </span>
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono">
+                ({presentCount} present − {totalWinnersCount} won)
+              </span>
+            </div>
           </div>
 
           <div className="bg-[#f8f7f4] dark:bg-neutral-950 p-3 border border-[#1a1a1a]/20 dark:border-white/10">

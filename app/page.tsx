@@ -652,7 +652,7 @@ export default function Home() {
   // Eligible pool calculations
   const eligiblePool = useMemo(() => {
     return participants.filter((p) => {
-      if (p.eligible !== 'ELIGIBLE') return false;
+      if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
       if (!settings.allowMultipleWins && p.winner === 'YES') return false;
       return true;
     });
@@ -1648,6 +1648,7 @@ export default function Home() {
           isFullscreen={isFullscreen}
           onToggleFullscreen={handleToggleFullscreen}
           unclaimedCount={unclaimedCount}
+          totalWinnersCount={winners.length}
           presentCount={presentCount}
           onLock={handleLockAdmin}
         />

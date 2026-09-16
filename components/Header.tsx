@@ -12,6 +12,7 @@ interface HeaderProps {
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   unclaimedCount?: number;
+  totalWinnersCount?: number;
   presentCount?: number;
   onLock?: () => void;
 }
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   isFullscreen,
   onToggleFullscreen,
   unclaimedCount = 0,
+  totalWinnersCount = 0,
   presentCount = 0,
   onLock
 }) => {
@@ -104,13 +106,15 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="nav-btn-claim"
               onClick={() => onViewChange('claim')}
+              title={totalWinnersCount > 0 ? `${unclaimedCount} Unclaimed Prizes pending disbursement (${totalWinnersCount} Total Winners drawn)` : 'Prize Claim Station'}
               className={`nav-item flex items-center gap-1.5 ${currentView === 'claim' ? 'active' : ''}`}
             >
               <span>Prize Claim</span>
               {isMounted && unclaimedCount > 0 && (
                 <span
                   suppressHydrationWarning
-                  className="font-mono text-[9px] bg-[#ff6a00] text-white px-1.5 py-0.2 rounded-xs font-bold"
+                  title={`${unclaimedCount} Unclaimed Prizes pending pickup (${totalWinnersCount || unclaimedCount} Total Winners drawn)`}
+                  className="font-mono text-[9px] bg-[#ff6a00] text-white px-1.5 py-0.2 rounded-xs font-bold cursor-help"
                 >
                   {unclaimedCount}
                 </span>
