@@ -92,23 +92,23 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
     <div className="space-y-4 animate-fade-in">
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[#121212] border border-white/10 p-4 border-t-2 border-t-white">
-          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Prize Lots</div>
-          <div className="text-xl sm:text-2xl font-black text-white mt-1">{prizes.length}</div>
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 border-t-4 border-t-[#1a1a1a] dark:border-t-white shadow-sm">
+          <div className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Total Prize Lots</div>
+          <div className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white mt-1">{prizes.length}</div>
         </div>
-        <div className="bg-[#121212] border border-white/10 p-4 border-t-2 border-t-[#FF1E1E]">
-          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Units</div>
-          <div className="text-xl sm:text-2xl font-black text-white mt-1">{totalPrizeUnits}</div>
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 border-t-4 border-t-[#FF1E1E] shadow-sm">
+          <div className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Total Units</div>
+          <div className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white mt-1">{totalPrizeUnits}</div>
         </div>
-        <div className="bg-[#121212] border border-white/10 p-4 border-t-2 border-t-white">
-          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Remaining Units</div>
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 border-t-4 border-t-[#1a1a1a] dark:border-t-white shadow-sm">
+          <div className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Remaining Units</div>
           <div className="text-xl sm:text-2xl font-black text-[#FF1E1E] mt-1">{totalRemainingUnits}</div>
         </div>
-        <div className="bg-[#121212] border border-white/10 p-4 border-t-2 border-t-[#FF1E1E]">
-          <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Cash Fund</div>
-          <div className="text-xl sm:text-2xl font-black text-white mt-1">₱{totalCashWorth.toLocaleString()}</div>
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 border-t-4 border-t-[#FF1E1E] shadow-sm">
+          <div className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Total Cash Fund</div>
+          <div className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white mt-1">₱{totalCashWorth.toLocaleString()}</div>
           {totalPhysicalUnits > 0 && (
-            <div className="text-[10px] text-neutral-400 font-bold mt-0.5">
+            <div className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold mt-0.5">
               + {totalPhysicalUnits} physical item unit{totalPhysicalUnits > 1 ? 's' : ''}
             </div>
           )}
@@ -117,12 +117,12 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
 
       {/* Offline Mode Alert */}
       {!isSupabaseConfigured() && (
-        <div className="bg-yellow-950/30 border border-yellow-500/30 p-3.5 text-xs flex items-start gap-2.5 text-yellow-300">
-          <CloudOff className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+        <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-300 dark:border-yellow-500/30 p-3.5 text-xs flex items-start gap-2.5 text-yellow-900 dark:text-yellow-300">
+          <CloudOff className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <div className="font-black uppercase tracking-wider">Offline Mode Active (Supabase Disconnected)</div>
-            <p className="text-neutral-400 text-[11px] leading-relaxed">
-              Prizes added right now will only be saved in your current browser session. To have prizes automatically show up in your Supabase SQL database and sync live to other tablets/projectors, enter your <strong className="text-white">Supabase URL &amp; Anon Key</strong> in the <strong>Settings</strong> tab.
+            <p className="text-neutral-600 dark:text-neutral-400 text-[11px] leading-relaxed">
+              Prizes added right now will only be saved in your current browser session. To have prizes automatically show up in your Supabase SQL database and sync live to other tablets/projectors, enter your <strong className="text-black dark:text-white">Supabase URL &amp; Anon Key</strong> in the <strong>Settings</strong> tab.
             </p>
           </div>
         </div>
@@ -133,47 +133,47 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
         <div
           className={`p-3 text-xs flex items-center justify-between border ${
             cloudMsg.error
-              ? 'bg-red-950/40 border-red-500/50 text-red-300'
-              : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+              ? 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-500/50 text-red-700 dark:text-red-300'
+              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300'
           }`}
         >
           <div className="flex items-center gap-2">
             {cloudMsg.error ? (
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
             ) : (
-              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             )}
             <span className="font-bold">{cloudMsg.text}</span>
           </div>
-          <button onClick={() => setCloudMsg(null)} className="text-neutral-400 hover:text-white p-1">
+          <button onClick={() => setCloudMsg(null)} className="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white p-1">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="bg-[#121212] border border-white/10 p-5 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative border-t-2 border-t-[#FF1E1E]">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative border-t-4 border-t-[#FF1E1E]">
         <div>
           <div className="flex items-center gap-2.5">
-            <h3 className="font-black text-lg sm:text-xl text-white uppercase tracking-tight leading-none">
+            <h3 className="font-black text-lg sm:text-xl text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">
               PRIZE INVENTORY
             </h3>
             <span
               className={`font-mono text-[9px] px-2 py-0.5 border font-bold uppercase tracking-wider flex items-center gap-1.5 ${
                 isSupabaseConfigured()
-                  ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/40'
-                  : 'border-yellow-500/40 text-yellow-400 bg-yellow-950/40'
+                  ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                  : 'border-yellow-500/40 text-yellow-800 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/40'
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isSupabaseConfigured() ? 'bg-emerald-400 animate-pulse' : 'bg-yellow-400'
+                  isSupabaseConfigured() ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-yellow-500 dark:bg-yellow-400'
                 }`}
               />
               {isSupabaseConfigured() ? 'Cloud Live' : 'Offline Mode'}
             </span>
           </div>
-          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+          <p className="text-[10px] text-neutral-600 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
             Primary setting is Prize Quantity. The system automatically computes Total Winners &amp; Total Value.
           </p>
         </div>
@@ -183,7 +183,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
             <button
               onClick={handleSyncToCloud}
               disabled={syncingCloud}
-              className="px-3.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2.5 bg-[#1a1a1a] dark:bg-neutral-900 hover:bg-[#ff6a00] border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
               title="Push current local prizes inventory to Supabase Cloud"
             >
               <UploadCloud className={`w-4 h-4 ${syncingCloud ? 'animate-bounce' : ''}`} />
@@ -198,7 +198,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                   onClearAllPrizes();
                 }
               }}
-              className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 hover:text-red-400 font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+              className="px-3 py-2 bg-neutral-100 dark:bg-neutral-900 hover:bg-red-50 dark:hover:bg-neutral-800 border border-[#1a1a1a]/30 dark:border-white/20 text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400 font-black text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear All</span>
@@ -216,11 +216,11 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
       </div>
 
       {/* Prize Table */}
-      <div className="bg-[#121212] border border-white/10 overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 overflow-hidden shadow-sm dark:shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-black border-b border-white/20 text-neutral-300 uppercase font-black tracking-widest text-[10px]">
+              <tr className="bg-[#1a1a1a] border-b border-[#1a1a1a] dark:border-white/20 text-white uppercase font-mono font-bold tracking-wider text-[10px]">
                 <th className="p-3">Prize ID</th>
                 <th className="p-3">Prize Name</th>
                 <th className="p-3">Description</th>
@@ -233,7 +233,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                 <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[#1a1a1a]/15 dark:divide-white/5">
               {prizes.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="p-8 text-center text-neutral-500 font-mono text-xs uppercase tracking-wider">
@@ -242,37 +242,37 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                 </tr>
               ) : (
                 prizes.map((p) => (
-                  <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
-                    <td className="p-3 font-mono font-black text-white">{p.id}</td>
-                    <td className="p-3 font-black text-white uppercase whitespace-nowrap">{p.name}</td>
-                    <td className="p-3 text-neutral-400 max-w-xs truncate">{p.description}</td>
-                    <td className="p-3 text-right font-bold text-white">
+                  <tr key={p.id} className="hover:bg-[#f8f7f4] dark:hover:bg-neutral-900/50 transition-colors">
+                    <td className="p-3 font-mono font-black text-[#1a1a1a] dark:text-white">{p.id}</td>
+                    <td className="p-3 font-black text-[#1a1a1a] dark:text-white uppercase whitespace-nowrap">{p.name}</td>
+                    <td className="p-3 text-neutral-600 dark:text-neutral-400 max-w-xs truncate">{p.description}</td>
+                    <td className="p-3 text-right font-bold text-[#1a1a1a] dark:text-white">
                       {p.unitValue > 0 ? (
                         `₱${p.unitValue.toLocaleString()}`
                       ) : (
-                        <span className="px-2 py-0.5 bg-neutral-900 text-neutral-400 border border-white/10 font-mono text-[9px] font-bold uppercase tracking-wider">
+                        <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-[#1a1a1a]/20 dark:border-white/10 font-mono text-[9px] font-bold uppercase tracking-wider">
                           Item / Gift
                         </span>
                       )}
                     </td>
-                    <td className="p-3 text-center font-bold text-neutral-300">{p.quantity}</td>
-                    <td className="p-3 text-center text-neutral-400 font-bold">{p.drawnQuantity}</td>
+                    <td className="p-3 text-center font-bold text-neutral-700 dark:text-neutral-300">{p.quantity}</td>
+                    <td className="p-3 text-center text-neutral-500 dark:text-neutral-400 font-bold">{p.drawnQuantity}</td>
                     <td className="p-3 text-center">
                       <span className="font-black text-sm text-[#FF1E1E]">{p.remainingQuantity}</span>
                     </td>
-                    <td className="p-3 text-right font-black text-white">
+                    <td className="p-3 text-right font-black text-[#1a1a1a] dark:text-white">
                       {p.unitValue > 0 ? (
                         `₱${p.totalValue.toLocaleString()}`
                       ) : (
-                        <span className="text-neutral-500 font-mono font-bold">—</span>
+                        <span className="text-neutral-400 font-mono font-bold">—</span>
                       )}
                     </td>
                     <td className="p-3 text-center">
                       <span
                         className={`px-2.5 py-0.5 font-black text-[9px] uppercase tracking-widest ${
                           p.status === 'AVAILABLE'
-                            ? 'bg-neutral-900 text-white border border-white/30'
-                            : 'bg-neutral-950 text-neutral-500 border border-white/10'
+                            ? 'bg-[#1a1a1a] dark:bg-neutral-900 text-white border border-[#1a1a1a] dark:border-white/30'
+                            : 'bg-neutral-200 dark:bg-neutral-950 text-neutral-500 border border-[#1a1a1a]/20 dark:border-white/10'
                         }`}
                       >
                         {p.status}
@@ -286,7 +286,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                               onDeletePrize(p.id);
                             }
                           }}
-                          className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-950/30 transition-colors rounded-xs"
+                          className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors rounded-xs"
                           title="Delete Prize"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -303,13 +303,13 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
 
       {/* Add Prize Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A0A0A]/85 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#0A0A0A] border-2 border-[#FF1E1E] max-w-md w-full overflow-hidden shadow-2xl">
-            <div className="bg-black px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/20 max-w-md w-full overflow-hidden shadow-2xl text-[#1a1a1a] dark:text-white">
+            <div className="bg-[#1a1a1a] px-5 py-4 border-b border-[#1a1a1a] flex items-center justify-between">
               <h3 className="font-black text-white text-base sm:text-lg uppercase tracking-tight">Add New Raffle Prize</h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-neutral-300 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -318,7 +318,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
             <form onSubmit={handleCreate} className="p-5 space-y-4 text-xs">
               {/* Prize Category Selector */}
               <div>
-                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1.5">
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
                   Prize Type:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -331,7 +331,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                     className={`py-2 px-3 border font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all ${
                       prizeType === 'ITEM'
                         ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow'
-                        : 'bg-neutral-950 text-neutral-400 border-white/15 hover:border-white/40 hover:text-white'
+                        : 'bg-[#f8f7f4] dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 border-[#1a1a1a]/20 dark:border-white/15 hover:border-[#1a1a1a] dark:hover:border-white/40'
                     }`}
                   >
                     <Gift className="w-3.5 h-3.5" />
@@ -346,7 +346,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                     className={`py-2 px-3 border font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all ${
                       prizeType === 'CASH'
                         ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow'
-                        : 'bg-neutral-950 text-neutral-400 border-white/15 hover:border-white/40 hover:text-white'
+                        : 'bg-[#f8f7f4] dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 border-[#1a1a1a]/20 dark:border-white/15 hover:border-[#1a1a1a] dark:hover:border-white/40'
                     }`}
                   >
                     <span className="font-mono font-black text-sm leading-none">₱</span>
@@ -356,19 +356,19 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
               </div>
 
               <div>
-                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Prize Name:</label>
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">Prize Name:</label>
                 <input
                   type="text"
                   required
                   placeholder={prizeType === 'ITEM' ? 'e.g. ELECTRIC FAN, SMART TV, RICE COOKER' : 'e.g. ₱1,000 CASH PRIZE'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] uppercase font-bold"
+                  className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] uppercase font-bold"
                 />
               </div>
 
               <div>
-                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
                   {prizeType === 'ITEM' ? 'Sponsor / Donor / Remarks:' : 'Description / Remarks:'}
                 </label>
                 <input
@@ -376,14 +376,14 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                   placeholder={prizeType === 'ITEM' ? 'e.g. SPONSORED BY: LANDBANK' : 'e.g. Teachers Day Special Cash Incentive'}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-medium"
+                  className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] font-medium"
                 />
               </div>
 
               {prizeType === 'CASH' ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Unit Value (₱):</label>
+                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">Unit Value (₱):</label>
                     <input
                       type="number"
                       min="1"
@@ -392,40 +392,40 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                       placeholder="e.g. 1000"
                       value={unitValue === 0 ? '' : unitValue}
                       onChange={(e) => setUnitValue(e.target.value === '' ? 0 : Number(e.target.value))}
-                      className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
+                      className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] font-bold"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Quantity Available:</label>
+                    <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">Quantity Available:</label>
                     <input
                       type="number"
                       min="1"
                       required
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value))}
-                      className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
+                      className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] font-bold"
                     />
                   </div>
                 </div>
               ) : (
                 <div>
-                  <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">Quantity Available (Units):</label>
+                  <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">Quantity Available (Units):</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
+                    className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] font-bold"
                   />
                 </div>
               )}
 
-              <div className="bg-neutral-950 border border-white/10 p-3 text-neutral-400 space-y-1">
+              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-3 text-neutral-600 dark:text-neutral-400 space-y-1">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black uppercase tracking-wider">Calculated Winners:</span>
-                  <span className="text-white font-black">{quantity} Winner{quantity > 1 ? 's' : ''}</span>
+                  <span className="text-[#1a1a1a] dark:text-white font-black">{quantity} Winner{quantity > 1 ? 's' : ''}</span>
                 </div>
                 {prizeType === 'CASH' ? (
                   <div className="flex justify-between items-center">
@@ -435,7 +435,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                 ) : (
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-black uppercase tracking-wider">Prize Category:</span>
-                    <span className="text-white font-mono font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 bg-neutral-900 border border-white/10">
+                    <span className="text-white font-mono font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 bg-[#1a1a1a] dark:bg-neutral-900 border border-[#1a1a1a] dark:border-white/10">
                       Physical Item / Sponsored Gift
                     </span>
                   </div>
@@ -446,7 +446,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-white/20 text-neutral-300 hover:bg-neutral-900 font-bold uppercase text-xs"
+                  className="px-4 py-2 border border-[#1a1a1a]/30 dark:border-white/20 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 font-bold uppercase text-xs"
                 >
                   Cancel
                 </button>

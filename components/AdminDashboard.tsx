@@ -121,7 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
       {/* Admin Tab Navigation */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 border-b-2 border-[#1a1a1a] scrollbar-thin">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 border-b-2 border-[#1a1a1a] dark:border-white/15 scrollbar-thin">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -130,13 +130,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               key={item.id}
               id={`tab-nav-${item.id}`}
               onClick={() => setActiveTab(item.id as typeof activeTab)}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all border border-[#1a1a1a] ${
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all border border-[#1a1a1a] dark:border-white/20 ${
                 isActive
-                  ? 'bg-[#1a1a1a] text-white shadow-sm'
-                  : 'bg-white text-[#1a1a1a] hover:bg-[#f8f7f4]'
+                  ? 'bg-[#1a1a1a] dark:bg-white text-white dark:text-black shadow-sm'
+                  : 'bg-white dark:bg-[#121215] text-[#1a1a1a] dark:text-neutral-300 hover:bg-[#f8f7f4] dark:hover:bg-[#18181c]'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#ff6a00]' : 'text-[#1a1a1a]'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#ff6a00]' : 'text-[#1a1a1a] dark:text-neutral-400'}`} />
               <span>{item.label}</span>
             </button>
           );

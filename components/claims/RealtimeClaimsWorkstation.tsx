@@ -1034,7 +1034,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                       className="w-full py-3.5 sm:py-4 bg-[#22c55e] hover:bg-[#16a34a] text-black font-mono font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-[0.98]"
                     >
                       <Zap className="w-5 h-5 fill-black" />
-                      <span>⚡ 1-CLICK FAST DISBURSE</span>
+                      <span>1-CLICK FAST DISBURSE</span>
                     </button>
                   )}
 

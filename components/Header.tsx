@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Lock, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, ExternalLink, Sun, Moon } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
@@ -27,11 +27,33 @@ export const Header: React.FC<HeaderProps> = ({
   presentCount = 0,
   onLock
 }) => {
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMounted(true);
+    try {
+      const mode = localStorage.getItem('td26_theme_mode');
+      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+      setIsDarkMode(isDark);
+    } catch (e) {}
   }, []);
+
+  const toggleDarkMode = () => {
+    const nextDark = !isDarkMode;
+    setIsDarkMode(nextDark);
+    try {
+      if (nextDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('td26_theme_mode', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('td26_theme_mode', 'light');
+      }
+    } catch (e) {}
+  };
 
   return (
     <>
@@ -150,6 +172,24 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
+          <button
+            id="header-theme-toggle"
+            onClick={toggleDarkMode}
+            className="nav-item flex items-center gap-1.5"
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? (
+              <>
+                <Sun className="w-3 h-3 text-[#ff6a00]" />
+                <span>Light Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3 h-3 text-neutral-400" />
+                <span>Dark Mode</span>
+              </>
+            )}
+          </button>
 
           {onLock && (
             <button
@@ -166,16 +206,16 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Editorial Style Layout Header */}
-      <header className="bg-[#f8f7f4] text-[#1a1a1a] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a]">
+      <header className="bg-[#f8f7f4] dark:bg-[#121215] text-[#1a1a1a] dark:text-[#f4f4f5] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a] dark:border-white/15 transition-colors">
         <div className="header-title">
-          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 mb-0.5">
+          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 dark:text-neutral-400 mb-0.5">
             SARANGANI PROVINCE / REGION XII
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] -mb-0.5">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] dark:text-white -mb-0.5">
             Teachers&apos; Day 2026
           </h1>
         </div>
-        <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[#1a1a1a]/70">
+        <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[#1a1a1a]/70 dark:text-neutral-400">
           MUNICIPALITY OF MALUNGON<br />
           GRAND RAFFLE SYSTEM V2.6
         </div>

@@ -1529,7 +1529,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f7f4] text-[#1a1a1a] flex flex-col selection:bg-[#1a1a1a] selection:text-[#f8f7f4]">
+    <main className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-[#f4f4f5] flex flex-col selection:bg-[#1a1a1a] selection:text-[#f8f7f4] transition-colors">
       {/* Top Application Header (Hidden when in Full Stage mode on Projector) */}
       {(!isFullStage || currentView !== 'display') && (
         <Header

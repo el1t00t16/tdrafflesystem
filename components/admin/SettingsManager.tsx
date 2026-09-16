@@ -18,7 +18,9 @@ import {
   QrCode,
   Lock,
   Smartphone,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import {
@@ -46,6 +48,31 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   totalWinners,
   participants = []
 }) => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    try {
+      const mode = localStorage.getItem('td26_theme_mode');
+      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+      setIsDarkMode(isDark);
+    } catch (e) {}
+  }, []);
+
+  const toggleDarkMode = (dark: boolean) => {
+    setIsDarkMode(dark);
+    try {
+      if (dark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('td26_theme_mode', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('td26_theme_mode', 'light');
+      }
+    } catch (e) {}
+  };
+
   const [localSettings, setLocalSettings] = useState<SystemSettings>(() => {
     let pin = settings.gateAccessPin || '2026';
     try {
@@ -220,19 +247,19 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {/* Event Configuration Form */}
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl relative border-t-2 border-t-[#FF1E1E]">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm relative border-t-4 border-t-[#FF1E1E]">
+        <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-[#FF1E1E]" />
             <div>
-              <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">SYSTEM SETTINGS</h3>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">SYSTEM SETTINGS</h3>
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
                 Event configuration &amp; raffle operational parameters
               </p>
             </div>
           </div>
           {savedSuccess && (
-            <span className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1 bg-neutral-900 px-3 py-1 border border-white/30">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#1a1a1a] dark:text-white flex items-center gap-1 bg-[#f8f7f4] dark:bg-neutral-900 px-3 py-1 border border-[#1a1a1a]/30 dark:border-white/30">
               <CheckCircle className="w-3.5 h-3.5 text-[#FF1E1E]" /> Saved!
             </span>
           )}
@@ -240,52 +267,91 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           <div>
-            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">EVENT NAME:</label>
+            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 mb-1">EVENT NAME:</label>
             <input
               type="text"
               value={localSettings.eventName}
               onChange={(e) => setLocalSettings({ ...localSettings, eventName: e.target.value })}
-              className="w-full bg-neutral-950 border border-white/15 px-3.5 py-2.5 text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
+              className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">EVENT DATE:</label>
+              <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 mb-1">EVENT DATE:</label>
               <input
                 type="text"
                 value={localSettings.eventDate}
                 onChange={(e) => setLocalSettings({ ...localSettings, eventDate: e.target.value })}
-                className="w-full bg-neutral-950 border border-white/15 px-3.5 py-2.5 text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
+                className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
               />
             </div>
 
             <div>
-              <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">LOCATION:</label>
+              <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 mb-1">LOCATION:</label>
               <input
                 type="text"
                 value={localSettings.location}
                 onChange={(e) => setLocalSettings({ ...localSettings, location: e.target.value })}
-                className="w-full bg-neutral-950 border border-white/15 px-3.5 py-2.5 text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
+                className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">ORGANIZATION:</label>
+            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 mb-1">ORGANIZATION:</label>
             <input
               type="text"
               value={localSettings.organization}
               onChange={(e) => setLocalSettings({ ...localSettings, organization: e.target.value })}
-              className="w-full bg-neutral-950 border border-white/15 px-3.5 py-2.5 text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
+              className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-bold outline-none focus:border-[#FF1E1E] uppercase"
             />
           </div>
 
-          {/* Previous Winner Protection Setting */}
-          <div className="bg-neutral-950 border border-white/10 p-4 flex items-center justify-between">
+          {/* Display Mode / Theme Setting */}
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="font-black text-white text-sm uppercase tracking-wide">ALLOW MULTIPLE WINS</div>
-              <p className="text-neutral-400 text-[11px] mt-0.5 max-w-sm">
+              <div className="font-black text-[#1a1a1a] dark:text-white text-sm uppercase tracking-wide flex items-center gap-2">
+                {isDarkMode ? <Moon className="w-4 h-4 text-neutral-400" /> : <Sun className="w-4 h-4 text-[#ff6a00]" />}
+                <span>INTERFACE THEME (DARK / LIGHT MODE)</span>
+              </div>
+              <p className="text-neutral-600 dark:text-neutral-400 text-[11px] mt-0.5 max-w-sm">
+                Choose between the crisp paper-white aesthetic (default) or the high-contrast dark room mode.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 bg-white dark:bg-neutral-900 p-1 border border-[#1a1a1a]/20 dark:border-white/20 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => toggleDarkMode(false)}
+                className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                  !isDarkMode
+                    ? 'bg-[#1a1a1a] text-white'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+                <span>Light</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleDarkMode(true)}
+                className={`px-3 py-1.5 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                  isDarkMode
+                    ? 'bg-white text-black'
+                    : 'text-neutral-600 hover:text-black'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                <span>Dark</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Previous Winner Protection Setting */}
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 flex items-center justify-between">
+            <div>
+              <div className="font-black text-[#1a1a1a] dark:text-white text-sm uppercase tracking-wide">ALLOW MULTIPLE WINS</div>
+              <p className="text-neutral-600 dark:text-neutral-400 text-[11px] mt-0.5 max-w-sm">
                 If <strong>OFF (Default)</strong>, participants who already won are excluded from succeeding draws.
               </p>
             </div>
@@ -300,7 +366,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               className={`px-4 py-2 font-black text-xs uppercase tracking-wider transition-colors ${
                 localSettings.allowMultipleWins
                   ? 'bg-[#FF1E1E] text-white'
-                  : 'bg-neutral-900 text-white border border-white/20'
+                  : 'bg-white dark:bg-neutral-900 text-[#1a1a1a] dark:text-white border border-[#1a1a1a]/30 dark:border-white/20'
               }`}
             >
               {localSettings.allowMultipleWins ? 'ALLOWED: ON' : 'PROTECTED: OFF'}
@@ -308,11 +374,11 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {/* Animation Duration Slider */}
-          <div className="bg-neutral-950 border border-white/10 p-4 space-y-3">
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 space-y-3">
             <div className="flex justify-between items-center">
               <div>
-                <div className="font-black text-white text-sm uppercase tracking-wide">ANIMATION DURATION</div>
-                <p className="text-neutral-400 text-[11px]">
+                <div className="font-black text-[#1a1a1a] dark:text-white text-sm uppercase tracking-wide">ANIMATION DURATION</div>
+                <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
                   Duration of rapid name cycling before reveal (3 to 30 seconds)
                 </p>
               </div>
@@ -336,7 +402,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             />
             {/* Quick Duration Preset Chips */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[10px] text-neutral-400 font-mono uppercase mr-1">Presets:</span>
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono uppercase mr-1">Presets:</span>
               {[3, 5, 10, 15, 20, 25, 30].map((sec) => (
                 <button
                   key={sec}
@@ -350,7 +416,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   className={`px-2.5 py-1 text-xs font-mono font-bold transition-all border ${
                     localSettings.animationDuration === sec
                       ? 'bg-[#FF1E1E] text-white border-[#FF1E1E] shadow-sm'
-                      : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-white/10'
+                      : 'bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[#1a1a1a] dark:text-neutral-300 border-[#1a1a1a]/20 dark:border-white/10'
                   }`}
                 >
                   {sec}s
@@ -369,31 +435,31 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       </div>
 
       {/* Controlled Event Preparation / Reset Panel */}
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl space-y-4 relative border-t-2 border-t-white">
-        <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-          <ShieldCheck className="w-5 h-5 text-white" />
-          <h4 className="font-black text-lg text-white uppercase tracking-tight">EVENT PREPARATION &amp; READINESS</h4>
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm space-y-4 relative border-t-4 border-t-[#1a1a1a] dark:border-t-white">
+        <div className="flex items-center gap-2 border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
+          <ShieldCheck className="w-5 h-5 text-[#1a1a1a] dark:text-white" />
+          <h4 className="font-black text-lg text-[#1a1a1a] dark:text-white uppercase tracking-tight">EVENT PREPARATION &amp; READINESS</h4>
         </div>
 
-        <div className="bg-neutral-950 border border-white/10 p-4 space-y-2.5 text-xs">
+        <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 space-y-2.5 text-xs">
           <div className="flex justify-between items-center">
-            <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-wider">Participants Loaded:</span>
-            <span className={totalParticipants > 0 ? "text-white font-black" : "text-amber-400 font-bold"}>
+            <span className="text-neutral-600 dark:text-neutral-400 font-bold uppercase text-[10px] tracking-wider">Participants Loaded:</span>
+            <span className={totalParticipants > 0 ? "text-[#1a1a1a] dark:text-white font-black" : "text-amber-600 dark:text-amber-400 font-bold"}>
               {totalParticipants > 0 ? `YES (${totalParticipants.toLocaleString()} PERSONNEL)` : '0 PERSONNEL (ROSTER EMPTY)'}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-wider">Previous Winners:</span>
-            <span className="text-white font-bold">{totalWinners} recorded</span>
+            <span className="text-neutral-600 dark:text-neutral-400 font-bold uppercase text-[10px] tracking-wider">Previous Winners:</span>
+            <span className="text-[#1a1a1a] dark:text-white font-bold">{totalWinners} recorded</span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-neutral-400 font-bold uppercase text-[10px] tracking-wider">System Status:</span>
+            <span className="text-neutral-600 dark:text-neutral-400 font-bold uppercase text-[10px] tracking-wider">System Status:</span>
             <span className={`px-2 py-0.5 border text-[10px] uppercase tracking-widest font-black ${
               totalParticipants > 0
-                ? 'bg-neutral-900 text-white border-white/20'
-                : 'bg-amber-950/60 text-amber-300 border-amber-500/40'
+                ? 'bg-white dark:bg-neutral-900 text-[#1a1a1a] dark:text-white border-[#1a1a1a]/30 dark:border-white/20'
+                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-500/40'
             }`}>
               {totalParticipants > 0 ? 'READY FOR EVENT' : 'AWAITING PARTICIPANTS ROSTER'}
             </span>
@@ -405,14 +471,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           <div
             className={`p-3.5 border text-xs font-mono flex items-start gap-2.5 animate-fade-in ${
               resetFeedback.success
-                ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200'
-                : 'bg-red-950/60 border-red-500 text-red-200'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                : 'bg-red-50 dark:bg-red-950/60 border-red-500 text-red-800 dark:text-red-200'
             }`}
           >
             {resetFeedback.success ? (
-              <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
             )}
             <div className="flex-1 leading-relaxed">
               <span className="font-bold block uppercase text-[10px] tracking-wider mb-0.5">
@@ -422,7 +488,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
             <button
               onClick={() => setResetFeedback(null)}
-              className="text-neutral-400 hover:text-white transition-colors"
+              className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -435,7 +501,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               setShowConfirmReset(true);
               setResetFeedback(null);
             }}
-            className="w-full py-3 bg-black hover:bg-neutral-900 border border-white/20 hover:border-[#FF1E1E] text-neutral-300 hover:text-white font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-none"
+            className="w-full py-3 bg-[#f8f7f4] dark:bg-black hover:bg-neutral-200 dark:hover:bg-neutral-900 border-2 border-[#1a1a1a] dark:border-white/20 hover:border-[#FF1E1E] text-[#1a1a1a] dark:text-neutral-300 hover:text-[#FF1E1E] dark:hover:text-white font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-none"
           >
             <RefreshCw className="w-4 h-4 text-[#FF1E1E]" />
             <span>Prepare Fresh Event Session (Clear Previous Winners)</span>
@@ -443,16 +509,16 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         </div>
 
         {showConfirmReset && (
-          <div className="bg-[#0A0A0A] border-2 border-[#FF1E1E] p-4 space-y-3 animate-fade-in text-xs">
-            <div className="flex items-center gap-2 text-white font-black text-sm uppercase tracking-wide">
+          <div className="bg-[#fff5f5] dark:bg-[#0A0A0A] border-2 border-[#FF1E1E] p-4 space-y-3 animate-fade-in text-xs">
+            <div className="flex items-center gap-2 text-red-700 dark:text-white font-black text-sm uppercase tracking-wide">
               <AlertTriangle className="w-5 h-5 text-[#FF1E1E]" />
               <span>Safety Confirmation Required</span>
             </div>
-            <p className="text-neutral-300 leading-relaxed">
-              This will clear previous winner records, clear draw history, and reset participant winner flags to &quot;NO&quot; both <strong>locally and in Supabase Cloud</strong>. All prize quantities will reset back to full. {deleteParticipantsCheckbox ? <strong className="text-red-400">WARNING: All {totalParticipants.toLocaleString()} participants will be permanently wiped!</strong> : <strong>The {totalParticipants.toLocaleString()} participant master list will NOT be deleted unless checked below.</strong>}
+            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+              This will clear previous winner records, clear draw history, and reset participant winner flags to &quot;NO&quot; both <strong>locally and in Supabase Cloud</strong>. All prize quantities will reset back to full. {deleteParticipantsCheckbox ? <strong className="text-red-600 dark:text-red-400">WARNING: All {totalParticipants.toLocaleString()} participants will be permanently wiped!</strong> : <strong>The {totalParticipants.toLocaleString()} participant master list will NOT be deleted unless checked below.</strong>}
             </p>
 
-            <div className="bg-neutral-950 p-3 border border-white/10 space-y-1">
+            <div className="bg-white dark:bg-neutral-950 p-3 border border-[#1a1a1a]/15 dark:border-white/10 space-y-1">
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -462,17 +528,17 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   className="accent-[#FF1E1E] w-4 h-4 mt-0.5"
                 />
                 <div>
-                  <span className="font-bold text-white uppercase text-[11px] block">
+                  <span className="font-bold text-[#1a1a1a] dark:text-white uppercase text-[11px] block">
                     Also Clear Attendance Gate Check-ins
                   </span>
-                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block mt-0.5 leading-tight">
                     Check this to reset all teachers back to Ineligible (Absent) and clear all gate scan records in Supabase. Leave unchecked if attendees have already checked in at the gates.
                   </span>
                 </div>
               </label>
             </div>
 
-            <div className="bg-neutral-950 p-3 border border-red-500/30 space-y-1">
+            <div className="bg-white dark:bg-neutral-950 p-3 border border-red-500/30 space-y-1">
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -482,11 +548,11 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   className="accent-[#FF1E1E] w-4 h-4 mt-0.5"
                 />
                 <div>
-                  <span className="font-bold text-red-400 uppercase text-[11px] flex items-center gap-1.5">
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  <span className="font-bold text-red-600 dark:text-red-400 uppercase text-[11px] flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                     Also Delete All Participants Masterlist (Purge Roster)
                   </span>
-                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block mt-0.5 leading-tight">
                     DANGER: Check this ONLY if you want to completely delete all {totalParticipants.toLocaleString()} personnel from Supabase Cloud and local storage. You will need to import a new roster TSV/CSV file.
                   </span>
                 </div>
@@ -494,7 +560,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-black uppercase text-[10px] tracking-wider mb-1">
+              <label className="block text-neutral-700 dark:text-neutral-300 font-black uppercase text-[10px] tracking-wider mb-1">
                 Type <strong>MALUNGON2026</strong> to confirm:
               </label>
               <input
@@ -503,7 +569,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 value={confirmInput}
                 onChange={(e) => setConfirmInput(e.target.value)}
                 disabled={isResetting}
-                className="w-full bg-neutral-950 border border-[#FF1E1E] p-2 text-white font-mono text-xs outline-none uppercase font-bold disabled:opacity-50"
+                className="w-full bg-white dark:bg-neutral-950 border-2 border-[#FF1E1E] p-2 text-[#1a1a1a] dark:text-white font-mono text-xs outline-none uppercase font-bold disabled:opacity-50"
               />
             </div>
             <div className="flex justify-end gap-2 pt-1">
@@ -514,7 +580,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   setShowConfirmReset(false);
                   setConfirmInput('');
                 }}
-                className="px-3 py-1.5 border border-white/20 text-neutral-300 hover:bg-neutral-900 font-bold uppercase text-xs disabled:opacity-50"
+                className="px-3 py-1.5 border border-[#1a1a1a]/30 dark:border-white/20 text-[#1a1a1a] dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 font-bold uppercase text-xs disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -539,34 +605,34 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       </div>
 
       {/* Gatekeeper Security & Scanner Stations Access Panel */}
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl space-y-5 relative border-t-2 border-t-[#ff6a00]">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm space-y-5 relative border-t-4 border-t-[#ff6a00]">
+        <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/30 flex items-center justify-center text-[#ff6a00]">
               <QrCode className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
+              <h4 className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">
                 GATEKEEPER &amp; SCANNER STATIONS
               </h4>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
                 Volunteer attendance passkey &amp; multi-gate mobile terminal link
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#ff6a00] animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-300">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#1a1a1a] dark:text-neutral-300">
               STATION SECURITY ACTIVE
             </span>
           </div>
         </div>
 
-        <div className="bg-neutral-950 border border-white/10 p-4 space-y-4 text-xs">
+        <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 space-y-4 text-xs">
           {/* Admin Master Console PIN Setting */}
-          <div className="space-y-1.5 pb-3 border-b border-white/10">
+          <div className="space-y-1.5 pb-3 border-b border-[#1a1a1a]/15 dark:border-white/10">
             <div className="flex items-center justify-between">
-              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-[#FF1E1E]" />
                 <span>ADMIN MASTER CONSOLE ACCESS PIN:</span>
               </label>
@@ -606,9 +672,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   setPinSavedFeedback(true);
                   setTimeout(() => setPinSavedFeedback(false), 2500);
                 }}
-                className="w-36 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#FF1E1E]"
+                className="w-36 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/25 dark:border-white/15 px-3 py-2 text-[#1a1a1a] dark:text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#FF1E1E]"
               />
-              <span className="text-[11px] text-neutral-400 font-sans">
+              <span className="text-[11px] text-neutral-600 dark:text-neutral-400 font-sans">
                 Protects the main stage console from gate volunteers, staff, or audience participants.
               </span>
             </div>
@@ -617,7 +683,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           {/* Gate Access PIN Setting */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-[#ff6a00]" />
                 <span>GATE STATION ACCESS PIN:</span>
               </label>
@@ -657,9 +723,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   setPinSavedFeedback(true);
                   setTimeout(() => setPinSavedFeedback(false), 2500);
                 }}
-                className="w-36 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#ff6a00]"
+                className="w-36 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/25 dark:border-white/15 px-3 py-2 text-[#1a1a1a] dark:text-white font-mono text-center font-bold tracking-widest text-sm outline-none focus:border-[#ff6a00]"
               />
-              <span className="text-[11px] text-neutral-400 font-sans">
+              <span className="text-[11px] text-neutral-600 dark:text-neutral-400 font-sans">
                 Only volunteers with this passkey can unlock the QR scanner station.
               </span>
             </div>
@@ -667,15 +733,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
           {/* Passcode Instant Feedback Banner */}
           {pinSavedFeedback && (
-            <div className="p-2 bg-emerald-950/40 border border-emerald-500/50 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/50 text-emerald-800 dark:text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Passcodes updated &amp; active immediately! Previous codes are now rejected.</span>
             </div>
           )}
 
           {/* Shareable Scanner Link */}
-          <div className="space-y-1.5 pt-3 border-t border-white/10">
-            <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+          <div className="space-y-1.5 pt-3 border-t border-[#1a1a1a]/15 dark:border-white/10">
+            <label className="font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
               <ExternalLink className="w-3.5 h-3.5 text-[#22c55e]" />
               <span>VOLUNTEER SCANNER STATION LINK (SHARE WITH ENTRANCE CREW):</span>
             </label>
@@ -684,12 +750,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 type="text"
                 readOnly
                 value={typeof window !== 'undefined' ? `${window.location.origin}/attendance` : 'https://teachers-day-raffle-system.web.app/attendance'}
-                className="flex-1 bg-neutral-900 border border-white/15 px-3 py-2 text-white font-mono text-xs select-all outline-none"
+                className="flex-1 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/25 dark:border-white/15 px-3 py-2 text-[#1a1a1a] dark:text-white font-mono text-xs select-all outline-none"
               />
               <button
                 type="button"
                 onClick={handleCopyGateUrl}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                className="px-4 py-2 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-[#1a1a1a]/30 dark:border-white/20 text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
               >
                 {copiedGateUrl ? (
                   <>
@@ -698,7 +764,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4 text-neutral-400" />
+                    <Copy className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     <span>Copy Link</span>
                   </>
                 )}
@@ -716,9 +782,9 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {/* Quick Phone Setup with Supabase Auto-Connect */}
-          <div className="pt-3 border-t border-white/10 space-y-2.5">
+          <div className="pt-3 border-t border-[#1a1a1a]/15 dark:border-white/10 space-y-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300 flex items-center gap-1.5">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                 <Smartphone className="w-3.5 h-3.5 text-[#ff6a00]" />
                 <span>MOBILE PHONE 1-SCAN SETUP (AUTO-CONNECTS SUPABASE &amp; 2,000 TEACHERS):</span>
               </label>
@@ -726,7 +792,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleQuickSetupQr}
-                  className="px-3 py-1.5 bg-[#ff6a00]/20 hover:bg-[#ff6a00]/30 border border-[#ff6a00]/40 text-[#ff6a00] font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 bg-[#ff6a00]/10 hover:bg-[#ff6a00]/20 border border-[#ff6a00]/40 text-[#ff6a00] font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
                 >
                   <QrCode className="w-3.5 h-3.5" />
                   <span>{showQuickSetupQr ? 'Hide Station QR' : 'Show Station Setup QR'}</span>
@@ -734,7 +800,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyQuickSetupUrl}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-neutral-200 font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-[#1a1a1a]/30 dark:border-white/20 text-[#1a1a1a] dark:text-neutral-200 font-bold text-xs uppercase flex items-center gap-1.5 transition-colors"
                 >
                   {copiedQuickSetupUrl ? <Check className="w-3.5 h-3.5 text-[#22c55e]" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedQuickSetupUrl ? 'Copied!' : 'Copy Mobile Link'}</span>
@@ -743,27 +809,27 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             </div>
 
             {showQuickSetupQr && (
-              <div className="bg-neutral-900 border border-[#ff6a00]/40 p-4 rounded-sm flex flex-col sm:flex-row items-center gap-4 animate-fade-in">
+              <div className="bg-white dark:bg-neutral-900 border border-[#ff6a00]/40 p-4 rounded-sm flex flex-col sm:flex-row items-center gap-4 animate-fade-in">
                 {quickSetupQrUrl ? (
-                  <div className="p-2 bg-white rounded-sm shrink-0 shadow-lg">
+                  <div className="p-2 bg-white rounded-sm shrink-0 shadow-md border border-neutral-200 dark:border-neutral-700">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={quickSetupQrUrl} alt="Quick Setup QR" className="w-40 h-40 object-contain" />
                   </div>
                 ) : (
-                  <div className="w-40 h-40 bg-neutral-950 flex items-center justify-center text-neutral-400 text-xs">
+                  <div className="w-40 h-40 bg-[#f8f7f4] dark:bg-neutral-950 flex items-center justify-center text-neutral-500 dark:text-neutral-400 text-xs">
                     Generating QR...
                   </div>
                 )}
-                <div className="space-y-2 text-neutral-300 text-xs">
-                  <div className="font-bold text-white uppercase text-sm flex items-center gap-1.5">
+                <div className="space-y-2 text-[#1a1a1a] dark:text-neutral-300 text-xs">
+                  <div className="font-bold text-[#1a1a1a] dark:text-white uppercase text-sm flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#ff6a00] animate-ping" />
                     <span>Scan with Mobile Camera to Instantly Sync</span>
                   </div>
-                  <p className="text-neutral-400 leading-relaxed text-[11px]">
+                  <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed text-[11px]">
                     Point your mobile phone camera at this QR code. It opens the Gatekeeper Terminal with your Supabase database credentials automatically applied — immediately pulling all 2,000 teachers without typing anything on the phone!
                   </p>
-                  <div className="text-[10px] font-mono text-neutral-400 bg-neutral-950 p-2 border border-white/10">
-                    Station PIN: <strong className="text-white">{localSettings.gateAccessPin || '2026'}</strong>
+                  <div className="text-[10px] font-mono text-neutral-600 dark:text-neutral-400 bg-[#f8f7f4] dark:bg-neutral-950 p-2 border border-[#1a1a1a]/15 dark:border-white/10">
+                    Station PIN: <strong className="text-[#1a1a1a] dark:text-white">{localSettings.gateAccessPin || '2026'}</strong>
                   </div>
                 </div>
               </div>
@@ -771,33 +837,33 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {/* Security & Multi-Network Highlights */}
-          <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] font-mono text-neutral-300">
-            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
-              <div className="text-white font-bold flex items-center gap-1">
+          <div className="pt-2 border-t border-[#1a1a1a]/15 dark:border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] font-mono text-[#1a1a1a] dark:text-neutral-300">
+            <div className="p-2.5 bg-white dark:bg-neutral-900/80 border border-[#1a1a1a]/15 dark:border-white/5 space-y-1">
+              <div className="text-[#1a1a1a] dark:text-white font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#22c55e]" />
                 <span>Strictly Isolated</span>
               </div>
-              <p className="text-neutral-400 text-[10px] leading-tight">
+              <p className="text-neutral-600 dark:text-neutral-400 text-[10px] leading-tight">
                 Gate volunteers cannot view or alter raffle prizes, winner rolls, or system configurations.
               </p>
             </div>
 
-            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
-              <div className="text-white font-bold flex items-center gap-1">
+            <div className="p-2.5 bg-white dark:bg-neutral-900/80 border border-[#1a1a1a]/15 dark:border-white/5 space-y-1">
+              <div className="text-[#1a1a1a] dark:text-white font-bold flex items-center gap-1">
                 <RefreshCw className="w-3.5 h-3.5 text-[#38bdf8]" />
                 <span>Any Network</span>
               </div>
-              <p className="text-neutral-400 text-[10px] leading-tight">
+              <p className="text-neutral-600 dark:text-neutral-400 text-[10px] leading-tight">
                 No venue Wi-Fi needed. Works on 4G/5G mobile data, pocket Wi-Fi, or hotspot over HTTPS.
               </p>
             </div>
 
-            <div className="p-2.5 bg-neutral-900/80 border border-white/5 space-y-1">
-              <div className="text-white font-bold flex items-center gap-1">
+            <div className="p-2.5 bg-white dark:bg-neutral-900/80 border border-[#1a1a1a]/15 dark:border-white/5 space-y-1">
+              <div className="text-[#1a1a1a] dark:text-white font-bold flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5 text-[#ff6a00]" />
                 <span>Multi-Gate Sync</span>
               </div>
-              <p className="text-neutral-400 text-[10px] leading-tight">
+              <p className="text-neutral-600 dark:text-neutral-400 text-[10px] leading-tight">
                 Gate 1, Gate 2, and VIP desks sync instantly to Supabase with real-time duplicate scan prevention.
               </p>
             </div>
@@ -806,15 +872,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       </div>
 
       {/* Supabase Cloud Database Integration Panel */}
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl space-y-5 relative border-t-2 border-t-[#22c55e]">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm space-y-5 relative border-t-4 border-t-[#22c55e]">
+        <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-4">
           <div className="flex items-center gap-3">
             <Database className="w-6 h-6 text-[#22c55e]" />
             <div>
-              <h4 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
+              <h4 className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">
                 SUPABASE CLOUD DATABASE
               </h4>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
                 Live attendance audit trail &amp; multi-station cloud synchronization
               </p>
             </div>
@@ -825,20 +891,20 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 supabaseUrl && supabaseAnonKey ? 'bg-[#22c55e] animate-pulse' : 'bg-[#eab308]'
               }`}
             />
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-300">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#1a1a1a] dark:text-neutral-300">
               {supabaseUrl && supabaseAnonKey ? 'CLOUD CONNECTED' : 'OFFLINE / LOCAL CACHE'}
             </span>
           </div>
         </div>
 
-        <div className="bg-neutral-950 border border-white/10 p-4 space-y-4 text-xs">
+        <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 space-y-4 text-xs">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-300">
+              <label className="font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300">
                 SUPABASE PROJECT URL:
               </label>
               {supabaseSource !== 'NONE' && (
-                <span className="text-[9px] font-mono text-neutral-400 uppercase">
+                <span className="text-[9px] font-mono text-neutral-500 dark:text-neutral-400 uppercase">
                   Source: {supabaseSource === 'LOCAL_STORAGE' ? 'Browser Settings' : 'Build Environment'}
                 </span>
               )}
@@ -848,12 +914,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               placeholder="https://xyzcompany.supabase.co"
               value={supabaseUrl}
               onChange={(e) => setSupabaseUrl(e.target.value)}
-              className="w-full bg-neutral-900 border border-white/15 px-3.5 py-2.5 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+              className="w-full bg-white dark:bg-neutral-900 border border-[#1a1a1a]/25 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-mono text-xs outline-none focus:border-[#22c55e]"
             />
           </div>
 
           <div>
-            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-300 mb-1">
+            <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-700 dark:text-neutral-300 mb-1">
               SUPABASE ANON PUBLIC KEY:
             </label>
             <input
@@ -861,7 +927,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
               value={supabaseAnonKey}
               onChange={(e) => setSupabaseAnonKey(e.target.value)}
-              className="w-full bg-neutral-900 border border-white/15 px-3.5 py-2.5 text-white font-mono text-xs outline-none focus:border-[#22c55e]"
+              className="w-full bg-white dark:bg-neutral-900 border border-[#1a1a1a]/25 dark:border-white/15 px-3.5 py-2.5 text-[#1a1a1a] dark:text-white font-mono text-xs outline-none focus:border-[#22c55e]"
             />
           </div>
 
@@ -870,14 +936,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <div
               className={`p-3 border text-xs flex items-center gap-2 ${
                 testStatus.success
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
-                  : 'bg-red-950/40 border-red-500/50 text-red-200'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/50 text-emerald-800 dark:text-emerald-200'
+                  : 'bg-red-50 dark:bg-red-950/40 border-red-500/50 text-red-800 dark:text-red-200'
               }`}
             >
               {testStatus.success ? (
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
               )}
               <span>{testStatus.message}</span>
             </div>
@@ -888,7 +954,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               type="button"
               onClick={handleTestConnection}
               disabled={testStatus.loading || !supabaseUrl || !supabaseAnonKey}
-              className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-all"
+              className="px-4 py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/30 dark:border-white/20 text-[#1a1a1a] dark:text-white font-black text-xs uppercase tracking-wider disabled:opacity-40 flex items-center gap-2 transition-all"
             >
               {testStatus.loading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-[#22c55e]" />
@@ -912,7 +978,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <button
                 type="button"
                 onClick={handleClearSupabase}
-                className="px-3 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-white/15 text-xs font-bold uppercase transition-all"
+                className="px-3 py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white border border-[#1a1a1a]/20 dark:border-white/15 text-xs font-bold uppercase transition-all"
                 title="Clear credentials"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -922,14 +988,14 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         </div>
 
         {/* Database Quick Actions */}
-        <div className="border border-white/10 bg-neutral-950 p-4 space-y-3 text-xs">
-          <div className="font-black text-white text-xs uppercase tracking-wider flex items-center justify-between">
+        <div className="border border-[#1a1a1a]/15 dark:border-white/10 bg-[#f8f7f4] dark:bg-neutral-950 p-4 space-y-3 text-xs">
+          <div className="font-black text-[#1a1a1a] dark:text-white text-xs uppercase tracking-wider flex items-center justify-between">
             <span>Database Setup &amp; Sync Utilities</span>
             <a
               href="https://supabase.com/dashboard"
               target="_blank"
               rel="noreferrer"
-              className="text-[10px] text-neutral-400 hover:text-white inline-flex items-center gap-1 font-mono underline"
+              className="text-[10px] text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white inline-flex items-center gap-1 font-mono underline"
             >
               Open Supabase Console <ExternalLink className="w-3 h-3" />
             </a>
@@ -939,7 +1005,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             <button
               type="button"
               onClick={handleCopySchema}
-              className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-white/30 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+              className="p-3 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/25 dark:border-white/15 hover:border-[#1a1a1a] dark:hover:border-white/30 text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
             >
               {copiedSchema ? (
                 <>
@@ -948,7 +1014,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-neutral-400" />
+                  <Copy className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                   <span>Copy SQL Schema</span>
                 </>
               )}
@@ -958,7 +1024,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               type="button"
               onClick={handlePushParticipants}
               disabled={isSyncingParticipants || !supabaseUrl || !supabaseAnonKey}
-              className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-[#22c55e] text-white font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
+              className="p-3 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/25 dark:border-white/15 hover:border-[#22c55e] text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
             >
               {isSyncingParticipants ? (
                 <>
@@ -975,12 +1041,12 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </div>
 
           {syncProgress && (
-            <div className="p-2.5 bg-neutral-900 border border-white/10 font-mono text-[11px] text-neutral-300">
+            <div className="p-2.5 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/15 dark:border-white/10 font-mono text-[11px] text-neutral-700 dark:text-neutral-300">
               {syncProgress}
             </div>
           )}
 
-          <p className="text-neutral-400 text-[11px] leading-relaxed pt-1">
+          <p className="text-neutral-600 dark:text-neutral-400 text-[11px] leading-relaxed pt-1">
             Tip: If you haven&apos;t created your Supabase tables yet, click <strong>&quot;Copy SQL Schema&quot;</strong>, open your Supabase project&apos;s <strong>SQL Editor</strong>, paste, and click <strong>Run</strong>.
           </p>
         </div>

@@ -51,60 +51,60 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const nonTeachingWinners = winners.filter((w) => w.personnelType === 'NON-TEACHING').length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5]">
       {/* Top Level Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[#121212] border border-white/10 p-5 flex flex-col justify-between shadow-xl relative border-t-2 border-t-[#FF1E1E]">
-          <div className="flex items-center justify-between text-neutral-400">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 flex flex-col justify-between shadow-sm dark:shadow-xl relative border-t-4 border-t-[#FF1E1E]">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Total Participants</span>
             <Users className="w-4 h-4 text-[#FF1E1E]" />
           </div>
           <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            <div className="text-3xl sm:text-4xl font-black text-[#1a1a1a] dark:text-white tracking-tight">
               {totalParticipants.toLocaleString()}
             </div>
-            <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold mt-1">Malungon Educators Pool</p>
+            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold mt-1">Malungon Educators Pool</p>
           </div>
         </div>
 
-        <div className="bg-[#121212] border border-white/10 p-5 flex flex-col justify-between shadow-xl relative border-t-2 border-t-white">
-          <div className="flex items-center justify-between text-neutral-400">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 flex flex-col justify-between shadow-sm dark:shadow-xl relative border-t-4 border-t-[#1a1a1a] dark:border-t-white">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Eligible Pool</span>
-            <CheckCircle2 className="w-4 h-4 text-white" />
+            <CheckCircle2 className="w-4 h-4 text-[#1a1a1a] dark:text-white" />
           </div>
           <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            <div className="text-3xl sm:text-4xl font-black text-[#1a1a1a] dark:text-white tracking-tight">
               {eligibleCount.toLocaleString()}
             </div>
-            <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold mt-1">
+            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold mt-1">
               {((eligibleCount / Math.max(1, totalParticipants)) * 100).toFixed(1)}% Qualified for Draw
             </p>
           </div>
         </div>
 
-        <div className="bg-[#121212] border border-white/10 p-5 flex flex-col justify-between shadow-xl relative border-t-2 border-t-[#FF1E1E]">
-          <div className="flex items-center justify-between text-neutral-400">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 flex flex-col justify-between shadow-sm dark:shadow-xl relative border-t-4 border-t-[#FF1E1E]">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Total Winners</span>
             <Trophy className="w-4 h-4 text-[#FF1E1E]" />
           </div>
           <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            <div className="text-3xl sm:text-4xl font-black text-[#1a1a1a] dark:text-white tracking-tight">
               {winnerCount.toLocaleString()}
             </div>
-            <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold mt-1">Confirmed Official Winners</p>
+            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold mt-1">Confirmed Official Winners</p>
           </div>
         </div>
 
-        <div className="bg-[#121212] border border-white/10 p-5 flex flex-col justify-between shadow-xl relative border-t-2 border-t-white">
-          <div className="flex items-center justify-between text-neutral-400">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 flex flex-col justify-between shadow-sm dark:shadow-xl relative border-t-4 border-t-[#1a1a1a] dark:border-t-white">
+          <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Remaining Prizes</span>
-            <Gift className="w-4 h-4 text-white" />
+            <Gift className="w-4 h-4 text-[#1a1a1a] dark:text-white" />
           </div>
           <div className="mt-3">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            <div className="text-3xl sm:text-4xl font-black text-[#1a1a1a] dark:text-white tracking-tight">
               {remainingPrizes.toLocaleString()}
             </div>
-            <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold mt-1">Valued at ₱{totalPrizeValue.toLocaleString()}</p>
+            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold mt-1">Valued at ₱{totalPrizeValue.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -112,15 +112,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {/* District & Personnel Breakdown Grids */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* District Statistics Card */}
-        <div className="bg-[#121212] border border-white/10 p-5 shadow-xl">
-          <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-xl">
+          <div className="flex items-center justify-between mb-4 border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#FF1E1E]" />
-              <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
+              <h3 className="font-black text-base sm:text-lg text-[#1a1a1a] dark:text-white uppercase tracking-tight">
                 5 Districts Participation
               </h3>
             </div>
-            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Simultaneous Cards</span>
+            <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Simultaneous Cards</span>
           </div>
 
           <div className="space-y-3">
@@ -129,24 +129,24 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               const percent = ((data.total / Math.max(1, totalParticipants)) * 100).toFixed(0);
 
               return (
-                <div key={d} className="bg-neutral-950 border border-white/10 p-3">
+                <div key={d} className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-3">
                   <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider mb-1.5">
-                    <span className="text-white">{d === 'PRIVATE' ? 'PRIVATE (ECCD + PRIVATE SCHOOL + LSB)' : `${d} DISTRICT`}</span>
-                    <span className="text-neutral-300">
+                    <span className="text-[#1a1a1a] dark:text-white">{d === 'PRIVATE' ? 'PRIVATE (ECCD + PRIVATE SCHOOL + LSB)' : `${d} DISTRICT`}</span>
+                    <span className="text-neutral-700 dark:text-neutral-300">
                       {data.total.toLocaleString()} <span className="text-neutral-500 font-normal">({percent}%)</span>
                     </span>
                   </div>
 
-                  <div className="w-full bg-neutral-900 h-2 overflow-hidden flex">
+                  <div className="w-full bg-neutral-300 dark:bg-neutral-900 h-2 overflow-hidden flex">
                     <div
                       className="bg-[#FF1E1E] h-full transition-all duration-500"
                       style={{ width: `${percent}%` }}
                     />
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px] text-neutral-400 uppercase font-bold mt-1.5">
+                  <div className="flex justify-between items-center text-[10px] text-neutral-600 dark:text-neutral-400 uppercase font-bold mt-1.5">
                     <span>Active pool: {data.total - data.winners} remaining</span>
-                    <span className="text-white font-black">🏆 {data.winners} Winners</span>
+                    <span className="text-[#1a1a1a] dark:text-white font-black">🏆 {data.winners} Winners</span>
                   </div>
                 </div>
               );
@@ -155,41 +155,41 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Personnel Type Statistics Card */}
-        <div className="bg-[#121212] border border-white/10 p-5 shadow-xl flex flex-col justify-between">
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
+            <div className="flex items-center justify-between mb-4 border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-[#FF1E1E]" />
-                <h3 className="font-black text-base sm:text-lg text-white uppercase tracking-tight">
+                <h3 className="font-black text-base sm:text-lg text-[#1a1a1a] dark:text-white uppercase tracking-tight">
                   Personnel Composition
                 </h3>
               </div>
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Teaching &amp; Non-Teaching</span>
+              <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Teaching &amp; Non-Teaching</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-neutral-950 border border-white/10 p-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Teaching Personnel</div>
-                <div className="text-2xl sm:text-3xl font-black text-white mt-1">
+              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Teaching Personnel</div>
+                <div className="text-2xl sm:text-3xl font-black text-[#1a1a1a] dark:text-white mt-1">
                   {teachingCount.toLocaleString()}
                 </div>
                 <div className="text-[10px] text-[#FF1E1E] font-black uppercase tracking-wider mt-1">
                   {((teachingCount / Math.max(1, totalParticipants)) * 100).toFixed(1)}% of total
                 </div>
-                <div className="text-xs text-white font-black uppercase tracking-wider mt-2 pt-2 border-t border-white/10">
+                <div className="text-xs text-[#1a1a1a] dark:text-white font-black uppercase tracking-wider mt-2 pt-2 border-t border-[#1a1a1a]/15 dark:border-white/10">
                   🏆 {teachingWinners} Winners
                 </div>
               </div>
 
-              <div className="bg-neutral-950 border border-white/10 p-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Non-Teaching Personnel</div>
-                <div className="text-2xl sm:text-3xl font-black text-white mt-1">
+              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Non-Teaching Personnel</div>
+                <div className="text-2xl sm:text-3xl font-black text-[#1a1a1a] dark:text-white mt-1">
                   {nonTeachingCount.toLocaleString()}
                 </div>
                 <div className="text-[10px] text-[#FF1E1E] font-black uppercase tracking-wider mt-1">
                   {((nonTeachingCount / Math.max(1, totalParticipants)) * 100).toFixed(1)}% of total
                 </div>
-                <div className="text-xs text-white font-black uppercase tracking-wider mt-2 pt-2 border-t border-white/10">
+                <div className="text-xs text-[#1a1a1a] dark:text-white font-black uppercase tracking-wider mt-2 pt-2 border-t border-[#1a1a1a]/15 dark:border-white/10">
                   🏆 {nonTeachingWinners} Winners
                 </div>
               </div>
@@ -197,10 +197,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {/* Quick Actions Panel */}
-          <div className="bg-neutral-950 border border-white/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-              <h4 className="font-black text-sm text-white uppercase tracking-tight">Ready for the Next Prize Draw?</h4>
-              <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">
+              <h4 className="font-black text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight">Ready for the Next Prize Draw?</h4>
+              <p className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase tracking-wider font-bold">
                 Launch the simultaneous 5-district raffle console.
               </p>
             </div>

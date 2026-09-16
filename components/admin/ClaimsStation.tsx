@@ -33,26 +33,26 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#121215] border border-white/10 p-3 text-xs font-mono">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-3 text-xs font-mono shadow-sm">
         <div className="flex items-center gap-2">
-          <span className="text-neutral-400 uppercase font-bold">Claim View Mode:</span>
+          <span className="text-neutral-600 dark:text-neutral-400 uppercase font-bold">Claim View Mode:</span>
           <button
             onClick={() => setViewMode('FAST')}
-            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors border border-[#1a1a1a] dark:border-transparent ${
               viewMode === 'FAST'
                 ? 'bg-[#ff6a00] text-black'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white'
+                : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white'
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>⚡ Fast Realtime Station</span>
+            <span>Fast Realtime Station</span>
           </button>
           <button
             onClick={() => setViewMode('LEGACY')}
-            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1 uppercase font-bold flex items-center gap-1.5 transition-colors border border-[#1a1a1a] dark:border-transparent ${
               viewMode === 'LEGACY'
-                ? 'bg-neutral-700 text-white'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white'
+                ? 'bg-[#1a1a1a] dark:bg-neutral-700 text-white'
+                : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white'
             }`}
           >
             <LayoutList className="w-3.5 h-3.5" />
