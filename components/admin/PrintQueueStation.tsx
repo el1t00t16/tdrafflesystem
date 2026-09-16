@@ -202,8 +202,10 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5]">
-      {/* Top Station Header & Sub-Nav */}
-      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl relative border-t-4 border-t-amber-500">
+      {/* On-Screen Workstation View (Hidden during stub printing so it occupies zero space) */}
+      <div className={`space-y-6 ${activeBatchPrint || activeSinglePrint ? 'print:hidden' : ''}`}>
+        {/* Top Station Header & Sub-Nav */}
+        <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl relative border-t-4 border-t-amber-500">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-500 text-black shadow-sm font-bold">
@@ -634,8 +636,9 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
           </div>
         </div>
       )}
+      </div>
 
-      {/* Batch Print Document Modal (1/4 Letter Layout: 4 Stubs Per Letter Sheet) */}
+      {/* Batch Print Document Modal (Pre-Cut 1/4 Letter Format) */}
       {activeBatchPrint && (
         <BatchPrintDocument
           batchNumber={activeBatchPrint.batchNumber}

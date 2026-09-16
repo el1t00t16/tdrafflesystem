@@ -138,7 +138,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
+    <div className="max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:space-y-0 print:w-full">
       {/* Admin Tab Navigation */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-3 border-b-2 border-[#1a1a1a] dark:border-white/15 scrollbar-thin print:hidden">
         {navItems.map((item) => {

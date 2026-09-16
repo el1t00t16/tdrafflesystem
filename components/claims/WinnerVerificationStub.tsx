@@ -69,31 +69,31 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           __html: `
             @media print {
               @page {
-                size: 4.25in 5.5in portrait;
+                size: letter portrait;
                 margin: 0.15in;
               }
-              body {
+              html, body {
                 background: white !important;
                 color: black !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                height: auto !important;
               }
-              body * {
-                visibility: hidden !important;
-              }
-              .winner-stub-printable,
-              .winner-stub-printable * {
-                visibility: visible !important;
+              .print\\:hidden {
+                display: none !important;
               }
               .winner-stub-printable {
-                position: fixed !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 3.95in !important;
-                height: 5.18in !important;
-                max-width: 3.95in !important;
-                max-height: 5.18in !important;
-                margin: 0 !important;
+                width: 4.0in !important;
+                height: 5.25in !important;
+                max-width: 4.0in !important;
+                max-height: 5.25in !important;
+                margin-left: 0 !important;
+                margin-right: auto !important;
+                margin-top: 0 !important;
+                margin-bottom: auto !important;
+                float: left !important;
+                clear: both !important;
+                display: block !important;
                 box-sizing: border-box !important;
                 background: white !important;
                 color: black !important;
@@ -250,9 +250,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) onClose();
       }}
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex justify-center items-center print:p-0 print:bg-white print:static"
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex justify-center items-center print:p-0 print:m-0 print:bg-white print:static print:block"
     >
-      <div className="bg-white text-black w-full max-w-md shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none">
+      <div className="bg-white text-black w-full max-w-md shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none print:w-auto print:block print:m-0 print:p-0">
         {/* Top Control Bar (Screen only) */}
         <div className="bg-[#1a1a1a] text-white px-4 py-3 flex items-center justify-between border-b-2 border-black print:hidden">
           <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         </div>
 
         {/* Stub Display */}
-        <div className="p-4 flex justify-center bg-neutral-200 print:bg-white print:p-0">
+        <div className="p-4 flex justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block">
           {stubContent}
         </div>
       </div>

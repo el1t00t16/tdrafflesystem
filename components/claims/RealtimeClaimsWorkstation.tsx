@@ -572,7 +572,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
   return (
     <div className="space-y-4 animate-fade-in font-sans selection:bg-[#ff6a00] selection:text-white">
-      {/* Real-time Alert Toast when new winners are drawn on Stage */}
+      {/* On-Screen Claims Workstation UI (Hidden during receipt/stub printing so it takes zero space) */}
+      <div className={`space-y-4 ${printingWinner || verifyingStubWinner ? 'print:hidden' : ''}`}>
+        {/* Real-time Alert Toast when new winners are drawn on Stage */}
       {newWinnerAlert && (
         <div className="bg-gradient-to-r from-[#ff6a00] to-amber-500 text-black px-4 py-3 shadow-2xl flex items-center justify-between border-2 border-white animate-bounce">
           <div className="flex items-center gap-3">
@@ -1564,6 +1566,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           </div>
         </div>
       )}
+      </div>
 
       {/* Printable Claim Slip Receipt Overlay */}
       {printingWinner && (

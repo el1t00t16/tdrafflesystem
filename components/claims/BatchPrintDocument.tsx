@@ -37,7 +37,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-neutral-900/90 backdrop-blur-md overflow-y-auto flex flex-col items-center print:bg-white print:static print:inset-auto print:overflow-visible">
+    <div className="fixed inset-0 z-50 bg-neutral-900/90 backdrop-blur-md overflow-y-auto flex flex-col items-center print:bg-white print:static print:inset-auto print:overflow-visible print:block print:p-0 print:m-0">
       {/* Top Floating Control Bar (Screen only, hidden in print) */}
       <div className="sticky top-0 z-40 w-full bg-[#1a1a1a] text-white border-b-2 border-black shadow-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
@@ -57,7 +57,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 truncate max-w-md font-sans mt-0.5">
-              {prizeName} • 1 Stub per 1/4 Letter Sheet (4.25&quot; × 5.5&quot;)
+              {prizeName} • 1 Stub per 1/4 Letter Sheet (Aligned to 1/4 side of page)
             </p>
           </div>
         </div>
@@ -100,51 +100,47 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
       </div>
 
       {/* Sheet Previews / Printable Document */}
-      <div className="batch-print-wrapper w-full max-w-3xl p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0">
+      <div className="batch-print-wrapper w-full max-w-3xl p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0 print:block">
         <style dangerouslySetInnerHTML={{
           __html: `
             @media print {
               @page {
-                size: 4.25in 5.5in portrait;
+                size: letter portrait;
                 margin: 0.15in;
               }
-              body {
+              html, body {
                 background: white !important;
                 color: black !important;
                 margin: 0 !important;
                 padding: 0 !important;
-              }
-              body * {
-                visibility: hidden !important;
-              }
-              .batch-print-wrapper,
-              .batch-print-wrapper * {
-                visibility: visible !important;
+                height: auto !important;
               }
               .batch-print-wrapper {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
                 width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                display: block !important;
+                position: static !important;
               }
               .stub-sheet-page {
-                width: 3.95in !important;
-                height: 5.18in !important;
-                max-width: 3.95in !important;
-                max-height: 5.18in !important;
+                width: 4.1in !important;
+                height: 5.35in !important;
+                max-width: 4.1in !important;
+                max-height: 5.35in !important;
+                margin-left: 0 !important;
+                margin-right: auto !important;
+                margin-top: 0 !important;
+                margin-bottom: auto !important;
+                padding: 0 !important;
+                float: left !important;
+                clear: both !important;
+                display: block !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
                 box-sizing: border-box !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
-                align-items: center !important;
+                background: white !important;
               }
               .stub-sheet-page:last-child {
                 page-break-after: auto !important;
@@ -157,7 +153,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
         {winners.map((winner, idx) => (
           <div
             key={winner.winnerId}
-            className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center"
+            className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"
           >
             {/* Screen Header Indicator */}
             <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
