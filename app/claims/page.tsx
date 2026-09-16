@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, Moon, Sun } from 'lucide-react';
+import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database } from 'lucide-react';
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
 import { RealtimeClaimsWorkstation } from '../../components/claims/RealtimeClaimsWorkstation';
 import { Winner, ClaimStationSession } from '../../lib/types';
-import { useTheme } from '../../lib/theme';
 import {
   isSupabaseConfigured,
   setSupabaseCredentials,
@@ -16,7 +15,6 @@ import {
 import { soundSynthesizer } from '../../lib/sound';
 
 export default function ClaimsPage() {
-  const { isDark, toggleDarkMode } = useTheme();
   const [winners, setWinners] = useState<Winner[]>([]);
   const [claimSession, setClaimSession] = useState<ClaimStationSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -288,11 +286,11 @@ export default function ClaimsPage() {
   const claimedCount = winners.filter((w) => w.claimStatus === 'CLAIMED').length;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)] flex flex-col font-sans transition-colors selection:bg-[var(--accent)] selection:text-black">
+    <div className="min-h-screen bg-[#09090b] text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-white">
       {/* Top Station Header */}
-      <header className="bg-[var(--header-bg)] text-[var(--ink)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
+      <header className="bg-[#18181b] text-[#f8f7f4] border-b border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-sm bg-[var(--badge-bg)] border border-[var(--border-accent)] flex items-center justify-center text-[var(--accent)]">
+          <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
             <Gift className="w-5 h-5" />
           </div>
           <div>
@@ -323,7 +321,6 @@ export default function ClaimsPage() {
 
         {/* Status Counters & Controls */}
         <div className="flex items-center gap-2.5 text-xs font-mono">
-          {/* Cloud Sync Refresh Button */}
           {isCloudConfigured && (
             <button
               onClick={triggerCloudHydration}
@@ -334,16 +331,6 @@ export default function ClaimsPage() {
               <RefreshCw className={`w-3.5 h-3.5 ${isHydrating ? 'animate-spin text-[#22c55e]' : ''}`} />
             </button>
           )}
-
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/15 px-2.5 py-1.5 rounded-sm transition-colors text-xs text-neutral-300 hover:text-white cursor-pointer"
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <Moon className="w-3.5 h-3.5 text-amber-300" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
-            <span className="hidden md:inline">{isDark ? 'Dark' : 'Light'}</span>
-          </button>
 
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-sm">
             <span className="text-neutral-400 text-[11px] uppercase">PENDING:</span>

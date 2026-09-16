@@ -18,15 +18,9 @@ import {
   QrCode,
   Lock,
   Smartphone,
-  X,
-  Palette,
-  Sparkles,
-  Monitor,
-  Moon,
-  Sun
+  X
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import { useTheme, THEMES, ThemeId } from '../../lib/theme';
 import {
   getSupabaseCredentials,
   setSupabaseCredentials,
@@ -77,17 +71,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [quickSetupQrUrl, setQuickSetupQrUrl] = useState<string | null>(null);
   const [copiedQuickSetupUrl, setCopiedQuickSetupUrl] = useState(false);
   const [pinSavedFeedback, setPinSavedFeedback] = useState(false);
-
-  // Dynamic Theme & Dark Mode Hook
-  const { theme, setTheme, allThemes, themeConfig, isDark, setMode, toggleDarkMode } = useTheme();
-  const [themeChangedFeedback, setThemeChangedFeedback] = useState<string | null>(null);
-
-  const handleSelectTheme = (newThemeId: ThemeId) => {
-    setTheme(newThemeId);
-    const found = allThemes.find((t) => t.id === newThemeId);
-    setThemeChangedFeedback(`Active: ${found?.name || newThemeId}`);
-    setTimeout(() => setThemeChangedFeedback(null), 3500);
-  };
 
   // Supabase State initialized lazily
   const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseCredentials().url);
@@ -236,172 +219,6 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      {/* Event Theme & Stage Color Palette Customizer */}
-      <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl relative border-t-2 border-t-[#F59E0B] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-4 gap-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-[#F59E0B] rounded-none">
-              <Palette className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none">
-                  EVENT COLOR THEME
-                </h3>
-                <span className="font-mono text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  Live Switcher
-                </span>
-              </div>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-[0.15em] mt-1">
-                Active Theme: <strong className="text-white">{themeConfig.name}</strong>
-              </p>
-            </div>
-          </div>
-
-          {themeChangedFeedback && (
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 px-3 py-1 animate-fade-in flex items-center gap-1 self-start sm:self-auto">
-              <Check className="w-3 h-3 text-emerald-400" />
-              {themeChangedFeedback}
-            </span>
-          )}
-        </div>
-
-        <p className="text-neutral-300 text-xs leading-relaxed">
-          Select a visual palette below. Changes apply <strong>instantly in real-time</strong> across the <strong>Stage Projector Display</strong>, <strong>Admin Master Console</strong>, and <strong>All Stations</strong>.
-        </p>
-
-        {/* Dedicated Dark / Light Mode Quick Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-neutral-950 border border-white/15 rounded-sm">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold uppercase text-white tracking-wide">
-                Display Mode:
-              </span>
-              <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 border ${
-                isDark ? 'border-amber-400/40 text-amber-300 bg-amber-400/10' : 'border-blue-400/40 text-blue-300 bg-blue-400/10'
-              }`}>
-                {isDark ? '🌙 Dark Mode Active' : '☀️ Light Mode Active'}
-              </span>
-            </div>
-            <p className="text-[11px] text-neutral-400 mt-0.5">
-              Switch between high-contrast stage dark mode and daylight alabaster light mode with one click.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-black/80 p-1 border border-white/20 rounded-sm self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setMode('dark')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
-                isDark
-                  ? 'bg-amber-500 text-black shadow-xs'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Moon className="w-3.5 h-3.5" />
-              <span>Dark Mode</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('light')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
-                !isDark
-                  ? 'bg-amber-500 text-black shadow-xs'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Sun className="w-3.5 h-3.5" />
-              <span>Light Mode</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Theme Selection Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {allThemes.map((t) => {
-            const isActive = theme === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => handleSelectTheme(t.id)}
-                className={`p-3.5 text-left border-2 transition-all relative flex flex-col justify-between gap-3 group cursor-pointer ${
-                  isActive
-                    ? 'border-white bg-neutral-900 shadow-lg ring-1 ring-white/30'
-                    : 'border-white/15 bg-neutral-950/80 hover:border-white/40 hover:bg-neutral-900/60'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 border ${
-                        isActive ? 'border-amber-400 text-amber-300 bg-amber-400/10' : 'border-white/20 text-neutral-400'
-                      }`}>
-                        {t.tag}
-                      </span>
-                      <span className={`text-[8px] font-mono font-bold uppercase px-1 py-0.5 border ${
-                        t.mode === 'dark' ? 'border-neutral-700 text-neutral-400 bg-neutral-900' : 'border-amber-400/30 text-amber-300 bg-amber-950/20'
-                      }`}>
-                        {t.mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
-                      </span>
-                    </div>
-                    {isActive ? (
-                      <span className="flex items-center gap-1 text-[10px] font-mono font-black text-amber-400 uppercase">
-                        <Check className="w-3.5 h-3.5 text-amber-400" /> ACTIVE
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono text-neutral-500 uppercase group-hover:text-white transition-colors">
-                        Click to Apply
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="font-display font-bold text-sm text-white uppercase tracking-tight">
-                    {t.name}
-                  </div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5 leading-snug">
-                    {t.subtitle}
-                  </div>
-                </div>
-
-                {/* Color Swatches */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                  <span className="text-[9px] font-mono uppercase text-neutral-400 font-bold">Palette:</span>
-                  <div className="flex items-center gap-1.5">
-                    <div
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: t.colors.bg }}
-                      title={`Stage Background: ${t.colors.bg}`}
-                    />
-                    <div
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: t.colors.surfaceCard }}
-                      title={`Card Surface: ${t.colors.surfaceCard}`}
-                    />
-                    <div
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: t.colors.accent }}
-                      title={`Primary Accent: ${t.colors.accent}`}
-                    />
-                    <div
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: t.colors.accentSecondary }}
-                      title={`Secondary Accent: ${t.colors.accentSecondary}`}
-                    />
-                    <div
-                      className="w-4 h-4 rounded-full border border-white/30"
-                      style={{ backgroundColor: t.colors.text }}
-                      title={`Text Ink: ${t.colors.text}`}
-                    />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Event Configuration Form */}
       <div className="bg-[#121212] border border-white/10 p-6 shadow-2xl relative border-t-2 border-t-[#FF1E1E]">
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">

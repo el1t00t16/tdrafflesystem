@@ -387,10 +387,11 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                     <input
                       type="number"
                       min="1"
-                      step="50"
+                      step="any"
                       required
-                      value={unitValue}
-                      onChange={(e) => setUnitValue(Number(e.target.value))}
+                      placeholder="e.g. 1000"
+                      value={unitValue === 0 ? '' : unitValue}
+                      onChange={(e) => setUnitValue(e.target.value === '' ? 0 : Number(e.target.value))}
                       className="w-full bg-neutral-950 border border-white/15 p-2.5 text-white outline-none focus:border-[#FF1E1E] font-bold"
                     />
                   </div>

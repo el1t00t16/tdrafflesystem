@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Lock, ExternalLink, Palette, Moon, Sun } from 'lucide-react';
+import { Lock, ExternalLink } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { useTheme } from '../lib/theme';
 
 interface HeaderProps {
   currentView: 'display' | 'admin' | 'claim' | 'attendance' | 'gas';
@@ -29,17 +28,10 @@ export const Header: React.FC<HeaderProps> = ({
   onLock
 }) => {
   const [isMounted, setIsMounted] = React.useState(false);
-  const { theme, setTheme, allThemes, themeConfig, isDark, toggleDarkMode } = useTheme();
 
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  const handleCycleTheme = () => {
-    const currentIndex = allThemes.findIndex((t) => t.id === theme);
-    const nextIndex = (currentIndex + 1) % allThemes.length;
-    setTheme(allThemes[nextIndex].id);
-  };
 
   return (
     <>
@@ -159,52 +151,6 @@ export const Header: React.FC<HeaderProps> = ({
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
 
-          {/* Quick Theme Switcher Button */}
-          {isMounted && (
-            <button
-              id="header-theme-toggle"
-              onClick={handleCycleTheme}
-              className="nav-item flex items-center gap-1.5 border border-white/20 hover:border-[var(--accent)] hover:text-white transition-all"
-              title={`Active Visual Theme: ${themeConfig.name} (${themeConfig.tag})\nClick to cycle palettes instantly.`}
-            >
-              <Palette className="w-3 h-3 text-[var(--accent)]" />
-              <span
-                className="w-2.5 h-2.5 rounded-full border border-white/40 inline-block shrink-0 shadow-xs"
-                style={{ backgroundColor: themeConfig.colors.accent }}
-              />
-              <span className="hidden sm:inline font-mono text-[9px] font-bold uppercase tracking-wider">
-                {themeConfig.name.split('&')[0].trim()}
-              </span>
-            </button>
-          )}
-
-          {/* Quick Dark Mode Toggle Button */}
-          {isMounted && (
-            <button
-              id="header-darkmode-toggle"
-              onClick={toggleDarkMode}
-              className={`nav-item flex items-center gap-1.5 border transition-all cursor-pointer ${
-                isDark
-                  ? 'border-white/20 hover:border-amber-400 hover:text-amber-300'
-                  : 'border-white/30 hover:border-neutral-900 bg-white/10 text-white'
-              }`}
-              title={isDark ? 'Current: Dark Mode (Click to switch to Light Mode)' : 'Current: Light Mode (Click to switch to Dark Mode)'}
-              aria-label="Toggle Dark / Light Mode"
-            >
-              {isDark ? (
-                <>
-                  <Moon className="w-3 h-3 text-amber-300" />
-                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider">Dark</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-3 h-3 text-amber-400" />
-                  <span className="font-mono text-[9px] font-bold uppercase tracking-wider">Light</span>
-                </>
-              )}
-            </button>
-          )}
-
           {onLock && (
             <button
               id="header-lock-toggle"
@@ -220,16 +166,16 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Editorial Style Layout Header */}
-      <header className="bg-[var(--header-bg)] text-[var(--ink)] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[var(--border)] transition-colors">
+      <header className="bg-[#f8f7f4] text-[#1a1a1a] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a]">
         <div className="header-title">
-          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[var(--ink-muted)] mb-0.5">
+          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 mb-0.5">
             SARANGANI PROVINCE / REGION XII
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[var(--ink)] -mb-0.5">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] -mb-0.5">
             Teachers&apos; Day 2026
           </h1>
         </div>
-        <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[var(--ink-muted)]">
+        <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[#1a1a1a]/70">
           MUNICIPALITY OF MALUNGON<br />
           GRAND RAFFLE SYSTEM V2.6
         </div>
