@@ -34,6 +34,7 @@ interface AdminDashboardProps {
   onLaunchDraw: () => void;
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
+  onClearAllParticipants?: () => void;
   onAddPrize: (prize: Prize) => void;
   onDeletePrize?: (prizeId: string) => void;
   onClearAllPrizes?: () => void;
@@ -51,7 +52,7 @@ interface AdminDashboardProps {
   onUnclaimPrize?: (winnerId: string) => void;
   onForfeitPrize?: (winnerId: string, reason?: string) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
-  onPrepareNewEvent: (options?: { resetAttendance?: boolean }) => Promise<{ success: boolean; message: string }> | void;
+  onPrepareNewEvent: (options?: { resetAttendance?: boolean; deleteParticipants?: boolean }) => Promise<{ success: boolean; message: string }> | void;
   eligiblePoolCount: number;
   isDrawing: boolean;
   distributionMode: DistributionMode;
@@ -74,6 +75,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onLaunchDraw,
   onToggleEligibility,
   onImportParticipants,
+  onClearAllParticipants,
   onAddPrize,
   onDeletePrize,
   onClearAllPrizes,
@@ -174,6 +176,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           participants={participants}
           onToggleEligibility={onToggleEligibility}
           onImportParticipants={onImportParticipants}
+          onClearAllParticipants={onClearAllParticipants}
         />
       )}
 

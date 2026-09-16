@@ -39,7 +39,8 @@ import {
   updateParticipantEligibilityInSupabase,
   subscribeToRealtimeUpdates,
   isSupabaseConfigured,
-  executeFullEventResetInSupabase
+  executeFullEventResetInSupabase,
+  clearAllParticipantsFromSupabase
 } from '../lib/supabase';
 
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
@@ -393,6 +394,7 @@ export default function Home() {
         },
 
         onWinnerChange: (winner) => {
+          if (!winner.winnerId) return;
           setWinners((prev) => {
             const idx = prev.findIndex((w) => w.winnerId === winner.winnerId);
             let next: Winner[];
@@ -402,6 +404,18 @@ export default function Home() {
             } else {
               next = [winner, ...prev];
             }
+            try {
+              localStorage.setItem('td26_winners', JSON.stringify(next));
+            } catch (e) {
+              console.error(e);
+            }
+            return next;
+          });
+        },
+
+        onWinnerDelete: (deletedWinnerId) => {
+          setWinners((prev) => {
+            const next = prev.filter((w) => w.winnerId && w.winnerId !== deletedWinnerId);
             try {
               localStorage.setItem('td26_winners', JSON.stringify(next));
             } catch (e) {
@@ -1050,6 +1064,20 @@ export default function Home() {
     }
   };
 
+  // Clear all participants (Purge masterlist locally and in Supabase Cloud)
+  const handleClearAllParticipants = async () => {
+    soundSynthesizer.playClick();
+    setParticipants([]);
+    try {
+      localStorage.removeItem('td26_profiling_participants');
+    } catch (e) {
+      console.error(e);
+    }
+    if (isSupabaseConfigured()) {
+      clearAllParticipantsFromSupabase().catch((err) => console.warn('Supabase participants clear sync:', err));
+    }
+  };
+
   // Prize Management Handlers
   const handleAddPrize = (newPrize: Prize) => {
     soundSynthesizer.playSuccess();
@@ -1357,6 +1385,7 @@ export default function Home() {
   // Prepare Fresh Event Reset (clears winners, raffle logs, resets participant flags & prizes locally and in Supabase Cloud)
   const handlePrepareNewEvent = async (options?: {
     resetAttendance?: boolean;
+    deleteParticipants?: boolean;
   }): Promise<{ success: boolean; message: string }> => {
     soundSynthesizer.playCelebrationFanfare();
 
@@ -1366,19 +1395,23 @@ export default function Home() {
     setRevealedWinners([]);
     setDrawStatus('IDLE');
 
-    // Update participants: preserve all 2,000 personnel profiles, but reset winner & claimed flags
-    setParticipants((prev) =>
-      prev.map((p) => ({
-        ...p,
-        winner: 'NO',
-        claimed: 'NO',
-        ...(options?.resetAttendance
-          ? { eligible: 'INELIGIBLE', attendedAt: undefined, attendedBy: undefined }
-          : {})
-      }))
-    );
+    if (options?.deleteParticipants) {
+      setParticipants([]);
+    } else {
+      // Update participants: preserve personnel profiles, but reset winner & claimed flags
+      setParticipants((prev) =>
+        prev.map((p) => ({
+          ...p,
+          winner: 'NO',
+          claimed: 'NO',
+          ...(options?.resetAttendance
+            ? { eligible: 'INELIGIBLE', attendedAt: undefined, attendedBy: undefined }
+            : {})
+        }))
+      );
+    }
 
-    if (options?.resetAttendance) {
+    if (options?.resetAttendance || options?.deleteParticipants) {
       setAttendanceRecords([]);
     }
 
@@ -1395,8 +1428,11 @@ export default function Home() {
     try {
       localStorage.removeItem('td26_winners');
       localStorage.removeItem('td26_raffle_logs');
-      if (options?.resetAttendance) {
+      if (options?.resetAttendance || options?.deleteParticipants) {
         localStorage.removeItem('td26_attendance_records');
+      }
+      if (options?.deleteParticipants) {
+        localStorage.removeItem('td26_profiling_participants');
       }
     } catch (e) {
       console.error('LocalStorage cleanup notice:', e);
@@ -1407,6 +1443,7 @@ export default function Home() {
       try {
         const cloudRes = await executeFullEventResetInSupabase({
           resetAttendance: options?.resetAttendance,
+          deleteParticipants: options?.deleteParticipants,
           prizes: resetPrizesList
         });
 
@@ -1420,7 +1457,9 @@ export default function Home() {
 
         return {
           success: true,
-          message: 'Local session and Supabase Cloud database have been completely reset!'
+          message: options?.deleteParticipants
+            ? 'Local session, participants roster, and Supabase Cloud database have been completely purged!'
+            : 'Local session and Supabase Cloud database have been completely reset!'
         };
       } catch (err: any) {
         console.error('Supabase cloud reset exception:', err);
@@ -1433,7 +1472,9 @@ export default function Home() {
 
     return {
       success: true,
-      message: 'Local session reset successfully (Offline Mode).'
+      message: options?.deleteParticipants
+        ? 'Local session and participants roster cleared (Offline Mode).'
+        : 'Local session reset successfully (Offline Mode).'
     };
   };
 
@@ -1548,6 +1589,7 @@ export default function Home() {
             onLaunchDraw={handleOpenDrawPreview}
             onToggleEligibility={handleToggleEligibility}
             onImportParticipants={handleImportParticipants}
+            onClearAllParticipants={handleClearAllParticipants}
             onAddPrize={handleAddPrize}
             onDeletePrize={handleDeletePrize}
             onClearAllPrizes={handleClearAllPrizes}

@@ -111,6 +111,7 @@ export default function ClaimsPage() {
 
     const unsubscribe = subscribeToRealtimeUpdates({
       onWinnerChange: (incomingWinner) => {
+        if (!incomingWinner.winnerId) return;
         setWinners((prev) => {
           const index = prev.findIndex((w) => w.winnerId === incomingWinner.winnerId);
           let next: Winner[];
@@ -120,6 +121,17 @@ export default function ClaimsPage() {
           } else {
             next = [incomingWinner, ...prev];
           }
+          try {
+            localStorage.setItem('td26_winners', JSON.stringify(next));
+          } catch (e) {
+            console.error(e);
+          }
+          return next;
+        });
+      },
+      onWinnerDelete: (deletedWinnerId) => {
+        setWinners((prev) => {
+          const next = prev.filter((w) => w.winnerId && w.winnerId !== deletedWinnerId);
           try {
             localStorage.setItem('td26_winners', JSON.stringify(next));
           } catch (e) {

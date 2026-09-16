@@ -32,7 +32,7 @@ import {
 interface SettingsManagerProps {
   settings: SystemSettings;
   onUpdateSettings: (newSettings: SystemSettings) => void;
-  onPrepareNewEvent: (options?: { resetAttendance?: boolean }) => Promise<{ success: boolean; message: string }> | void;
+  onPrepareNewEvent: (options?: { resetAttendance?: boolean; deleteParticipants?: boolean }) => Promise<{ success: boolean; message: string }> | void;
   totalParticipants: number;
   totalWinners: number;
   participants?: Participant[];
@@ -64,6 +64,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [isResetting, setIsResetting] = useState(false);
   const [resetFeedback, setResetFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [resetAttendanceCheckbox, setResetAttendanceCheckbox] = useState(false);
+  const [deleteParticipantsCheckbox, setDeleteParticipantsCheckbox] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedGateUrl, setCopiedGateUrl] = useState(false);
   const [showQuickSetupQr, setShowQuickSetupQr] = useState(false);
@@ -191,7 +192,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     setIsResetting(true);
     setResetFeedback(null);
     try {
-      const res = await onPrepareNewEvent({ resetAttendance: resetAttendanceCheckbox });
+      const res = await onPrepareNewEvent({
+        resetAttendance: resetAttendanceCheckbox,
+        deleteParticipants: deleteParticipantsCheckbox
+      });
       if (res && res.message) {
         setResetFeedback(res);
       } else {
@@ -202,6 +206,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
       }
       setShowConfirmReset(false);
       setConfirmInput('');
+      setDeleteParticipantsCheckbox(false);
     } catch (err: any) {
       setResetFeedback({
         success: false,
@@ -440,7 +445,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <span>Safety Confirmation Required</span>
             </div>
             <p className="text-neutral-300 leading-relaxed">
-              This will clear previous winner records, clear draw history, and reset participant winner flags to &quot;NO&quot; both <strong>locally and in Supabase Cloud</strong>. All prize quantities will reset back to full. <strong>The 2,000 participant master list will NOT be deleted.</strong>
+              This will clear previous winner records, clear draw history, and reset participant winner flags to &quot;NO&quot; both <strong>locally and in Supabase Cloud</strong>. All prize quantities will reset back to full. {deleteParticipantsCheckbox ? <strong className="text-red-400">WARNING: All {totalParticipants.toLocaleString()} participants will be permanently wiped!</strong> : <strong>The {totalParticipants.toLocaleString()} participant master list will NOT be deleted unless checked below.</strong>}
             </p>
 
             <div className="bg-neutral-950 p-3 border border-white/10 space-y-1">
@@ -458,6 +463,27 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   </span>
                   <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">
                     Check this to reset all teachers back to Ineligible (Absent) and clear all gate scan records in Supabase. Leave unchecked if attendees have already checked in at the gates.
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            <div className="bg-neutral-950 p-3 border border-red-500/30 space-y-1">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={deleteParticipantsCheckbox}
+                  onChange={(e) => setDeleteParticipantsCheckbox(e.target.checked)}
+                  disabled={isResetting}
+                  className="accent-[#FF1E1E] w-4 h-4 mt-0.5"
+                />
+                <div>
+                  <span className="font-bold text-red-400 uppercase text-[11px] flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    Also Delete All Participants Masterlist (Purge Roster)
+                  </span>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">
+                    DANGER: Check this ONLY if you want to completely delete all {totalParticipants.toLocaleString()} personnel from Supabase Cloud and local storage. You will need to import a new roster TSV/CSV file.
                   </span>
                 </div>
               </label>

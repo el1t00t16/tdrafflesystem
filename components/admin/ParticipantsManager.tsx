@@ -3,19 +3,21 @@
 import React, { useState, useMemo } from 'react';
 import { District, Participant, EligibilityStatus, YesNo } from '../../lib/types';
 import { parseProfilingTSV } from '../../lib/data';
-import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check, Cloud, CloudOff, AlertCircle } from 'lucide-react';
+import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check, Cloud, CloudOff, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
 
 interface ParticipantsManagerProps {
   participants: Participant[];
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
+  onClearAllParticipants?: () => void;
 }
 
 export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   participants,
   onToggleEligibility,
-  onImportParticipants
+  onImportParticipants,
+  onClearAllParticipants
 }) => {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState<string>('ALL');
@@ -30,7 +32,27 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [syncingCloud, setSyncingCloud] = useState(false);
   const [syncProgress, setSyncProgress] = useState<string | null>(null);
   const [cloudMsg, setCloudMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [purgeInput, setPurgeInput] = useState('');
+  const [isPurging, setIsPurging] = useState(false);
   const pageSize = 25;
+
+  const handleConfirmPurge = async () => {
+    if (purgeInput !== 'PURGE') return;
+    setIsPurging(true);
+    try {
+      if (onClearAllParticipants) {
+        await onClearAllParticipants();
+      }
+      setCloudMsg({ text: 'All participants have been wiped from local cache and Supabase Cloud.' });
+      setIsPurgeModalOpen(false);
+      setPurgeInput('');
+    } catch (err: any) {
+      setCloudMsg({ text: `Purge error: ${err?.message || err}`, error: true });
+    } finally {
+      setIsPurging(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return participants.filter((p) => {
@@ -215,6 +237,20 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
               <FileSpreadsheet className="w-4 h-4 text-[#ff6a00] hover:text-white" />
               <span>Import Sheet</span>
             </button>
+
+            {participants.length > 0 && onClearAllParticipants && (
+              <button
+                onClick={() => {
+                  setIsPurgeModalOpen(true);
+                  setPurgeInput('');
+                }}
+                className="px-3 py-2 bg-red-950/40 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                title="Completely purge all participants from Supabase Cloud and local storage"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                <span>Purge Roster</span>
+              </button>
+            )}
 
             <div className="relative flex-1 md:w-64">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -541,6 +577,62 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 className="px-5 py-2 bg-[#1a1a1a] hover:bg-[#ff6a00] text-white transition-colors"
               >
                 Process & Load Sheet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purge Confirmation Modal */}
+      {isPurgeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-[#121212] border-2 border-red-500 max-w-md w-full p-5 space-y-4 shadow-2xl text-white font-mono text-xs">
+            <div className="flex items-center gap-2 text-red-400 font-black text-sm uppercase">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+              <span>DANGER: PURGE ENTIRE PARTICIPANTS ROSTER</span>
+            </div>
+
+            <p className="text-neutral-300 leading-relaxed">
+              This action will permanently delete all <strong>{participants.length.toLocaleString()} participants</strong> from your browser local cache and Supabase Cloud database.
+            </p>
+
+            <div className="bg-red-950/40 border border-red-500/30 p-3 text-[11px] text-red-200 leading-relaxed">
+              ⚠️ Warning: This cannot be undone. You will need to re-import your masterlist TSV/CSV file to load participants again.
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-neutral-300 font-bold uppercase text-[10px] tracking-wider">
+                Type <strong className="text-white font-mono">PURGE</strong> to confirm:
+              </label>
+              <input
+                type="text"
+                placeholder="PURGE"
+                value={purgeInput}
+                onChange={(e) => setPurgeInput(e.target.value)}
+                disabled={isPurging}
+                className="w-full bg-black border border-red-500 p-2.5 text-white font-mono text-xs outline-none uppercase font-bold"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isPurging}
+                onClick={() => {
+                  setIsPurgeModalOpen(false);
+                  setPurgeInput('');
+                }}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 text-xs font-bold uppercase"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={purgeInput !== 'PURGE' || isPurging}
+                onClick={handleConfirmPurge}
+                className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-xs font-bold uppercase flex items-center gap-1.5"
+              >
+                {isPurging ? 'Purging...' : 'Permanently Purge'}
               </button>
             </div>
           </div>

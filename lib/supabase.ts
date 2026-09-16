@@ -961,6 +961,26 @@ export async function clearAttendanceRecordsFromSupabase(): Promise<{ success: b
   }
 }
 
+export async function clearAllParticipantsFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode' };
+  }
+  try {
+    const { error } = await client.from('participants').delete().neq('id', '___NEVER_MATCH___');
+    if (error) {
+      const msg = formatSupabaseError(error);
+      console.error('Supabase clear participants error:', msg, error);
+      return { success: false, error: msg };
+    }
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Error clearing participants from Supabase:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
 export async function resetParticipantsInSupabase(options?: {
   resetAttendance?: boolean;
 }): Promise<{ success: boolean; error?: string }> {
@@ -1021,6 +1041,7 @@ export async function resetPrizesInventoryInSupabase(
 
 export async function executeFullEventResetInSupabase(options: {
   resetAttendance?: boolean;
+  deleteParticipants?: boolean;
   prizes?: Prize[];
 }): Promise<{ success: boolean; error?: string }> {
   const client = getSupabase();
@@ -1037,12 +1058,17 @@ export async function executeFullEventResetInSupabase(options: {
     const logsRes = await clearRaffleLogsFromSupabase();
     if (!logsRes.success) throw new Error(`Raffle logs reset failed: ${logsRes.error}`);
 
-    // 3. Reset Participant winner flags (and optionally attendance)
-    const partRes = await resetParticipantsInSupabase({ resetAttendance: options.resetAttendance });
-    if (!partRes.success) throw new Error(`Participants reset failed: ${partRes.error}`);
+    // 3. Either completely purge participants or reset participant winner flags
+    if (options.deleteParticipants) {
+      const delPartRes = await clearAllParticipantsFromSupabase();
+      if (!delPartRes.success) throw new Error(`Participants purge failed: ${delPartRes.error}`);
+    } else {
+      const partRes = await resetParticipantsInSupabase({ resetAttendance: options.resetAttendance });
+      if (!partRes.success) throw new Error(`Participants reset failed: ${partRes.error}`);
+    }
 
     // 4. Optionally clear Attendance Scan Records table
-    if (options.resetAttendance) {
+    if (options.resetAttendance || options.deleteParticipants) {
       const attRes = await clearAttendanceRecordsFromSupabase();
       if (!attRes.success) throw new Error(`Attendance records reset failed: ${attRes.error}`);
     }
@@ -1067,12 +1093,14 @@ export async function executeFullEventResetInSupabase(options: {
 export function subscribeToRealtimeUpdates({
   onAttendanceScan,
   onWinnerChange,
+  onWinnerDelete,
   onParticipantChange,
   onPrizeChange,
   onLogAdded
 }: {
   onAttendanceScan?: (record: AttendanceRecord) => void;
   onWinnerChange?: (winner: Winner) => void;
+  onWinnerDelete?: (winnerId: string) => void;
   onParticipantChange?: (participantUpdate: { id: string; eligible?: string; winner?: string; attended_at?: string; attended_by?: string }) => void;
   onPrizeChange?: (prize: Prize) => void;
   onLogAdded?: (log: RaffleLog) => void;
@@ -1088,7 +1116,7 @@ export function subscribeToRealtimeUpdates({
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'attendance_records' },
         (payload) => {
-          if (onAttendanceScan && payload.new) {
+          if (onAttendanceScan && payload.new && (payload.new as any).id) {
             const row = payload.new as any;
             onAttendanceScan({
               id: row.id,
@@ -1110,7 +1138,16 @@ export function subscribeToRealtimeUpdates({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'winners' },
         (payload) => {
-          if (onWinnerChange && payload.new) {
+          if (payload.eventType === 'DELETE') {
+            const oldRow = payload.old as any;
+            const deletedId = oldRow?.winner_id || oldRow?.id;
+            if (onWinnerDelete && deletedId) {
+              onWinnerDelete(deletedId);
+            }
+            return;
+          }
+
+          if (onWinnerChange && payload.new && (payload.new as any).winner_id) {
             const row = payload.new as any;
             onWinnerChange({
               winnerId: row.winner_id,
@@ -1147,7 +1184,7 @@ export function subscribeToRealtimeUpdates({
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'participants' },
         (payload) => {
-          if (onParticipantChange && payload.new) {
+          if (onParticipantChange && payload.new && (payload.new as any).id) {
             const row = payload.new as any;
             onParticipantChange({
               id: row.id,
@@ -1163,7 +1200,8 @@ export function subscribeToRealtimeUpdates({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'prizes' },
         (payload) => {
-          if (onPrizeChange && payload.new) {
+          if (payload.eventType === 'DELETE') return;
+          if (onPrizeChange && payload.new && (payload.new as any).id) {
             const row = payload.new as any;
             onPrizeChange({
               id: row.id,
@@ -1183,7 +1221,7 @@ export function subscribeToRealtimeUpdates({
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'raffle_logs' },
         (payload) => {
-          if (onLogAdded && payload.new) {
+          if (onLogAdded && payload.new && (payload.new as any).log_id) {
             const row = payload.new as any;
             onLogAdded({
               logId: row.log_id,

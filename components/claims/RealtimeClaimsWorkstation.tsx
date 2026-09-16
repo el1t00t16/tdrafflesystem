@@ -129,6 +129,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
     const unsubscribe = subscribeToRealtimeUpdates({
       onWinnerChange: (updatedWinner) => {
+        if (!updatedWinner.winnerId) return;
         // Check if this is a newly drawn winner
         const existing = winners.find((w) => w.winnerId === updatedWinner.winnerId);
         if (!existing) {
