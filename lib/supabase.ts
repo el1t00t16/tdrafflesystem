@@ -784,7 +784,13 @@ export async function savePrizeToSupabase(prize: Prize): Promise<{ success: bool
       category: prize.category || 'MINOR'
     };
 
-    const { error } = await client.from('prizes').upsert([row], { onConflict: 'id' });
+    let { error } = await client.from('prizes').upsert([row], { onConflict: 'id' });
+    if (error && (error.message?.includes('category') || error.details?.includes('category') || (error as any).code === '42703')) {
+      // Graceful fallback if database does not have category column yet
+      const { category, ...fallbackRow } = row;
+      const retry = await client.from('prizes').upsert([fallbackRow], { onConflict: 'id' });
+      error = retry.error;
+    }
     if (error) {
       const formatted = formatSupabaseError(error);
       console.error('Supabase save prize error:', formatted, error);
@@ -865,7 +871,13 @@ export async function syncPrizesToSupabase(prizes: Prize[]): Promise<{ success: 
       category: String(p.category || 'MINOR')
     }));
 
-    const { error } = await client.from('prizes').upsert(rows, { onConflict: 'id' });
+    let { error } = await client.from('prizes').upsert(rows, { onConflict: 'id' });
+    if (error && (error.message?.includes('category') || error.details?.includes('category') || (error as any).code === '42703')) {
+      // Graceful fallback if database does not have category column yet
+      const fallbackRows = rows.map(({ category, ...rest }) => rest);
+      const retry = await client.from('prizes').upsert(fallbackRows, { onConflict: 'id' });
+      error = retry.error;
+    }
     if (error) {
       const formatted = formatSupabaseError(error);
       console.error('Error syncing prizes to Supabase:', formatted, error);
