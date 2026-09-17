@@ -27,7 +27,9 @@ import {
   UploadCloud,
   Loader2,
   ExternalLink,
-  Trash2
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -95,8 +97,19 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   // Camera Scanner states
   const [cameraActive, setCameraActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [showDashboardInFocus, setShowDashboardInFocus] = useState<boolean>(false);
   const scannerInstanceRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'html5qr-attendance-reader';
+
+  // Automatically scroll to camera and collapse dashboard when camera activates
+  useEffect(() => {
+    if (cameraActive) {
+      setShowDashboardInFocus(false);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {}
+    }
+  }, [cameraActive]);
 
   // Barcode Gun states
   const gunInputRef = useRef<HTMLInputElement | null>(null);
@@ -773,170 +786,246 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   };
 
   return (
-    <div id="attendance-station-container" className="w-full flex flex-col gap-5">
-      {/* Top Header & Operational Banner */}
-      <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
-            <QrCode className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-mono font-bold tracking-tight text-[#1a1a1a] dark:text-white uppercase">
-                Attendance &amp; Eligibility Station
-              </h1>
-              <span className="px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold bg-[#22c55e]/20 text-emerald-700 dark:text-[#22c55e] border border-[#22c55e]/30">
-                LIVE GATE SCANNER
-              </span>
+    <div id="attendance-station-container" className="w-full flex flex-col gap-4">
+      {/* 1. Camera Focus Mode Top Bar (Shown when Camera is Active and Dashboard is Hidden) */}
+      {cameraActive && !showDashboardInFocus && (
+        <div className="bg-white dark:bg-[#18181b] border-2 border-[#ff6a00] p-3 sm:p-4 rounded-sm flex flex-wrap items-center justify-between gap-3 shadow-md animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00] shrink-0">
+              <Camera className="w-5 h-5" />
             </div>
-            <p className="text-xs text-neutral-600 dark:text-[#a1a1aa] mt-0.5">
-              Only scanned attendees become <strong className="text-[#1a1a1a] dark:text-white">ELIGIBLE</strong> for the Municipal Teachers&apos; Day 2026 raffle.
-            </p>
-          </div>
-        </div>
-
-        {/* Station Controls */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
-            <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Station:</span>
-            {isStandaloneGate ? (
-              <span className="text-emerald-700 dark:text-[#22c55e] font-mono font-bold text-xs max-w-[200px] truncate" title={stationId}>
-                {stationId}
-              </span>
-            ) : (
-              <select
-                value={stationId}
-                onChange={(e) => setStationId(e.target.value)}
-                className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none cursor-pointer"
-              >
-                <option value="Station 1 - Main Entrance" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 1 - Main Entrance</option>
-                <option value="Station 2 - North Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 2 - North Gate</option>
-                <option value="Station 3 - South Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 3 - South Gate</option>
-                <option value="Station 4 - VIP / Fast Track" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 4 - VIP / Fast Track</option>
-              </select>
-            )}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <h2 className="text-xs sm:text-sm font-mono font-bold text-[#1a1a1a] dark:text-white uppercase tracking-wider">
+                  CAMERA SCANNER FOCUS MODE
+                </h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-xs font-bold uppercase">
+                  ACTIVE
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Station: <strong className="text-[#1a1a1a] dark:text-white">{stationId}</strong> • Officer: <strong className="text-[#1a1a1a] dark:text-white">{officerName}</strong>
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
-            <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Officer:</span>
-            {isStandaloneGate ? (
-              <span className="text-[#1a1a1a] dark:text-white font-mono font-bold text-xs max-w-[140px] truncate" title={officerName}>
-                {officerName}
-              </span>
-            ) : (
-              <input
-                type="text"
-                value={officerName}
-                onChange={(e) => setOfficerName(e.target.value)}
-                placeholder="Officer Name"
-                className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none w-28"
-              />
-            )}
-          </div>
+          <div className="flex items-center gap-2 flex-wrap ml-auto">
+            {/* Live Count Pill */}
+            <div className="flex items-center gap-1.5 font-mono text-xs px-3 py-1.5 bg-[#f8f7f4] dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/10 rounded-xs">
+              <span className="text-neutral-500 text-[10px] uppercase font-bold">Checked In:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</span>
+              <span className="text-neutral-400">/</span>
+              <span className="text-neutral-600 dark:text-neutral-400">{stats.total}</span>
+              <span className="text-[#ff6a00] font-bold text-[10px]">({stats.rate}%)</span>
+            </div>
 
-          <button
-            onClick={() => setAudioFeedback((prev) => !prev)}
-            title="Toggle Audio Feedback"
-            className={`p-2 rounded-sm border text-xs flex items-center gap-1 transition-colors ${
-              audioFeedback
-                ? 'bg-[#ff6a00]/15 border-[#ff6a00]/40 text-[#ff6a00]'
-                : 'bg-[#f8f7f4] dark:bg-[#27272a] border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-neutral-600 dark:text-[#71717a]'
-            }`}
-          >
-            {audioFeedback ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Live Statistics Overview Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
-          <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
-            <span>Registered</span>
-            <Users className="w-4 h-4" />
-          </div>
-          <div className="text-2xl font-mono font-bold text-[#1a1a1a] dark:text-white mt-1">{stats.total}</div>
-          <div className="text-[11px] text-neutral-500 dark:text-[#a1a1aa] mt-0.5">Imported Profiling</div>
-        </div>
-
-        <div className="bg-emerald-50/70 dark:bg-[#18181b] border-2 border-emerald-600 dark:border-[#22c55e]/30 p-3.5 rounded-sm bg-gradient-to-br from-emerald-50/70 dark:from-[#18181b] to-emerald-100/40 dark:to-[#22c55e]/10 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-800 dark:text-[#22c55e] text-[11px] font-mono uppercase font-semibold">
-            <span>Checked In (Present)</span>
-            <UserCheck className="w-4 h-4" />
-          </div>
-          <div className="text-2xl font-mono font-bold text-emerald-600 dark:text-[#22c55e] mt-1">{stats.present}</div>
-          <div className="text-[11px] text-emerald-700 dark:text-[#22c55e]/80 mt-0.5">Active Raffle Pool</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
-          <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
-            <span>Absent (Ineligible)</span>
-            <UserX className="w-4 h-4" />
-          </div>
-          <div className="text-2xl font-mono font-bold text-neutral-700 dark:text-[#a1a1aa] mt-1">{stats.absent}</div>
-          <div className="text-[11px] text-neutral-500 dark:text-[#71717a] mt-0.5">Pending Entrance Scan</div>
-        </div>
-
-        <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
-          <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
-            <span>Attendance Rate</span>
-            <Sparkles className="w-4 h-4 text-[#ff6a00]" />
-          </div>
-          <div className="text-2xl font-mono font-bold text-[#ff6a00] mt-1">{stats.rate}%</div>
-          <div className="text-[11px] text-neutral-500 dark:text-[#a1a1aa] mt-0.5">Turnout Percentage</div>
-        </div>
-
-        <div className="col-span-2 sm:col-span-4 lg:col-span-1 bg-white dark:bg-[#18181b] border-2 border-emerald-600 dark:border-[#22c55e]/40 p-3 rounded-sm flex flex-col justify-between gap-1.5 shadow-xs">
-          <div className="text-[11px] text-emerald-800 dark:text-[#22c55e] font-mono uppercase font-bold flex items-center justify-between">
-            <span>OFFLINE SYNC / CSV</span>
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-[#22c55e]" />
-          </div>
-          <p className="text-[10px] text-neutral-600 dark:text-[#a1a1aa] font-sans leading-tight">
-            Backup or transfer scans without internet
-          </p>
-          <div className="grid grid-cols-2 gap-1.5 mt-0.5">
+            {/* Audio Feedback Toggle */}
             <button
-              onClick={handleExportAttendanceCsv}
-              title="Download CSV of all scanned attendees from this device"
-              className="py-1.5 px-2 bg-emerald-100 hover:bg-emerald-200 dark:bg-[#22c55e]/20 dark:hover:bg-[#22c55e]/30 text-emerald-800 dark:text-[#22c55e] border border-emerald-600 dark:border-[#22c55e]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95"
+              onClick={() => setAudioFeedback((prev) => !prev)}
+              title="Toggle Audio Feedback"
+              className={`p-2 rounded-xs border text-xs flex items-center gap-1 transition-colors ${
+                audioFeedback
+                  ? 'bg-[#ff6a00]/15 border-[#ff6a00]/40 text-[#ff6a00]'
+                  : 'bg-[#f8f7f4] dark:bg-[#27272a] border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-neutral-600 dark:text-[#71717a]'
+              }`}
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 dark:text-[#22c55e]" />
-              <span>Export</span>
+              {audioFeedback ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
-            <label
-              title="Merge attendance CSV from other offline scanner devices"
-              className="py-1.5 px-2 bg-sky-100 hover:bg-sky-200 dark:bg-[#38bdf8]/20 dark:hover:bg-[#38bdf8]/30 text-sky-800 dark:text-[#38bdf8] border border-sky-500 dark:border-[#38bdf8]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+
+            {/* Show Dashboard Button */}
+            <button
+              type="button"
+              onClick={() => setShowDashboardInFocus(true)}
+              className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#1a1a1a]/20 dark:border-white/15 text-[#1a1a1a] dark:text-white rounded-xs font-mono text-xs font-bold uppercase flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Expand dashboard and statistics"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-sky-700 dark:text-[#38bdf8]" />
-              <span>Merge</span>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleImportAttendanceCsv}
-                className="hidden"
-              />
-            </label>
+              <Eye className="w-3.5 h-3.5 text-[#ff6a00]" />
+              <span>Show Dashboard</span>
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* District Attendance Breakdown Pills */}
-      <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] px-4 py-2.5 rounded-sm flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-xs">
-        <span className="text-neutral-600 dark:text-[#71717a] text-[11px] uppercase tracking-wider">Districts Turnout:</span>
-        {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => {
-          const dStat = stats.districts[d] || { total: 0, present: 0 };
-          const pct = dStat.total > 0 ? Math.round((dStat.present / dStat.total) * 100) : 0;
-          return (
-            <div key={d} className="flex items-center gap-1.5 bg-[#f8f7f4] dark:bg-[#27272a]/60 px-2.5 py-1 rounded-xs border border-[#1a1a1a]/20 dark:border-[#3f3f46]">
-              <span className="font-bold text-[#1a1a1a] dark:text-white">{d}:</span>
-              <span className="text-emerald-700 dark:text-[#22c55e] font-bold">{dStat.present}</span>
-              <span className="text-neutral-400 dark:text-[#71717a]">/</span>
-              <span className="text-neutral-600 dark:text-[#a1a1aa]">{dStat.total}</span>
-              <span className="text-[10px] text-[#ff6a00] font-bold ml-1">({pct}%)</span>
+      {/* 2. Full Station Dashboard (Hidden when camera is active unless user clicks 'Show Dashboard') */}
+      {(!cameraActive || showDashboardInFocus) && (
+        <div className="flex flex-col gap-5 animate-fade-in">
+          {/* Top Header & Operational Banner */}
+          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
+                <QrCode className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-mono font-bold tracking-tight text-[#1a1a1a] dark:text-white uppercase">
+                    Attendance &amp; Eligibility Station
+                  </h1>
+                  <span className="px-2 py-0.5 rounded-xs text-[10px] font-mono font-bold bg-[#22c55e]/20 text-emerald-700 dark:text-[#22c55e] border border-[#22c55e]/30">
+                    LIVE GATE SCANNER
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-600 dark:text-[#a1a1aa] mt-0.5">
+                  Only scanned attendees become <strong className="text-[#1a1a1a] dark:text-white">ELIGIBLE</strong> for the Municipal Teachers&apos; Day 2026 raffle.
+                </p>
+              </div>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Station Controls */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
+                <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Station:</span>
+                {isStandaloneGate ? (
+                  <span className="text-emerald-700 dark:text-[#22c55e] font-mono font-bold text-xs max-w-[200px] truncate" title={stationId}>
+                    {stationId}
+                  </span>
+                ) : (
+                  <select
+                    value={stationId}
+                    onChange={(e) => setStationId(e.target.value)}
+                    className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none cursor-pointer"
+                  >
+                    <option value="Station 1 - Main Entrance" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 1 - Main Entrance</option>
+                    <option value="Station 2 - North Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 2 - North Gate</option>
+                    <option value="Station 3 - South Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 3 - South Gate</option>
+                    <option value="Station 4 - VIP / Fast Track" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 4 - VIP / Fast Track</option>
+                  </select>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
+                <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Officer:</span>
+                {isStandaloneGate ? (
+                  <span className="text-[#1a1a1a] dark:text-white font-mono font-bold text-xs max-w-[140px] truncate" title={officerName}>
+                    {officerName}
+                  </span>
+                ) : (
+                  <input
+                    type="text"
+                    value={officerName}
+                    onChange={(e) => setOfficerName(e.target.value)}
+                    placeholder="Officer Name"
+                    className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none w-28"
+                  />
+                )}
+              </div>
+
+              <button
+                onClick={() => setAudioFeedback((prev) => !prev)}
+                title="Toggle Audio Feedback"
+                className={`p-2 rounded-sm border text-xs flex items-center gap-1 transition-colors ${
+                  audioFeedback
+                    ? 'bg-[#ff6a00]/15 border-[#ff6a00]/40 text-[#ff6a00]'
+                    : 'bg-[#f8f7f4] dark:bg-[#27272a] border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-neutral-600 dark:text-[#71717a]'
+                }`}
+              >
+                {audioFeedback ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </button>
+
+              {cameraActive && (
+                <button
+                  type="button"
+                  onClick={() => setShowDashboardInFocus(false)}
+                  className="px-3 py-1.5 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-xs font-mono text-xs font-bold uppercase flex items-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <EyeOff className="w-3.5 h-3.5" />
+                  <span>Hide Dashboard (Focus Mode)</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Live Statistics Overview Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
+              <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
+                <span>Registered</span>
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-mono font-bold text-[#1a1a1a] dark:text-white mt-1">{stats.total}</div>
+              <div className="text-[11px] text-neutral-500 dark:text-[#a1a1aa] mt-0.5">Imported Profiling</div>
+            </div>
+
+            <div className="bg-emerald-50/70 dark:bg-[#18181b] border-2 border-emerald-600 dark:border-[#22c55e]/30 p-3.5 rounded-sm bg-gradient-to-br from-emerald-50/70 dark:from-[#18181b] to-emerald-100/40 dark:to-[#22c55e]/10 shadow-xs">
+              <div className="flex items-center justify-between text-emerald-800 dark:text-[#22c55e] text-[11px] font-mono uppercase font-semibold">
+                <span>Checked In (Present)</span>
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-mono font-bold text-emerald-600 dark:text-[#22c55e] mt-1">{stats.present}</div>
+              <div className="text-[11px] text-emerald-700 dark:text-[#22c55e]/80 mt-0.5">Active Raffle Pool</div>
+            </div>
+
+            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
+              <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
+                <span>Absent (Ineligible)</span>
+                <UserX className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-mono font-bold text-neutral-700 dark:text-[#a1a1aa] mt-1">{stats.absent}</div>
+              <div className="text-[11px] text-neutral-500 dark:text-[#71717a] mt-0.5">Pending Entrance Scan</div>
+            </div>
+
+            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
+              <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
+                <span>Attendance Rate</span>
+                <Sparkles className="w-4 h-4 text-[#ff6a00]" />
+              </div>
+              <div className="text-2xl font-mono font-bold text-[#ff6a00] mt-1">{stats.rate}%</div>
+              <div className="text-[11px] text-neutral-500 dark:text-[#a1a1aa] mt-0.5">Turnout Percentage</div>
+            </div>
+
+            <div className="col-span-2 sm:col-span-4 lg:col-span-1 bg-white dark:bg-[#18181b] border-2 border-emerald-600 dark:border-[#22c55e]/40 p-3 rounded-sm flex flex-col justify-between gap-1.5 shadow-xs">
+              <div className="text-[11px] text-emerald-800 dark:text-[#22c55e] font-mono uppercase font-bold flex items-center justify-between">
+                <span>OFFLINE SYNC / CSV</span>
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-[#22c55e]" />
+              </div>
+              <p className="text-[10px] text-neutral-600 dark:text-[#a1a1aa] font-sans leading-tight">
+                Backup or transfer scans without internet
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 mt-0.5">
+                <button
+                  onClick={handleExportAttendanceCsv}
+                  title="Download CSV of all scanned attendees from this device"
+                  className="py-1.5 px-2 bg-emerald-100 hover:bg-emerald-200 dark:bg-[#22c55e]/20 dark:hover:bg-[#22c55e]/30 text-emerald-800 dark:text-[#22c55e] border border-emerald-600 dark:border-[#22c55e]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 dark:text-[#22c55e]" />
+                  <span>Export</span>
+                </button>
+                <label
+                  title="Merge attendance CSV from other offline scanner devices"
+                  className="py-1.5 px-2 bg-sky-100 hover:bg-sky-200 dark:bg-[#38bdf8]/20 dark:hover:bg-[#38bdf8]/30 text-sky-800 dark:text-[#38bdf8] border border-sky-500 dark:border-[#38bdf8]/40 rounded-sm text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-sky-700 dark:text-[#38bdf8]" />
+                  <span>Merge</span>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleImportAttendanceCsv}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* District Attendance Breakdown Pills */}
+          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] px-4 py-2.5 rounded-sm flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-xs">
+            <span className="text-neutral-600 dark:text-[#71717a] text-[11px] uppercase tracking-wider">Districts Turnout:</span>
+            {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => {
+              const dStat = stats.districts[d] || { total: 0, present: 0 };
+              const pct = dStat.total > 0 ? Math.round((dStat.present / dStat.total) * 100) : 0;
+              return (
+                <div key={d} className="flex items-center gap-1.5 bg-[#f8f7f4] dark:bg-[#27272a]/60 px-2.5 py-1 rounded-xs border border-[#1a1a1a]/20 dark:border-[#3f3f46]">
+                  <span className="font-bold text-[#1a1a1a] dark:text-white">{d}:</span>
+                  <span className="text-emerald-700 dark:text-[#22c55e] font-bold">{dStat.present}</span>
+                  <span className="text-neutral-400 dark:text-[#71717a]">/</span>
+                  <span className="text-neutral-600 dark:text-[#a1a1aa]">{dStat.total}</span>
+                  <span className="text-[10px] text-[#ff6a00] font-bold ml-1">({pct}%)</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Module Navigation Tabs */}
       <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0">
@@ -1050,20 +1139,36 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     Position the participant&apos;s QR code in front of the camera lens for immediate verification.
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    soundSynthesizer.playClick();
-                    setCameraActive((prev) => !prev);
-                  }}
-                  className={`px-4 py-2 rounded-sm font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2 ${
-                    cameraActive
-                      ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
-                      : 'bg-[#ff6a00] hover:bg-[#e05d00] text-white'
-                  }`}
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>{cameraActive ? 'Stop Camera' : 'Start Camera'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {cameraActive && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDashboardInFocus((prev) => !prev)}
+                      className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#1a1a1a]/20 dark:border-white/15 text-[#1a1a1a] dark:text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+                      title={showDashboardInFocus ? 'Hide dashboard to focus on camera' : 'Show dashboard statistics'}
+                    >
+                      {showDashboardInFocus ? <EyeOff className="w-3.5 h-3.5 text-[#ff6a00]" /> : <Eye className="w-3.5 h-3.5 text-[#ff6a00]" />}
+                      <span>{showDashboardInFocus ? 'Focus Mode' : 'Show Dashboard'}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      soundSynthesizer.playClick();
+                      if (!cameraActive) {
+                        setShowDashboardInFocus(false);
+                      }
+                      setCameraActive((prev) => !prev);
+                    }}
+                    className={`px-4 py-2 rounded-sm font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2 ${
+                      cameraActive
+                        ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
+                        : 'bg-[#ff6a00] hover:bg-[#e05d00] text-white'
+                    }`}
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>{cameraActive ? 'Stop Camera' : 'Start Camera'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Camera Scanner Viewport */}
@@ -1082,6 +1187,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                     <button
                       onClick={() => {
                         soundSynthesizer.playClick();
+                        setShowDashboardInFocus(false);
                         setCameraActive(true);
                       }}
                       className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2"
