@@ -83,6 +83,36 @@ const NON_TEACHING_POSITIONS = [
   'Security Officer', 'Utility Worker', 'Bookkeeper'
 ];
 
+/**
+ * Check if a participant is classified as Teaching Personnel.
+ * Strictly excludes anyone with personnelType === 'NON-TEACHING' or whose typeOfPersonnel includes 'non'.
+ */
+export function isTeachingPersonnel(p: {
+  personnelType?: string;
+  typeOfPersonnel?: string;
+}): boolean {
+  if (p.personnelType === 'NON-TEACHING') return false;
+  if (p.typeOfPersonnel && p.typeOfPersonnel.toLowerCase().includes('non')) return false;
+  return true;
+}
+
+/**
+ * Validates if a participant is eligible to enter active raffle draws (Live Stage or Pre-Draw).
+ * Requirements:
+ * 1. Must be registered ELIGIBLE or attended at gate (attendedAt).
+ * 2. Must not have won yet (unless allowMultipleWins is enabled).
+ * 3. Must strictly be TEACHING personnel (Non-Teaching personnel are excluded from raffle draws).
+ */
+export function isEligibleForDraw(
+  p: Participant,
+  allowMultipleWins: boolean = false
+): boolean {
+  if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
+  if (!allowMultipleWins && p.winner === 'YES') return false;
+  if (!isTeachingPersonnel(p)) return false;
+  return true;
+}
+
 export function determineParticipantDistrict(params: {
   rawDistrict?: string;
   rawType?: string;

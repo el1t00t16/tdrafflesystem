@@ -8,7 +8,8 @@ import {
   INITIAL_WINNERS,
   INITIAL_LOGS,
   INITIAL_SETTINGS,
-  determineParticipantDistrict
+  determineParticipantDistrict,
+  isEligibleForDraw
 } from '../lib/data';
 import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -657,13 +658,9 @@ export default function Home() {
     }
   }, [prizes, selectedPrizeId]);
 
-  // Eligible pool calculations
+  // Eligible pool calculations - strictly Teaching Personnel only (Non-Teaching excluded from raffle draws)
   const eligiblePool = useMemo(() => {
-    return participants.filter((p) => {
-      if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
-      if (!settings.allowMultipleWins && p.winner === 'YES') return false;
-      return true;
-    });
+    return participants.filter((p) => isEligibleForDraw(p, settings.allowMultipleWins));
   }, [participants, settings.allowMultipleWins]);
 
   const excludedWinnersCount = useMemo(() => {

@@ -126,8 +126,13 @@ export const DrawPreviewModal: React.FC<DrawPreviewModalProps> = ({
             )}
 
             <div className="flex justify-between items-center text-sm border-t border-[#1a1a1a]/10 pt-2">
-              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Eligible Pool Size:</span>
-              <span className="font-mono font-bold text-[#1a1a1a] text-xs uppercase">{eligiblePoolCount.toLocaleString()} Personnel</span>
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Eligible Pool:</span>
+              <span className="font-mono font-bold text-[#1a1a1a] text-xs uppercase">{eligiblePoolCount.toLocaleString()} Teaching Personnel</span>
+            </div>
+
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-mono text-neutral-500 font-bold uppercase text-[10px] tracking-wider">Non-Teaching Status:</span>
+              <span className="font-mono text-neutral-600 text-xs uppercase font-bold">Excluded from Draw</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">

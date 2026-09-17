@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { District, Participant, EligibilityStatus, YesNo } from '../../lib/types';
-import { parseProfilingTSV } from '../../lib/data';
+import { parseProfilingTSV, isTeachingPersonnel } from '../../lib/data';
 import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check, Cloud, CloudOff, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
 
@@ -397,8 +397,15 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                     </td>
                     <td className="p-3">
                       <div className="font-bold text-[#1a1a1a] text-xs uppercase">{p.position}</div>
-                      <div className="font-mono text-[10px] text-neutral-500 uppercase">
-                        {p.typeOfPersonnel || p.personnelType}
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="font-mono text-[10px] text-neutral-500 uppercase">
+                          {p.typeOfPersonnel || p.personnelType}
+                        </span>
+                        {!isTeachingPersonnel(p) && (
+                          <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-mono font-bold px-1.5 py-0.5 uppercase tracking-wider">
+                            Raffle Ineligible
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3 font-medium text-neutral-800 whitespace-nowrap max-w-xs truncate">

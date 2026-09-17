@@ -194,6 +194,7 @@ function drawWinners(prizeId, options) {
   const eligiblePool = participants.filter(p => {
     if (p.eligible !== 'ELIGIBLE') return false;
     if (!settings.allowMultipleWins && p.winner === 'YES') return false;
+    if (p.personnelType === 'NON-TEACHING' || (p.typeOfPersonnel && p.typeOfPersonnel.toLowerCase().includes('non'))) return false;
     return true;
   });
   
