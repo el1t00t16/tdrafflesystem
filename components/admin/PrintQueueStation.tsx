@@ -119,14 +119,14 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
         if (!searchFilter.trim()) return g;
         const q = searchFilter.toLowerCase();
         const matchesBatch =
-          g.drawNumber.toLowerCase().includes(q) ||
-          g.prizeName.toLowerCase().includes(q);
+          (g.drawNumber || '').toLowerCase().includes(q) ||
+          (g.prizeName || '').toLowerCase().includes(q);
         const matchingWinners = g.winners.filter(
           (w) =>
-            w.name.toLowerCase().includes(q) ||
-            w.winnerId.toLowerCase().includes(q) ||
-            (w.participantId && w.participantId.toLowerCase().includes(q)) ||
-            w.school.toLowerCase().includes(q)
+            (w.name || '').toLowerCase().includes(q) ||
+            (w.winnerId || '').toLowerCase().includes(q) ||
+            (w.participantId ? String(w.participantId).toLowerCase().includes(q) : false) ||
+            (w.school || '').toLowerCase().includes(q)
         );
         if (matchesBatch) return g;
         if (matchingWinners.length > 0) {
@@ -144,12 +144,12 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
     const q = searchFilter.toLowerCase();
     return printed.filter(
       (w) =>
-        w.name.toLowerCase().includes(q) ||
-        w.winnerId.toLowerCase().includes(q) ||
-        (w.participantId && w.participantId.toLowerCase().includes(q)) ||
-        w.school.toLowerCase().includes(q) ||
-        w.drawNumber.toLowerCase().includes(q) ||
-        w.prizeName.toLowerCase().includes(q)
+        (w.name || '').toLowerCase().includes(q) ||
+        (w.winnerId || '').toLowerCase().includes(q) ||
+        (w.participantId ? String(w.participantId).toLowerCase().includes(q) : false) ||
+        (w.school || '').toLowerCase().includes(q) ||
+        (w.drawNumber ? String(w.drawNumber).toLowerCase().includes(q) : false) ||
+        (w.prizeName || '').toLowerCase().includes(q)
     );
   }, [winners, searchFilter]);
 

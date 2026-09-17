@@ -36,9 +36,13 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       }
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (!w.originalDistrict?.toLowerCase().includes('eccd') && !w.school?.toLowerCase().includes('eccd')) return false;
+          const orig = (w.originalDistrict || '').toLowerCase();
+          const sch = (w.school || '').toLowerCase();
+          if (!orig.includes('eccd') && !sch.includes('eccd')) return false;
         } else if (districtFilter === 'LSB') {
-          if (!w.position?.toLowerCase().includes('lsb') && !w.personnelType?.toLowerCase().includes('lsb')) return false;
+          const pos = (w.position || '').toLowerCase();
+          const pType = (w.personnelType || '').toLowerCase();
+          if (!pos.includes('lsb') && !pType.includes('lsb')) return false;
         } else if (w.district !== districtFilter) {
           return false;
         }
@@ -47,12 +51,12 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
-          w.name.toLowerCase().includes(q) ||
-          w.winnerId.toLowerCase().includes(q) ||
-          w.participantId.toLowerCase().includes(q) ||
-          w.prizeName.toLowerCase().includes(q) ||
-          w.school.toLowerCase().includes(q) ||
-          w.drawNumber.toLowerCase().includes(q)
+          (w.name || '').toLowerCase().includes(q) ||
+          (w.winnerId || '').toLowerCase().includes(q) ||
+          (w.participantId || '').toLowerCase().includes(q) ||
+          (w.prizeName || '').toLowerCase().includes(q) ||
+          (w.school || '').toLowerCase().includes(q) ||
+          (w.drawNumber || '').toLowerCase().includes(q)
         );
       }
       return true;

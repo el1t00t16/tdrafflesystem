@@ -95,22 +95,26 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
       if (statusFilter !== 'ALL' && w.claimStatus !== statusFilter) return false;
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (!w.originalDistrict?.toLowerCase().includes('eccd') && !w.school.toLowerCase().includes('eccd')) return false;
+          const orig = (w.originalDistrict || '').toLowerCase();
+          const sch = (w.school || '').toLowerCase();
+          if (!orig.includes('eccd') && !sch.includes('eccd')) return false;
         } else if (districtFilter === 'LSB') {
-          if (!w.position?.toLowerCase().includes('lsb') && !w.personnelType?.toLowerCase().includes('lsb')) return false;
+          const pos = (w.position || '').toLowerCase();
+          const pType = (w.personnelType || '').toLowerCase();
+          if (!pos.includes('lsb') && !pType.includes('lsb')) return false;
         } else if (w.district !== districtFilter) {
           return false;
         }
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = w.name.toLowerCase().includes(q);
-        const matchesWinnerId = w.winnerId.toLowerCase().includes(q);
-        const matchesPartId = w.participantId.toLowerCase().includes(q);
-        const matchesDeped = w.depedId ? w.depedId.toLowerCase().includes(q) : false;
-        const matchesSchool = w.school.toLowerCase().includes(q);
-        const matchesPrize = w.prizeName.toLowerCase().includes(q);
-        const matchesContact = w.contactNumber ? w.contactNumber.includes(q) : false;
+        const matchesName = (w.name || '').toLowerCase().includes(q);
+        const matchesWinnerId = (w.winnerId || '').toLowerCase().includes(q);
+        const matchesPartId = (w.participantId || '').toLowerCase().includes(q);
+        const matchesDeped = w.depedId ? (w.depedId || '').toLowerCase().includes(q) : false;
+        const matchesSchool = (w.school || '').toLowerCase().includes(q);
+        const matchesPrize = (w.prizeName || '').toLowerCase().includes(q);
+        const matchesContact = w.contactNumber ? String(w.contactNumber).includes(q) : false;
 
         if (
           !matchesName &&

@@ -171,15 +171,15 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       if (!clean) return undefined;
 
       // 1. Direct match on Winner Ticket ID (e.g. WN-0001)
-      let match = winners.find((w) => w.winnerId.toLowerCase() === clean.toLowerCase());
+      let match = winners.find((w) => (w.winnerId || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       // 2. Direct match on Participant Profiling ID (e.g. W-2026-49550)
-      match = winners.find((w) => w.participantId.toLowerCase() === clean.toLowerCase());
+      match = winners.find((w) => (w.participantId || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       // 3. Direct match on DepEd Employee ID
-      match = winners.find((w) => w.depedId && w.depedId.toLowerCase() === clean.toLowerCase());
+      match = winners.find((w) => w.depedId && (w.depedId || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       // 4. Try parsing JSON (if QR encoded object)
@@ -188,11 +188,12 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           const parsed = JSON.parse(clean);
           const id = parsed.id || parsed.winnerId || parsed.participantId || parsed.profilingId || parsed.depedId;
           if (id) {
+            const idStr = String(id).toLowerCase();
             match = winners.find(
               (w) =>
-                w.winnerId.toLowerCase() === String(id).toLowerCase() ||
-                w.participantId.toLowerCase() === String(id).toLowerCase() ||
-                (w.depedId && w.depedId.toLowerCase() === String(id).toLowerCase())
+                (w.winnerId || '').toLowerCase() === idStr ||
+                (w.participantId || '').toLowerCase() === idStr ||
+                (w.depedId && (w.depedId || '').toLowerCase() === idStr)
             );
             if (match) return match;
           }
@@ -205,17 +206,18 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       if (clean.includes('=')) {
         const parts = clean.split(/[?&=]/);
         for (const part of parts) {
+          const partStr = part.toLowerCase();
           match = winners.find(
             (w) =>
-              w.winnerId.toLowerCase() === part.toLowerCase() ||
-              w.participantId.toLowerCase() === part.toLowerCase()
+              (w.winnerId || '').toLowerCase() === partStr ||
+              (w.participantId || '').toLowerCase() === partStr
           );
           if (match) return match;
         }
       }
 
       // 6. Name match
-      match = winners.find((w) => w.name.toLowerCase() === clean.toLowerCase());
+      match = winners.find((w) => (w.name || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       return undefined;
@@ -331,11 +333,15 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       // District filter
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (!w.originalDistrict?.toLowerCase().includes('eccd') && !w.school.toLowerCase().includes('eccd')) {
+          const orig = (w.originalDistrict || '').toLowerCase();
+          const sch = (w.school || '').toLowerCase();
+          if (!orig.includes('eccd') && !sch.includes('eccd')) {
             return false;
           }
         } else if (districtFilter === 'LSB') {
-          if (!w.position?.toLowerCase().includes('lsb') && !w.personnelType?.toLowerCase().includes('lsb')) {
+          const pos = (w.position || '').toLowerCase();
+          const pType = (w.personnelType || '').toLowerCase();
+          if (!pos.includes('lsb') && !pType.includes('lsb')) {
             return false;
           }
         } else if (w.district !== districtFilter) {
@@ -346,13 +352,13 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
       // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = w.name.toLowerCase().includes(q);
-        const matchesWinnerId = w.winnerId.toLowerCase().includes(q);
-        const matchesPartId = w.participantId.toLowerCase().includes(q);
-        const matchesDeped = w.depedId ? w.depedId.toLowerCase().includes(q) : false;
-        const matchesSchool = w.school.toLowerCase().includes(q);
-        const matchesPrize = w.prizeName.toLowerCase().includes(q);
-        const matchesContact = w.contactNumber ? w.contactNumber.includes(q) : false;
+        const matchesName = (w.name || '').toLowerCase().includes(q);
+        const matchesWinnerId = (w.winnerId || '').toLowerCase().includes(q);
+        const matchesPartId = (w.participantId || '').toLowerCase().includes(q);
+        const matchesDeped = w.depedId ? (w.depedId || '').toLowerCase().includes(q) : false;
+        const matchesSchool = (w.school || '').toLowerCase().includes(q);
+        const matchesPrize = (w.prizeName || '').toLowerCase().includes(q);
+        const matchesContact = w.contactNumber ? String(w.contactNumber).includes(q) : false;
 
         return (
           matchesName ||

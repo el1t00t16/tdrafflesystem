@@ -377,12 +377,12 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     const q = searchFilter.toLowerCase();
     return activeMasterlistWinners.filter(
       (w) =>
-        w.name.toLowerCase().includes(q) ||
-        w.winnerId.toLowerCase().includes(q) ||
-        (w.participantId && w.participantId.toLowerCase().includes(q)) ||
-        w.school.toLowerCase().includes(q) ||
-        w.prizeName.toLowerCase().includes(q) ||
-        (w.drawNumber && w.drawNumber.toLowerCase().includes(q))
+        (w.name || '').toLowerCase().includes(q) ||
+        (w.winnerId || '').toLowerCase().includes(q) ||
+        (w.participantId ? String(w.participantId).toLowerCase().includes(q) : false) ||
+        (w.school || '').toLowerCase().includes(q) ||
+        (w.prizeName || '').toLowerCase().includes(q) ||
+        (w.drawNumber ? String(w.drawNumber).toLowerCase().includes(q) : false)
     );
   }, [activeMasterlistWinners, searchFilter]);
 

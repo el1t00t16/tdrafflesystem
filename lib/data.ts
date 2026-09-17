@@ -87,12 +87,15 @@ const NON_TEACHING_POSITIONS = [
  * Check if a participant is classified as Teaching Personnel.
  * Strictly excludes anyone with personnelType === 'NON-TEACHING' or whose typeOfPersonnel includes 'non'.
  */
-export function isTeachingPersonnel(p: {
+export function isTeachingPersonnel(p?: {
   personnelType?: string;
   typeOfPersonnel?: string;
-}): boolean {
-  if (p.personnelType === 'NON-TEACHING') return false;
-  if (p.typeOfPersonnel && p.typeOfPersonnel.toLowerCase().includes('non')) return false;
+} | null): boolean {
+  if (!p) return false;
+  const pType = String(p.personnelType || '').toUpperCase().trim();
+  if (pType === 'NON-TEACHING') return false;
+  const rawType = String(p.typeOfPersonnel || '').toLowerCase().trim();
+  if (rawType.includes('non')) return false;
   return true;
 }
 
@@ -104,25 +107,26 @@ export function isTeachingPersonnel(p: {
  * 3. Must strictly be TEACHING personnel (Non-Teaching personnel are excluded from raffle draws).
  */
 export function isEligibleForDraw(
-  p: Participant,
+  p?: Participant | null,
   allowMultipleWins: boolean = false
 ): boolean {
+  if (!p) return false;
   if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
   if (!allowMultipleWins && p.winner === 'YES') return false;
   if (!isTeachingPersonnel(p)) return false;
   return true;
 }
 
-export function determineParticipantDistrict(params: {
+export function determineParticipantDistrict(params?: {
   rawDistrict?: string;
   rawType?: string;
   position?: string;
   school?: string;
-}): District {
-  const rawDist = (params.rawDistrict || '').toLowerCase().trim();
-  const rawType = (params.rawType || '').toLowerCase().trim();
-  const pos = (params.position || '').toLowerCase().trim();
-  const school = (params.school || '').toLowerCase().trim();
+} | null): District {
+  const rawDist = String(params?.rawDistrict || '').toLowerCase().trim();
+  const rawType = String(params?.rawType || '').toLowerCase().trim();
+  const pos = String(params?.position || '').toLowerCase().trim();
+  const school = String(params?.school || '').toLowerCase().trim();
 
   // 1. PSDS (Public Schools District Supervisor) Routing
   // "for the 2 PSDS: if East & South, include this in raffle to EAST District; if North & West, include this in raffle to NORTH DISTRICT"

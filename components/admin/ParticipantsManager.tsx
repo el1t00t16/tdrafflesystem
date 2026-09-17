@@ -58,9 +58,13 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     return participants.filter((p) => {
       if (districtFilter !== 'ALL') {
         if (districtFilter === 'ECCD') {
-          if (!p.originalDistrict?.toLowerCase().includes('eccd') && !p.school.toLowerCase().includes('eccd')) return false;
+          const orig = (p.originalDistrict || '').toLowerCase();
+          const sch = (p.school || '').toLowerCase();
+          if (!orig.includes('eccd') && !sch.includes('eccd')) return false;
         } else if (districtFilter === 'LSB') {
-          if (!p.position?.toLowerCase().includes('lsb') && !p.typeOfPersonnel?.toLowerCase().includes('lsb')) return false;
+          const pos = (p.position || '').toLowerCase();
+          const pType = (p.typeOfPersonnel || p.personnelType || '').toLowerCase();
+          if (!pos.includes('lsb') && !pType.includes('lsb')) return false;
         } else if (p.district !== districtFilter) {
           return false;
         }
@@ -71,12 +75,12 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
-          p.fullName.toLowerCase().includes(q) ||
-          p.id.toLowerCase().includes(q) ||
-          (p.depedId && p.depedId.toLowerCase().includes(q)) ||
-          p.school.toLowerCase().includes(q) ||
-          p.position.toLowerCase().includes(q) ||
-          (p.contactNumber && p.contactNumber.includes(q))
+          (p.fullName || '').toLowerCase().includes(q) ||
+          (p.id || '').toLowerCase().includes(q) ||
+          (p.depedId ? String(p.depedId).toLowerCase().includes(q) : false) ||
+          (p.school || '').toLowerCase().includes(q) ||
+          (p.position || '').toLowerCase().includes(q) ||
+          (p.contactNumber ? String(p.contactNumber).includes(q) : false)
         );
       }
       return true;

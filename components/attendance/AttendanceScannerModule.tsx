@@ -287,11 +287,11 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       if (!clean) return undefined;
 
       // Try exact Profiling ID match
-      let match = participants.find((p) => p.id.toLowerCase() === clean.toLowerCase());
+      let match = participants.find((p) => (p.id || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       // Try DepEd ID match
-      match = participants.find((p) => p.depedId && p.depedId.toLowerCase() === clean.toLowerCase());
+      match = participants.find((p) => p.depedId && (p.depedId || '').toLowerCase() === clean.toLowerCase());
       if (match) return match;
 
       // Try JSON format match
@@ -300,8 +300,9 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           const parsed = JSON.parse(clean);
           const id = parsed.id || parsed.profilingId || parsed.depedId;
           if (id) {
+            const idStr = String(id).toLowerCase();
             match = participants.find(
-              (p) => p.id.toLowerCase() === String(id).toLowerCase() || (p.depedId && p.depedId.toLowerCase() === String(id).toLowerCase())
+              (p) => (p.id || '').toLowerCase() === idStr || (p.depedId && (p.depedId || '').toLowerCase() === idStr)
             );
             if (match) return match;
           }
@@ -314,7 +315,8 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       if (clean.includes('=')) {
         const parts = clean.split(/[?&=]/);
         for (const part of parts) {
-          match = participants.find((p) => p.id.toLowerCase() === part.toLowerCase());
+          const partStr = part.toLowerCase();
+          match = participants.find((p) => (p.id || '').toLowerCase() === partStr);
           if (match) return match;
         }
       }
@@ -469,10 +471,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       if (badgeSearch) {
         const q = badgeSearch.toLowerCase();
         return (
-          p.fullName.toLowerCase().includes(q) ||
-          p.id.toLowerCase().includes(q) ||
-          (p.depedId && p.depedId.toLowerCase().includes(q)) ||
-          p.school.toLowerCase().includes(q)
+          (p.fullName || '').toLowerCase().includes(q) ||
+          (p.id || '').toLowerCase().includes(q) ||
+          (p.depedId ? String(p.depedId).toLowerCase().includes(q) : false) ||
+          (p.school || '').toLowerCase().includes(q)
         );
       }
       return true;
@@ -514,11 +516,11 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       if (manualSearch) {
         const q = manualSearch.toLowerCase();
         return (
-          p.fullName.toLowerCase().includes(q) ||
-          p.id.toLowerCase().includes(q) ||
-          (p.depedId && p.depedId.toLowerCase().includes(q)) ||
-          p.school.toLowerCase().includes(q) ||
-          p.position.toLowerCase().includes(q)
+          (p.fullName || '').toLowerCase().includes(q) ||
+          (p.id || '').toLowerCase().includes(q) ||
+          (p.depedId ? String(p.depedId).toLowerCase().includes(q) : false) ||
+          (p.school || '').toLowerCase().includes(q) ||
+          (p.position || '').toLowerCase().includes(q)
         );
       }
       return true;
@@ -684,24 +686,25 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
           // 1st Priority: Match by Profiling ID
           if (rawId) {
+            const searchId = String(rawId).toLowerCase();
             targetIndex = updatedList.findIndex(
-              (p) => p.id && p.id.toLowerCase() === rawId.toLowerCase()
+              (p) => (p.id || '').toLowerCase() === searchId
             );
           }
 
           // 2nd Priority: Match by DepEd Employee ID
           if (targetIndex === -1 && (rawDepedId || rawId)) {
-            const searchDeped = (rawDepedId || rawId).toLowerCase();
+            const searchDeped = String(rawDepedId || rawId).toLowerCase();
             targetIndex = updatedList.findIndex(
-              (p) => p.depedId && p.depedId.toLowerCase() === searchDeped
+              (p) => (p.depedId ? String(p.depedId).toLowerCase() === searchDeped : false)
             );
           }
 
           // 3rd Priority: Match by Full Name
           if (targetIndex === -1 && rawName) {
-            const searchName = rawName.toLowerCase();
+            const searchName = String(rawName).toLowerCase();
             targetIndex = updatedList.findIndex(
-              (p) => p.fullName && p.fullName.toLowerCase() === searchName
+              (p) => (p.fullName || '').toLowerCase() === searchName
             );
           }
 
