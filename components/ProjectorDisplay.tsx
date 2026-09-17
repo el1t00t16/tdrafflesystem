@@ -176,13 +176,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
           {/* Center: The Name of the Prize Being Drawn (Flex-1, Naturally Centered, Never Collides With Buttons) */}
           <div className="flex-1 text-center px-2 sm:px-4 min-w-0">
             <div className="font-display text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-md truncate">
-              {selectedPrize ? (
-                selectedPrize.unitValue > 0
-                  ? `₱${selectedPrize.unitValue.toLocaleString()} — ${selectedPrize.name}`
-                  : selectedPrize.name
-              ) : (
-                'GRAND RAFFLE DRAW'
-              )}
+              {selectedPrize ? selectedPrize.name : 'GRAND RAFFLE DRAW'}
             </div>
             <div className="font-mono text-[10px] sm:text-xs lg:text-sm text-[#ff6a00] font-bold uppercase tracking-wider mt-0.5 truncate">
               {selectedPrize?.description && (
@@ -348,23 +342,11 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
               <div className="pt-0.5">
                 <div className="font-display text-2xl sm:text-3xl font-black leading-tight text-[#1a1a1a] tracking-tight truncate">
-                  {selectedPrize ? (
-                    selectedPrize.unitValue > 0 ? (
-                      `₱${selectedPrize.unitValue.toLocaleString()}`
-                    ) : (
-                      selectedPrize.name
-                    )
-                  ) : (
-                    'SELECT PRIZE'
-                  )}
+                  {selectedPrize ? selectedPrize.name : 'SELECT PRIZE'}
                 </div>
                 <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5">
                   {selectedPrize ? (
-                    selectedPrize.unitValue > 0 ? (
-                      `${selectedPrize.name} • ${availableQty} AVAILABLE`
-                    ) : (
-                      `${selectedPrize.description ? `${selectedPrize.description} • ` : ''}${availableQty} AVAILABLE`
-                    )
+                    `${selectedPrize.description ? `${selectedPrize.description} • ` : ''}${availableQty} AVAILABLE`
                   ) : (
                     'NO PRIZE SELECTED'
                   )}
