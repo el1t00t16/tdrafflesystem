@@ -11,8 +11,15 @@ import {
   setSupabaseCredentials,
   fetchWinnersFromSupabase,
   updateClaimInSupabase,
-  subscribeToRealtimeUpdates
+  subscribeToRealtimeUpdates,
+  syncWinnerPrintStatusToSupabase
 } from '../../lib/supabase';
+import {
+  markWinnerAsPrintedInStorage,
+  markWinnersBatchAsPrintedInStorage,
+  markWinnerAsUnprintedInStorage,
+  mergeWinnersWithPrintStatus
+} from '../../lib/printQueueStorage';
 import { soundSynthesizer } from '../../lib/sound';
 
 export default function ClaimsPage() {
@@ -95,9 +102,10 @@ export default function ClaimsPage() {
     try {
       const cloudWinners = await fetchWinnersFromSupabase();
       if (cloudWinners && cloudWinners.length >= 0) {
-        setWinners(cloudWinners);
+        const mergedWinners = mergeWinnersWithPrintStatus(cloudWinners);
+        setWinners(mergedWinners);
         try {
-          localStorage.setItem('td26_winners', JSON.stringify(cloudWinners));
+          localStorage.setItem('td26_winners', JSON.stringify(mergedWinners));
         } catch (e) {
           console.error(e);
         }
@@ -120,7 +128,7 @@ export default function ClaimsPage() {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setWinners(parsed);
+          setWinners(mergeWinnersWithPrintStatus(parsed));
         }
       }
     } catch (e) {
@@ -299,6 +307,9 @@ export default function ClaimsPage() {
   // Print Queue Handlers
   const handleMarkAsPrinted = (winnerId: string) => {
     const timestamp = new Date().toISOString();
+    const officer = claimSession?.officerName || 'Claims Desk';
+    markWinnerAsPrintedInStorage(winnerId, officer);
+    syncWinnerPrintStatusToSupabase([winnerId], true, officer);
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {
@@ -306,7 +317,7 @@ export default function ClaimsPage() {
             ...w,
             isPrinted: true,
             printedAt: timestamp,
-            printedBy: claimSession?.officerName || 'Claims Desk'
+            printedBy: officer
           };
         }
         return w;
@@ -322,6 +333,9 @@ export default function ClaimsPage() {
 
   const handleMarkBatchAsPrinted = (winnerIds: string[]) => {
     const timestamp = new Date().toISOString();
+    const officer = claimSession?.officerName || 'Claims Desk';
+    markWinnersBatchAsPrintedInStorage(winnerIds, officer);
+    syncWinnerPrintStatusToSupabase(winnerIds, true, officer);
     const idSet = new Set(winnerIds);
     setWinners((prev) => {
       const updated = prev.map((w) => {
@@ -330,7 +344,7 @@ export default function ClaimsPage() {
             ...w,
             isPrinted: true,
             printedAt: timestamp,
-            printedBy: claimSession?.officerName || 'Claims Desk'
+            printedBy: officer
           };
         }
         return w;
@@ -346,6 +360,8 @@ export default function ClaimsPage() {
 
   const handleRequeueWinner = (winnerId: string) => {
     soundSynthesizer.playClick();
+    markWinnerAsUnprintedInStorage(winnerId);
+    syncWinnerPrintStatusToSupabase([winnerId], false);
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {

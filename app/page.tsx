@@ -40,8 +40,15 @@ import {
   subscribeToRealtimeUpdates,
   isSupabaseConfigured,
   executeFullEventResetInSupabase,
-  clearAllParticipantsFromSupabase
+  clearAllParticipantsFromSupabase,
+  syncWinnerPrintStatusToSupabase
 } from '../lib/supabase';
+import {
+  markWinnerAsPrintedInStorage,
+  markWinnersBatchAsPrintedInStorage,
+  markWinnerAsUnprintedInStorage,
+  mergeWinnersWithPrintStatus
+} from '../lib/printQueueStorage';
 
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
@@ -251,7 +258,7 @@ export default function Home() {
       const cachedWinners = localStorage.getItem('td26_winners');
       if (cachedWinners) {
         const parsed = JSON.parse(cachedWinners);
-        if (Array.isArray(parsed)) setWinners(parsed);
+        if (Array.isArray(parsed)) setWinners(mergeWinnersWithPrintStatus(parsed));
       }
     } catch (e) {
       console.error(e);
@@ -352,10 +359,11 @@ export default function Home() {
           }
 
           if (Array.isArray(cloudWinners)) {
-            setWinners(cloudWinners);
+            const mergedWinners = mergeWinnersWithPrintStatus(cloudWinners);
+            setWinners(mergedWinners);
             try {
-              if (cloudWinners.length > 0) {
-                localStorage.setItem('td26_winners', JSON.stringify(cloudWinners));
+              if (mergedWinners.length > 0) {
+                localStorage.setItem('td26_winners', JSON.stringify(mergedWinners));
               } else {
                 localStorage.removeItem('td26_winners');
               }
@@ -1504,6 +1512,8 @@ export default function Home() {
   // Print Queue & Verification Stub Handlers
   const handleMarkAsPrinted = (winnerId: string) => {
     const timestamp = new Date().toISOString();
+    markWinnerAsPrintedInStorage(winnerId, 'Print Desk');
+    syncWinnerPrintStatusToSupabase([winnerId], true, 'Print Desk');
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {
@@ -1527,6 +1537,8 @@ export default function Home() {
 
   const handleMarkBatchAsPrinted = (winnerIds: string[]) => {
     const timestamp = new Date().toISOString();
+    markWinnersBatchAsPrintedInStorage(winnerIds, 'Print Desk');
+    syncWinnerPrintStatusToSupabase(winnerIds, true, 'Print Desk');
     const idSet = new Set(winnerIds);
     setWinners((prev) => {
       const updated = prev.map((w) => {
@@ -1551,6 +1563,8 @@ export default function Home() {
 
   const handleRequeueWinner = (winnerId: string) => {
     soundSynthesizer.playClick();
+    markWinnerAsUnprintedInStorage(winnerId);
+    syncWinnerPrintStatusToSupabase([winnerId], false);
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {

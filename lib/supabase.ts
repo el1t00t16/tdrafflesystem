@@ -413,6 +413,40 @@ export async function updateClaimInSupabase(
   }
 }
 
+// Helper: Update Winner Print Status in Supabase
+export async function syncWinnerPrintStatusToSupabase(
+  winnerIds: string[],
+  isPrinted: boolean,
+  printedBy?: string
+): Promise<boolean> {
+  const client = getSupabase();
+  if (!client || winnerIds.length === 0) return false;
+
+  try {
+    const timestamp = new Date().toISOString();
+    const updatePayload: Record<string, any> = {
+      is_printed: isPrinted,
+      printed_at: isPrinted ? timestamp : null,
+      printed_by: isPrinted ? (printedBy || 'Print Station') : null
+    };
+
+    const { error } = await client
+      .from('winners')
+      .update(updatePayload)
+      .in('winner_id', winnerIds);
+
+    if (error) {
+      console.warn('Supabase print status update note (local storage fallback active):', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Error syncing print status to Supabase:', err);
+    return false;
+  }
+}
+
+
 // Helper: Update participant eligibility directly
 export async function updateParticipantEligibilityInSupabase(
   id: string,
@@ -681,7 +715,10 @@ export async function fetchWinnersFromSupabase(): Promise<Winner[] | null> {
       proxyRelationship: row.proxy_relationship || undefined,
       forfeitedAt: row.forfeited_at || undefined,
       forfeitReason: row.forfeit_reason || undefined,
-      drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
+      drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE'),
+      isPrinted: Boolean(row.is_printed),
+      printedAt: row.printed_at || undefined,
+      printedBy: row.printed_by || undefined
     }));
   } catch (err) {
     console.error('Error fetching winners from Supabase:', err);

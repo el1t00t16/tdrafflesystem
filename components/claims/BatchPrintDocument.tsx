@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Winner } from '../../lib/types';
 import { WinnerVerificationStub } from './WinnerVerificationStub';
-import { Printer, X, CheckCheck, FileText } from 'lucide-react';
+import { Printer, X, CheckCheck, FileText, ArrowDownAZ } from 'lucide-react';
 
 interface BatchPrintDocumentProps {
   batchNumber: string;
@@ -13,6 +13,14 @@ interface BatchPrintDocumentProps {
   onMarkBatchPrinted?: (winnerIds: string[]) => void;
 }
 
+const DISTRICT_SORT_PRIORITY: Record<string, number> = {
+  NORTH: 1,
+  WEST: 2,
+  EAST: 3,
+  SOUTH: 4,
+  PRIVATE: 5
+};
+
 export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   batchNumber,
   prizeName,
@@ -20,6 +28,20 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   onClose,
   onMarkBatchPrinted
 }) => {
+  // Sort winners by District (e.g. NORTH, WEST, EAST, SOUTH, PRIVATE) and then by Winner Name
+  const sortedWinners = useMemo(() => {
+    return [...winners].sort((a, b) => {
+      const distA = String(a.district || '').trim().toUpperCase();
+      const distB = String(b.district || '').trim().toUpperCase();
+      const priorityA = DISTRICT_SORT_PRIORITY[distA] ?? 99;
+      const priorityB = DISTRICT_SORT_PRIORITY[distB] ?? 99;
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+  }, [winners]);
+
   // Keyboard shortcut: Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,8 +52,8 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   }, [onClose]);
 
   const handlePrintAll = () => {
-    if (onMarkBatchPrinted && winners.length > 0) {
-      onMarkBatchPrinted(winners.map((w) => w.winnerId));
+    if (onMarkBatchPrinted && sortedWinners.length > 0) {
+      onMarkBatchPrinted(sortedWinners.map((w) => w.winnerId));
     }
     window.print();
   };
@@ -50,14 +72,18 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 BATCH {batchNumber}
               </span>
               <span className="text-[11px] bg-neutral-800 text-neutral-300 font-mono px-2 py-0.5 border border-white/10 uppercase">
-                {winners.length} {winners.length === 1 ? 'Stub' : 'Stubs'} ({winners.length} {winners.length === 1 ? 'Sheet' : 'Sheets'})
+                {sortedWinners.length} {sortedWinners.length === 1 ? 'Stub' : 'Stubs'} ({sortedWinners.length} {sortedWinners.length === 1 ? 'Sheet' : 'Sheets'})
+              </span>
+              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-mono px-2 py-0.5 border border-indigo-500/30 uppercase font-bold flex items-center gap-1">
+                <ArrowDownAZ className="w-3 h-3" />
+                <span>Sorted by District</span>
               </span>
               <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 border border-amber-500/30 uppercase font-bold">
                 1-by-1 Pre-Cut 1/4 Letter
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 truncate max-w-md font-sans mt-0.5">
-              {prizeName} • 1 Stub per 1/4 Letter Sheet (Aligned to 1/4 side of page)
+              {prizeName} • 1 Stub per 1/4 Sheet (North → West → East → South → Private)
             </p>
           </div>
         </div>
@@ -69,14 +95,14 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Print All Stubs ({winners.length})</span>
+            <span>Print All Stubs ({sortedWinners.length})</span>
           </button>
 
           {onMarkBatchPrinted && (
             <button
               type="button"
               onClick={() => {
-                onMarkBatchPrinted(winners.map((w) => w.winnerId));
+                onMarkBatchPrinted(sortedWinners.map((w) => w.winnerId));
                 onClose();
               }}
               className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
@@ -127,10 +153,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 height: 5.35in !important;
                 max-width: 4.1in !important;
                 max-height: 5.35in !important;
-                margin-left: 0 !important;
-                margin-right: auto !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
+                margin: 0 !important;
                 padding: 0 !important;
                 float: none !important;
                 clear: both !important;
@@ -142,10 +165,6 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 box-sizing: border-box !important;
                 background: white !important;
               }
-              .stub-sheet-page + .stub-sheet-page {
-                page-break-before: always !important;
-                break-before: page !important;
-              }
               .stub-sheet-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
@@ -154,39 +173,22 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           `
         }} />
 
-        {winners.map((winner, idx) => (
-          <React.Fragment key={winner.winnerId}>
-            <div
-              className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"
-            >
-              {/* Screen Header Indicator */}
-              <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
-                <span className="font-bold text-indigo-900">
-                  Sheet {idx + 1} of {winners.length} (Pre-Cut 1/4 Letter)
-                </span>
-                <span>Ticket: {winner.winnerId}</span>
-              </div>
-
-              {/* Verification Stub */}
-              <WinnerVerificationStub winner={winner} isModal={false} isBatchChild={true} />
+        {sortedWinners.map((winner, idx) => (
+          <div
+            key={winner.winnerId}
+            className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"
+          >
+            {/* Screen Header Indicator */}
+            <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
+              <span className="font-bold text-indigo-900">
+                Sheet {idx + 1} of {sortedWinners.length} • District: <strong className="text-black">{winner.district}</strong>
+              </span>
+              <span>Ticket: {winner.winnerId}</span>
             </div>
 
-            {/* Print-only forced page break divider (ensures exactly 1 stub per sheet) */}
-            {idx < winners.length - 1 && (
-              <div
-                className="hidden print:block"
-                style={{
-                  breakAfter: 'page',
-                  pageBreakAfter: 'always',
-                  height: 0,
-                  maxHeight: 0,
-                  margin: 0,
-                  padding: 0,
-                  clear: 'both'
-                }}
-              />
-            )}
-          </React.Fragment>
+            {/* Verification Stub */}
+            <WinnerVerificationStub winner={winner} isModal={false} isBatchChild={true} />
+          </div>
         ))}
       </div>
     </div>
