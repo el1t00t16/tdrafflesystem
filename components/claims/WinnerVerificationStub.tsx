@@ -117,8 +117,13 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           <div className="text-xs font-serif font-black uppercase tracking-tight text-black pt-0.5">
             MUNICIPAL TEACHERS&apos; DAY 2026
           </div>
-          <div className="inline-block bg-black text-white text-[7.5px] font-mono font-black uppercase px-2 py-0.5 tracking-widest mt-0.5">
-            OFFICIAL PRIZE CLAIM &amp; VERIFICATION STUB
+          <div className="flex items-center justify-between gap-1 mt-0.5">
+            <span className="inline-block bg-black text-white text-[7px] font-mono font-black uppercase px-2 py-0.5 tracking-widest">
+              OFFICIAL PRIZE CLAIM &amp; VERIFICATION STUB
+            </span>
+            <span className="font-mono font-black text-[8.5px] text-red-700 print:text-black tracking-wider border border-black px-1.5 py-0.5 bg-neutral-100 whitespace-nowrap">
+              {winner.district} • {winner.drawNumber}
+            </span>
           </div>
         </div>
 
@@ -195,19 +200,38 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           </div>
         </div>
 
-        {/* Ticket & Batch Metadata Bar */}
-        <div className="grid grid-cols-3 gap-1 py-1 px-1.5 bg-neutral-100 border-t border-b border-black font-mono text-[7.5px]">
-          <div>
-            <span className="text-neutral-500 block uppercase">Ticket ID:</span>
-            <strong className="text-black font-black text-[8.5px]">{winner.winnerId}</strong>
+        {/* Ticket & Batch Metadata Bar with High-Visibility Serial & District Sorting */}
+        <div className="grid grid-cols-12 gap-1.5 py-1 px-1.5 bg-neutral-100 border-2 border-black font-mono items-center my-0.5">
+          {/* Left: Identification Codes (5 cols) */}
+          <div className="col-span-5 flex flex-col justify-center space-y-1 border-r border-black/30 pr-1">
+            <div>
+              <span className="text-[6.5px] text-neutral-500 block uppercase font-bold leading-none">TICKET ID:</span>
+              <strong className="text-black font-black text-[9px] leading-tight block">{winner.winnerId}</strong>
+            </div>
+            <div>
+              <span className="text-[6.5px] text-neutral-500 block uppercase font-bold leading-none">PROFILING ID:</span>
+              <strong className="text-black font-black text-[8px] leading-tight block truncate">{winner.participantId || 'N/A'}</strong>
+            </div>
           </div>
-          <div>
-            <span className="text-neutral-500 block uppercase">Profiling ID:</span>
-            <strong className="text-black font-black text-[8.5px]">{winner.participantId || 'N/A'}</strong>
-          </div>
-          <div>
-            <span className="text-neutral-500 block uppercase">Batch #:</span>
-            <strong className="text-indigo-900 font-black text-[8.5px]">{winner.drawNumber}</strong>
+
+          {/* Right: Prominent Serial Type BATCH # & DISTRICT Sorting Tag (7 cols) */}
+          <div className="col-span-7 flex flex-col justify-center pl-1">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[7px] text-neutral-600 uppercase font-black tracking-wider">
+                DISTRICT:
+              </span>
+              <span className="px-1.5 py-0.5 bg-black text-white font-mono font-black text-[9px] uppercase tracking-widest leading-none">
+                {winner.district}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-1 mt-1 pt-0.5 border-t border-black/20">
+              <span className="text-[7px] text-neutral-600 uppercase font-black tracking-wider">
+                BATCH #:
+              </span>
+              <span className="font-mono font-black text-xs sm:text-[13px] tracking-wider text-red-700 print:text-black leading-none bg-white px-2 py-0.5 border border-black/40 shadow-xs">
+                № {winner.drawNumber}
+              </span>
+            </div>
           </div>
         </div>
 
