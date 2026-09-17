@@ -754,8 +754,10 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
             - Right Column: Sticky DISBURSEMENT VERIFICATION (Rows 1-2)
       */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* BLOCK 1: Barcode Gun / Search & Live Camera QR Scanner */}
-        <div className="order-1 lg:order-1 lg:col-span-7 lg:col-start-1 lg:row-start-1 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-4">
+                {/* LEFT COLUMN: Search & Queue (Stacked seamlessly on Desktop, flattened with order on Mobile) */}
+        <div className="contents lg:flex lg:flex-col lg:col-span-7 lg:gap-4">
+          {/* BLOCK 1: Barcode Gun / Search & Live Camera QR Scanner */}
+        <div className="order-1 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-4">
           {/* Hardware Barcode Gun, Quick Search & Camera QR Scanner Button */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase text-neutral-700 dark:text-neutral-300">
@@ -912,10 +914,209 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           )}
         </div>
 
+          {/* BLOCK 3: Winners Table / Queue (Mobile Order 3, Desktop Order 3 / Left Bottom Column) */}
+        <div className="order-3 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-3">
+          {/* Queue Tab Selectors & District Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10 text-xs font-mono">
+            <div className="inline-flex border border-[#1a1a1a]/20 dark:border-white/20 divide-x divide-[#1a1a1a]/20 dark:divide-white/20 bg-[#f8f7f4] dark:bg-black overflow-x-auto max-w-full">
+              <button
+                onClick={() => setStatusTab('UNCLAIMED')}
+                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+                  statusTab === 'UNCLAIMED'
+                    ? 'bg-[#ff6a00] text-black font-black'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Unclaimed ({unclaimedCount})</span>
+              </button>
+              <button
+                onClick={() => setStatusTab('PENDING_PRINT')}
+                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+                  statusTab === 'PENDING_PRINT'
+                    ? 'bg-amber-500 text-black font-black'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Pending Print ({pendingPrintCount})</span>
+              </button>
+              <button
+                onClick={() => setStatusTab('ALL')}
+                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                  statusTab === 'ALL'
+                    ? 'bg-[#1a1a1a] text-white dark:bg-neutral-800 dark:text-white font-black'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                All ({totalCount})
+              </button>
+              <button
+                onClick={() => setStatusTab('CLAIMED')}
+                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
+                  statusTab === 'CLAIMED'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Claimed ({claimedCount})
+              </button>
+              <button
+                onClick={() => setStatusTab('FORFEITED')}
+                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
+                  statusTab === 'FORFEITED'
+                    ? 'bg-red-800 text-white'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Forfeited ({forfeitedCount})
+              </button>
+            </div>
+
+            <select
+              value={districtFilter}
+              onChange={(e) => setDistrictFilter(e.target.value)}
+              className="bg-white dark:bg-black border border-[#1a1a1a]/30 dark:border-white/20 px-2.5 py-1.5 text-[11px] font-mono font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-[#ff6a00] uppercase w-full sm:w-auto"
+            >
+              <option value="ALL">All Districts</option>
+              <option value="NORTH">North</option>
+              <option value="EAST">East</option>
+              <option value="WEST">West</option>
+              <option value="SOUTH">South</option>
+              <option value="PRIVATE">Private (ECCD + Private + LSB)</option>
+              <option value="LSB">-- LSB Personnel</option>
+              <option value="ECCD">-- ECCD Personnel</option>
+            </select>
+          </div>
+
+          {/* Queue List Cards */}
+          <div className="space-y-2 max-h-[540px] overflow-y-auto pr-1">
+            {filteredWinners.length === 0 ? (
+              <div className="p-8 text-center bg-[#f8f7f4] dark:bg-black/40 border border-dashed border-[#1a1a1a]/20 dark:border-white/10 text-neutral-500 font-mono text-xs">
+                No winners found matching the current search criteria or status filter.
+              </div>
+            ) : (
+              filteredWinners.map((w) => {
+                const isSelected = selectedWinner?.winnerId === w.winnerId;
+                const isClaimed = w.claimStatus === 'CLAIMED';
+                const isForfeited = w.claimStatus === 'FORFEITED';
+
+                return (
+                  <div
+                    key={w.winnerId}
+                    onClick={() => handleSelectWinner(w.winnerId)}
+                    className={`p-3 border-2 transition-all cursor-pointer relative select-none ${
+                      isSelected
+                        ? 'border-[#ff6a00] bg-orange-50/50 dark:bg-neutral-900 shadow-md ring-1 ring-[#ff6a00]'
+                        : isClaimed
+                        ? 'border-emerald-600/40 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-neutral-950/80 hover:border-emerald-600'
+                        : isForfeited
+                        ? 'border-red-600/40 dark:border-red-950 bg-red-50/30 dark:bg-red-950/20 opacity-70'
+                        : 'border-[#1a1a1a]/15 dark:border-white/10 hover:border-[#1a1a1a]/40 dark:hover:border-white/30 bg-[#f8f7f4] dark:bg-neutral-950 active:bg-neutral-200 dark:active:bg-neutral-900'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs font-black text-[#ff6a00]">
+                            {w.winnerId}
+                          </span>
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 bg-white dark:bg-black text-[#1a1a1a] dark:text-white border border-[#1a1a1a]/20 dark:border-white/10 uppercase">
+                            {w.district}
+                          </span>
+                          <span className="font-mono text-[10px] text-neutral-600 dark:text-neutral-400">
+                            {w.participantId}
+                          </span>
+                          {w.drawNumber && (
+                            <span className="font-mono text-[10px] text-neutral-500">
+                              • {w.drawNumber}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="font-sans font-bold text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight truncate">
+                          {w.name}
+                        </div>
+
+                        <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">
+                          {w.school} • <span className="text-neutral-500">{w.position}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0 space-y-1">
+                        <div className="font-sans font-bold text-xs text-[#1a1a1a] dark:text-white uppercase max-w-[150px] sm:max-w-[180px] truncate">
+                          {w.prizeName}
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="inline-block">
+                          <span
+                            className={`px-2 py-0.5 font-mono font-black text-[9px] uppercase tracking-wider inline-flex items-center gap-1 ${
+                              isClaimed
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-500 dark:border-emerald-600'
+                                : isForfeited
+                                ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-500 dark:border-red-700 line-through'
+                                : 'bg-[#ff6a00]/15 dark:bg-[#ff6a00]/20 text-[#d45800] dark:text-[#ff6a00] border border-[#ff6a00]'
+                            }`}
+                          >
+                            {isClaimed ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>CLAIMED</span>
+                              </>
+                            ) : isForfeited ? (
+                              <span>FORFEITED</span>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3" />
+                                <span>UNCLAIMED</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Safe Card Footer */}
+                    <div className="mt-2 pt-2 border-t border-[#1a1a1a]/10 dark:border-white/5 flex items-center justify-between text-xs">
+                      <span className="font-mono text-[10px] text-neutral-500">
+                        {isClaimed
+                          ? `Disbursed: ${w.claimedAt || 'Yes'}`
+                          : `Won: ${w.date} ${w.time}`}
+                      </span>
+
+                      {!isClaimed && !isForfeited ? (
+                        <div className="flex items-center gap-1">
+                          {isSelected ? (
+                            <span className="px-2 py-0.5 bg-[#ff6a00] text-black font-mono font-bold text-[10px] uppercase flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              <span>Active in Verification</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/10 hover:border-[#ff6a00] text-neutral-800 dark:text-neutral-300 font-mono text-[10px] font-bold uppercase flex items-center gap-1">
+                              <span>Verify &amp; Disburse</span>
+                              <ChevronRight className="w-3 h-3 text-[#ff6a00]" />
+                            </span>
+                          )}
+                        </div>
+                      ) : isClaimed ? (
+                        <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
+                          Disbursed by {w.claimedBy?.split(' ')[0] || 'Officer'}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+        </div>
+
         {/* BLOCK 2: Selected Winner Verification & Actions (Mobile Order 2, Desktop Order 2 / Right Column) */}
         <div
           ref={verificationCardRef}
-          className="order-2 lg:order-2 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-xl space-y-4"
+          className="order-2 lg:col-span-5 lg:sticky lg:top-4 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-xl space-y-4"
         >
           <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-3">
             <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white flex items-center gap-1.5">
@@ -1191,204 +1392,6 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
               Select a winner ticket from the list or scan a badge to start disbursement.
             </div>
           )}
-        </div>
-
-        {/* BLOCK 3: Winners Table / Queue (Mobile Order 3, Desktop Order 3 / Left Bottom Column) */}
-        <div className="order-3 lg:order-3 lg:col-span-7 lg:col-start-1 lg:row-start-2 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-3">
-          {/* Queue Tab Selectors & District Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10 text-xs font-mono">
-            <div className="inline-flex border border-[#1a1a1a]/20 dark:border-white/20 divide-x divide-[#1a1a1a]/20 dark:divide-white/20 bg-[#f8f7f4] dark:bg-black overflow-x-auto max-w-full">
-              <button
-                onClick={() => setStatusTab('UNCLAIMED')}
-                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
-                  statusTab === 'UNCLAIMED'
-                    ? 'bg-[#ff6a00] text-black font-black'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Unclaimed ({unclaimedCount})</span>
-              </button>
-              <button
-                onClick={() => setStatusTab('PENDING_PRINT')}
-                className={`px-3 py-1.5 font-bold uppercase flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
-                  statusTab === 'PENDING_PRINT'
-                    ? 'bg-amber-500 text-black font-black'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Pending Print ({pendingPrintCount})</span>
-              </button>
-              <button
-                onClick={() => setStatusTab('ALL')}
-                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
-                  statusTab === 'ALL'
-                    ? 'bg-[#1a1a1a] text-white dark:bg-neutral-800 dark:text-white font-black'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                All ({totalCount})
-              </button>
-              <button
-                onClick={() => setStatusTab('CLAIMED')}
-                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
-                  statusTab === 'CLAIMED'
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                Claimed ({claimedCount})
-              </button>
-              <button
-                onClick={() => setStatusTab('FORFEITED')}
-                className={`px-3 py-1.5 font-bold uppercase transition-colors shrink-0 ${
-                  statusTab === 'FORFEITED'
-                    ? 'bg-red-800 text-white'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                Forfeited ({forfeitedCount})
-              </button>
-            </div>
-
-            <select
-              value={districtFilter}
-              onChange={(e) => setDistrictFilter(e.target.value)}
-              className="bg-white dark:bg-black border border-[#1a1a1a]/30 dark:border-white/20 px-2.5 py-1.5 text-[11px] font-mono font-bold text-[#1a1a1a] dark:text-white outline-none focus:border-[#ff6a00] uppercase w-full sm:w-auto"
-            >
-              <option value="ALL">All Districts</option>
-              <option value="NORTH">North</option>
-              <option value="EAST">East</option>
-              <option value="WEST">West</option>
-              <option value="SOUTH">South</option>
-              <option value="PRIVATE">Private (ECCD + Private + LSB)</option>
-              <option value="LSB">-- LSB Personnel</option>
-              <option value="ECCD">-- ECCD Personnel</option>
-            </select>
-          </div>
-
-          {/* Queue List Cards */}
-          <div className="space-y-2 max-h-[540px] overflow-y-auto pr-1">
-            {filteredWinners.length === 0 ? (
-              <div className="p-8 text-center bg-[#f8f7f4] dark:bg-black/40 border border-dashed border-[#1a1a1a]/20 dark:border-white/10 text-neutral-500 font-mono text-xs">
-                No winners found matching the current search criteria or status filter.
-              </div>
-            ) : (
-              filteredWinners.map((w) => {
-                const isSelected = selectedWinner?.winnerId === w.winnerId;
-                const isClaimed = w.claimStatus === 'CLAIMED';
-                const isForfeited = w.claimStatus === 'FORFEITED';
-
-                return (
-                  <div
-                    key={w.winnerId}
-                    onClick={() => handleSelectWinner(w.winnerId)}
-                    className={`p-3 border-2 transition-all cursor-pointer relative select-none ${
-                      isSelected
-                        ? 'border-[#ff6a00] bg-orange-50/50 dark:bg-neutral-900 shadow-md ring-1 ring-[#ff6a00]'
-                        : isClaimed
-                        ? 'border-emerald-600/40 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-neutral-950/80 hover:border-emerald-600'
-                        : isForfeited
-                        ? 'border-red-600/40 dark:border-red-950 bg-red-50/30 dark:bg-red-950/20 opacity-70'
-                        : 'border-[#1a1a1a]/15 dark:border-white/10 hover:border-[#1a1a1a]/40 dark:hover:border-white/30 bg-[#f8f7f4] dark:bg-neutral-950 active:bg-neutral-200 dark:active:bg-neutral-900'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-black text-[#ff6a00]">
-                            {w.winnerId}
-                          </span>
-                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 bg-white dark:bg-black text-[#1a1a1a] dark:text-white border border-[#1a1a1a]/20 dark:border-white/10 uppercase">
-                            {w.district}
-                          </span>
-                          <span className="font-mono text-[10px] text-neutral-600 dark:text-neutral-400">
-                            {w.participantId}
-                          </span>
-                          {w.drawNumber && (
-                            <span className="font-mono text-[10px] text-neutral-500">
-                              • {w.drawNumber}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="font-sans font-bold text-sm text-[#1a1a1a] dark:text-white uppercase tracking-tight truncate">
-                          {w.name}
-                        </div>
-
-                        <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">
-                          {w.school} • <span className="text-neutral-500">{w.position}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0 space-y-1">
-                        <div className="font-sans font-bold text-xs text-[#1a1a1a] dark:text-white uppercase max-w-[150px] sm:max-w-[180px] truncate">
-                          {w.prizeName}
-                        </div>
-
-                        {/* Status Badge */}
-                        <div className="inline-block">
-                          <span
-                            className={`px-2 py-0.5 font-mono font-black text-[9px] uppercase tracking-wider inline-flex items-center gap-1 ${
-                              isClaimed
-                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-500 dark:border-emerald-600'
-                                : isForfeited
-                                ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border border-red-500 dark:border-red-700 line-through'
-                                : 'bg-[#ff6a00]/15 dark:bg-[#ff6a00]/20 text-[#d45800] dark:text-[#ff6a00] border border-[#ff6a00]'
-                            }`}
-                          >
-                            {isClaimed ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>CLAIMED</span>
-                              </>
-                            ) : isForfeited ? (
-                              <span>FORFEITED</span>
-                            ) : (
-                              <>
-                                <Clock className="w-3 h-3" />
-                                <span>UNCLAIMED</span>
-                              </>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Safe Card Footer */}
-                    <div className="mt-2 pt-2 border-t border-[#1a1a1a]/10 dark:border-white/5 flex items-center justify-between text-xs">
-                      <span className="font-mono text-[10px] text-neutral-500">
-                        {isClaimed
-                          ? `Disbursed: ${w.claimedAt || 'Yes'}`
-                          : `Won: ${w.date} ${w.time}`}
-                      </span>
-
-                      {!isClaimed && !isForfeited ? (
-                        <div className="flex items-center gap-1">
-                          {isSelected ? (
-                            <span className="px-2 py-0.5 bg-[#ff6a00] text-black font-mono font-bold text-[10px] uppercase flex items-center gap-1">
-                              <Check className="w-3 h-3" />
-                              <span>Active in Verification</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-white dark:bg-neutral-900 border border-[#1a1a1a]/20 dark:border-white/10 hover:border-[#ff6a00] text-neutral-800 dark:text-neutral-300 font-mono text-[10px] font-bold uppercase flex items-center gap-1">
-                              <span>Verify &amp; Disburse</span>
-                              <ChevronRight className="w-3 h-3 text-[#ff6a00]" />
-                            </span>
-                          )}
-                        </div>
-                      ) : isClaimed ? (
-                        <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
-                          Disbursed by {w.claimedBy?.split(' ')[0] || 'Officer'}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
         </div>
       </div>
 
