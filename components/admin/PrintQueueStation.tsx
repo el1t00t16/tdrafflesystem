@@ -96,20 +96,36 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
     [batchGroups]
   );
 
-  // Toggle batch card expansion
+  // Toggle batch card expansion (default is collapsed)
   const toggleBatchExpand = (batchNumber: string) => {
     setExpandedBatches((prev) => ({
       ...prev,
-      [batchNumber]: prev[batchNumber] === undefined ? false : !prev[batchNumber]
+      [batchNumber]: !isBatchExpanded(batchNumber)
     }));
   };
 
-  const isBatchExpanded = (batchNumber: string, pendingCount: number) => {
-    if (expandedBatches[batchNumber] !== undefined) {
-      return expandedBatches[batchNumber];
+  const isBatchExpanded = (batchNumber: string) => {
+    // If user is actively searching, auto-expand to reveal matching winners
+    if (searchFilter.trim()) {
+      return expandedBatches[batchNumber] !== false;
     }
-    // Auto-expand if there are pending stubs to print
-    return pendingCount > 0;
+    return Boolean(expandedBatches[batchNumber]);
+  };
+
+  const handleExpandAll = () => {
+    const next: Record<string, boolean> = {};
+    filteredQueueBatches.forEach((b) => {
+      next[b.drawNumber] = true;
+    });
+    setExpandedBatches(next);
+  };
+
+  const handleCollapseAll = () => {
+    const next: Record<string, boolean> = {};
+    filteredQueueBatches.forEach((b) => {
+      next[b.drawNumber] = false;
+    });
+    setExpandedBatches(next);
   };
 
   // Filtered batches in active queue
@@ -325,6 +341,30 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
       {/* TAB 1: ACTIVE PRINT QUEUE (Grouped by Raffle Batch) */}
       {activeTab === 'queue' && (
         <div className="space-y-4">
+          {filteredQueueBatches.length > 0 && (
+            <div className="flex items-center justify-between text-xs font-mono px-1 py-0.5">
+              <span className="text-neutral-500 font-bold uppercase text-[11px]">
+                {filteredQueueBatches.length} {filteredQueueBatches.length === 1 ? 'Batch' : 'Batches'} Awaiting Print
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExpandAll}
+                  className="px-2.5 py-1 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/10 text-neutral-700 dark:text-neutral-300 text-[10px] font-bold uppercase transition-colors"
+                >
+                  Expand All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCollapseAll}
+                  className="px-2.5 py-1 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/20 dark:border-white/10 text-neutral-700 dark:text-neutral-300 text-[10px] font-bold uppercase transition-colors"
+                >
+                  Collapse All
+                </button>
+              </div>
+            </div>
+          )}
+
           {filteredQueueBatches.length === 0 ? (
             <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-12 text-center space-y-3">
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
@@ -351,7 +391,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
             </div>
           ) : (
             filteredQueueBatches.map((batch) => {
-              const expanded = isBatchExpanded(batch.drawNumber, batch.pendingCount);
+              const expanded = isBatchExpanded(batch.drawNumber);
               const pendingWinners = batch.winners.filter((w) => !w.isPrinted);
 
               return (
@@ -361,12 +401,18 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                 >
                   {/* Batch Card Header Strip */}
                   <div className="bg-[#f8f7f4] dark:bg-neutral-950 p-4 border-b border-[#1a1a1a]/15 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer select-none"
+                      onClick={() => toggleBatchExpand(batch.drawNumber)}
+                    >
                       <button
                         type="button"
-                        onClick={() => toggleBatchExpand(batch.drawNumber)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBatchExpand(batch.drawNumber);
+                        }}
                         className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-300"
-                        title={expanded ? 'Collapse Batch' : 'Expand Batch'}
+                        title={expanded ? 'Collapse Batch' : 'Expand Batch to view winners'}
                       >
                         {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </button>
