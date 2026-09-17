@@ -109,7 +109,7 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                   disabled={prize.remainingQuantity <= 0}
                   className="bg-white dark:bg-neutral-900 text-black dark:text-white py-2"
                 >
-                  {prize.name} — (Remaining: {prize.remainingQuantity} / {prize.quantity})
+                  [{prize.category || 'MINOR'}] {prize.name} — (Remaining: {prize.remainingQuantity} / {prize.quantity})
                   {prize.unitValue > 0
                     ? ` • ₱${prize.unitValue.toLocaleString()} each`
                     : (prize.description ? ` • ${prize.description}` : ' • Physical Item')}

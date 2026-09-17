@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Prize } from '../../lib/types';
+import { Prize, PrizeCategory } from '../../lib/types';
 import { Gift, Plus, CheckCircle, AlertCircle, X, Trash2, Cloud, CloudOff, UploadCloud } from 'lucide-react';
 import { isSupabaseConfigured, syncPrizesToSupabase } from '../../lib/supabase';
 
@@ -19,6 +19,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
   onClearAllPrizes
 }) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [category, setCategory] = useState<PrizeCategory>('MINOR');
   const [prizeType, setPrizeType] = useState<'ITEM' | 'CASH'>('ITEM');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -62,7 +63,8 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
       drawnQuantity: 0,
       remainingQuantity: finalQuantity,
       totalValue: finalUnitValue * finalQuantity,
-      status: 'AVAILABLE'
+      status: 'AVAILABLE',
+      category: category
     };
 
     onAddPrize(newPrize);
@@ -70,6 +72,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
     setDescription('');
     setUnitValue(0);
     setQuantity(1);
+    setCategory('MINOR');
     setPrizeType('ITEM');
     setShowAddModal(false);
 
@@ -79,6 +82,36 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
     } else {
       setCloudMsg({ text: `Prize ${nextId} saved locally. (Offline Mode: Not pushed to Supabase Cloud)` });
       setTimeout(() => setCloudMsg(null), 4000);
+    }
+  };
+
+  const renderCategoryBadge = (cat?: PrizeCategory) => {
+    switch (cat) {
+      case 'GRAND':
+        return (
+          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+            ★ Grand Prize
+          </span>
+        );
+      case 'MAJOR':
+        return (
+          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30 whitespace-nowrap">
+            ◆ Major Prize
+          </span>
+        );
+      case 'CONSOLATION':
+        return (
+          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/30 whitespace-nowrap">
+            Consolation
+          </span>
+        );
+      case 'MINOR':
+      default:
+        return (
+          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 whitespace-nowrap">
+            ● Minor Prize
+          </span>
+        );
     }
   };
 
@@ -223,6 +256,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
               <tr className="bg-[#1a1a1a] border-b border-[#1a1a1a] dark:border-white/20 text-white uppercase font-mono font-bold tracking-wider text-[10px]">
                 <th className="p-3">Prize ID</th>
                 <th className="p-3">Prize Name</th>
+                <th className="p-3 text-center">Tier</th>
                 <th className="p-3">Description</th>
                 <th className="p-3 text-right">Unit Value</th>
                 <th className="p-3 text-center">Total Qty</th>
@@ -236,7 +270,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
             <tbody className="divide-y divide-[#1a1a1a]/15 dark:divide-white/5">
               {prizes.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-neutral-500 font-mono text-xs uppercase tracking-wider">
+                  <td colSpan={11} className="p-8 text-center text-neutral-500 font-mono text-xs uppercase tracking-wider">
                     No prizes in inventory. Click &quot;+ Add New Prize&quot; above to configure event prizes.
                   </td>
                 </tr>
@@ -245,6 +279,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                   <tr key={p.id} className="hover:bg-[#f8f7f4] dark:hover:bg-neutral-900/50 transition-colors">
                     <td className="p-3 font-mono font-black text-[#1a1a1a] dark:text-white">{p.id}</td>
                     <td className="p-3 font-black text-[#1a1a1a] dark:text-white uppercase whitespace-nowrap">{p.name}</td>
+                    <td className="p-3 text-center">{renderCategoryBadge(p.category)}</td>
                     <td className="p-3 text-neutral-600 dark:text-neutral-400 max-w-xs truncate">{p.description}</td>
                     <td className="p-3 text-right font-bold text-[#1a1a1a] dark:text-white">
                       {p.unitValue > 0 ? (
@@ -316,10 +351,27 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
             </div>
 
             <form onSubmit={handleCreate} className="p-5 space-y-4 text-xs">
-              {/* Prize Category Selector */}
+              {/* Type of Prize (Tier) Selector */}
+              <div>
+                <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1">
+                  Type of Prize (Tier):
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as PrizeCategory)}
+                  className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] uppercase font-bold text-xs"
+                >
+                  <option value="MINOR">Minor Prize</option>
+                  <option value="MAJOR">Major Prize</option>
+                  <option value="GRAND">Grand Prize</option>
+                  <option value="CONSOLATION">Consolation Prize</option>
+                </select>
+              </div>
+
+              {/* Reward Format Selector */}
               <div>
                 <label className="block font-black uppercase text-[10px] tracking-wider text-neutral-600 dark:text-neutral-300 mb-1.5">
-                  Prize Type:
+                  Reward Format:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -422,7 +474,11 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                 </div>
               )}
 
-              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-3 text-neutral-600 dark:text-neutral-400 space-y-1">
+              <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/20 dark:border-white/10 p-3 text-neutral-600 dark:text-neutral-400 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-wider">Prize Tier:</span>
+                  <div>{renderCategoryBadge(category)}</div>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black uppercase tracking-wider">Calculated Winners:</span>
                   <span className="text-[#1a1a1a] dark:text-white font-black">{quantity} Winner{quantity > 1 ? 's' : ''}</span>
@@ -434,7 +490,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase tracking-wider">Prize Category:</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider">Format:</span>
                     <span className="text-white font-mono font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 bg-[#1a1a1a] dark:bg-neutral-900 border border-[#1a1a1a] dark:border-white/10">
                       Physical Item / Sponsored Gift
                     </span>

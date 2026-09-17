@@ -657,7 +657,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                       disabled={p.remainingQuantity <= 0}
                       className="bg-white dark:bg-neutral-900 text-black dark:text-white py-2"
                     >
-                      {p.name} — (Remaining: {p.remainingQuantity} / {p.quantity})
+                      [{p.category || 'MINOR'}] {p.name} — (Remaining: {p.remainingQuantity} / {p.quantity})
                       {val > 0 ? ` • ₱${val.toLocaleString()} each` : ''}
                       {p.remainingQuantity <= 0 ? ' [EXHAUSTED]' : ''}
                     </option>

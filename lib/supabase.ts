@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
-import { Participant, AttendanceRecord, Winner, Prize, RaffleLog, EligibilityStatus } from './types';
+import { Participant, AttendanceRecord, Winner, Prize, PrizeCategory, RaffleLog, EligibilityStatus } from './types';
 
 let supabaseInstance: SupabaseClient | null = null;
 let lastUsedUrl = '';
@@ -183,8 +183,12 @@ create table if not exists public.prizes (
   remaining_quantity integer not null default 1,
   total_value numeric not null default 0,
   status text not null default 'AVAILABLE',
+  category text not null default 'MINOR',
   updated_at timestamp with time zone default now()
 );
+
+-- Ensure category column exists if table was previously created
+alter table public.prizes add column if not exists category text default 'MINOR';
 
 -- 4. Winners Table
 create table if not exists public.winners (
@@ -748,7 +752,8 @@ export async function fetchPrizesFromSupabase(): Promise<Prize[] | null> {
       drawnQuantity: Number(row.drawn_quantity) || 0,
       remainingQuantity: Number(row.remaining_quantity) || 0,
       totalValue: Number(row.total_value) || 0,
-      status: row.status || 'AVAILABLE'
+      status: row.status || 'AVAILABLE',
+      category: (row.category as PrizeCategory) || 'MINOR'
     }));
   } catch (err) {
     console.error('Error fetching prizes from Supabase:', err);
@@ -775,7 +780,8 @@ export async function savePrizeToSupabase(prize: Prize): Promise<{ success: bool
       drawn_quantity: prize.drawnQuantity,
       remaining_quantity: prize.remainingQuantity,
       total_value: prize.totalValue,
-      status: prize.status
+      status: prize.status,
+      category: prize.category || 'MINOR'
     };
 
     const { error } = await client.from('prizes').upsert([row], { onConflict: 'id' });
@@ -855,7 +861,8 @@ export async function syncPrizesToSupabase(prizes: Prize[]): Promise<{ success: 
       drawn_quantity: Math.max(0, Number(p.drawnQuantity) || 0),
       remaining_quantity: Math.max(0, Number(p.remainingQuantity) || 0),
       total_value: (Number(p.unitValue) || 0) * (Number(p.quantity) || 1),
-      status: String(p.status || 'AVAILABLE')
+      status: String(p.status || 'AVAILABLE'),
+      category: String(p.category || 'MINOR')
     }));
 
     const { error } = await client.from('prizes').upsert(rows, { onConflict: 'id' });
