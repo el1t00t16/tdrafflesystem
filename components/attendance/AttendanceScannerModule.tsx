@@ -789,7 +789,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
     <div id="attendance-station-container" className="w-full flex flex-col gap-4">
       {/* 1. Camera Focus Mode Top Bar (Shown when Camera is Active and Dashboard is Hidden) */}
       {cameraActive && !showDashboardInFocus && (
-        <div className="bg-white dark:bg-[#18181b] border-2 border-[#ff6a00] p-3 sm:p-4 rounded-sm flex flex-wrap items-center justify-between gap-3 shadow-md animate-fade-in">
+        <div className="bg-white dark:bg-[#18181b] border-2 border-[#ff6a00] p-3 sm:p-4 rounded-sm flex flex-wrap items-center justify-between gap-3 shadow-md animate-fade-in order-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00] shrink-0">
               <Camera className="w-5 h-5" />
@@ -847,9 +847,16 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         </div>
       )}
 
-      {/* 2. Full Station Dashboard (Hidden when camera is active unless user clicks 'Show Dashboard') */}
+      {/* 2. Full Station Dashboard (On mobile, placed below camera at order-3; on desktop at top at lg:order-1) */}
       {(!cameraActive || showDashboardInFocus) && (
-        <div className="flex flex-col gap-5 animate-fade-in">
+        <div className="flex flex-col gap-5 animate-fade-in order-3 lg:order-1">
+          {/* Mobile section indicator when scrolled below scanner */}
+          <div className="lg:hidden flex items-center gap-2 pt-2 border-t-2 border-dashed border-[#1a1a1a]/20 dark:border-white/10">
+            <span className="text-[11px] font-mono font-bold text-neutral-500 uppercase tracking-wider">
+              Station Overview &amp; District Turnout
+            </span>
+          </div>
+
           {/* Top Header & Operational Banner */}
           <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
@@ -1028,7 +1035,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       )}
 
       {/* Module Navigation Tabs */}
-      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0">
+      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0 order-1 lg:order-2">
         <button
           onClick={() => {
             soundSynthesizer.playClick();
@@ -1123,13 +1130,13 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       </div>
 
       {/* Main Tab Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 order-2 lg:order-3">
         {/* Left Interactive Operation Area (8 cols) */}
         <div className="lg:col-span-8 flex flex-col gap-4">
           {/* TAB 1: Camera QR Scanner */}
           {activeTab === 'camera' && (
-            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-5 rounded-sm flex flex-col gap-4 shadow-sm">
-              <div className="flex items-center justify-between">
+            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col gap-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base font-mono font-bold text-[#1a1a1a] dark:text-white uppercase flex items-center gap-2">
                     <Camera className="w-4 h-4 text-[#ff6a00]" />
