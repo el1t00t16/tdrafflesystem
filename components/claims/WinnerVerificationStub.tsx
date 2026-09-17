@@ -107,15 +107,25 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       )}
       <div className={`w-full max-w-[3.95in] min-h-[5.15in] max-h-[5.18in] p-2.5 sm:p-3 bg-white text-black border-2 border-black flex flex-col justify-between text-[10.5px] leading-tight font-sans relative overflow-hidden select-none box-border ${!isBatchChild ? 'winner-stub-printable' : ''} print:border-black print:border-solid print:m-0 print:p-2.5`}>
         {/* Top Government & Event Header */}
-        <div className="text-center border-b border-black pb-1 space-y-0.5">
-          <div className="text-[7.5px] font-mono uppercase tracking-widest text-neutral-600 font-bold leading-none">
-            Republic of the Philippines • Region XII
-          </div>
-          <div className="text-[8.5px] font-mono font-black uppercase text-black leading-none tracking-wider">
-            MUNICIPALITY OF MALUNGON
-          </div>
-          <div className="text-xs font-serif font-black uppercase tracking-tight text-black pt-0.5">
-            MUNICIPAL TEACHERS&apos; DAY 2026
+        <div className="border-b border-black pb-1 space-y-0.5">
+          <div className="flex items-center justify-between gap-1">
+            <img
+              src="/LGU_LOGO1.png"
+              alt="LGU Malungon Seal"
+              className="w-8 h-8 object-contain flex-shrink-0"
+            />
+            <div className="text-center flex-1">
+              <div className="text-[7px] font-mono uppercase tracking-widest text-neutral-600 font-bold leading-none">
+                Republic of the Philippines • Region XII
+              </div>
+              <div className="text-[8.5px] font-mono font-black uppercase text-black leading-none tracking-wider">
+                MUNICIPALITY OF MALUNGON
+              </div>
+              <div className="text-[11px] font-serif font-black uppercase tracking-tight text-black pt-0.5">
+                MUNICIPAL TEACHERS&apos; DAY 2026
+              </div>
+            </div>
+            <div className="w-8 flex-shrink-0" /> {/* Spacer for balance */}
           </div>
           <div className="flex items-center justify-between gap-1 mt-0.5">
             <span className="inline-block bg-black text-white text-[7px] font-mono font-black uppercase px-2 py-0.5 tracking-widest">

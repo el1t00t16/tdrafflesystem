@@ -1,0 +1,88 @@
+﻿{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "Municipal Teachers' Day 2026 Raffle System",
+  "short_name": "TD Raffle 2026",
+  "id": "/",
+  "description": "Official Grand Raffle Draw, Gate Attendance Scanner, and Prize Disbursement System for Municipal Teachers' Day 2026 - Municipality of Malungon, Sarangani Province.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#18181b",
+  "theme_color": "#FF6A00",
+  "categories": [
+    "government",
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Projector Raffle Draw",
+      "short_name": "Draw Display",
+      "description": "Main screen projector view for district draw cards",
+      "url": "/?view=display",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Gate Attendance Scanner",
+      "short_name": "Gate Scanner",
+      "description": "Barcode / QR code gate entrance scanner workstation",
+      "url": "/attendance",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Prize Claim Station",
+      "short_name": "Prize Claims",
+      "description": "Disbursement desk, verification stub search and claim processing",
+      "url": "/claims",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

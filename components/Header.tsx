@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lock, ExternalLink, Sun, Moon } from 'lucide-react';
+import { Lock, ExternalLink, Sun, Moon, Download } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
@@ -31,6 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -38,8 +40,37 @@ export const Header: React.FC<HeaderProps> = ({
       const mode = localStorage.getItem('td26_theme_mode');
       const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
       setIsDarkMode(isDark);
+
+      if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+        setIsInstalled(true);
+      }
     } catch (e) {}
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
   }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstalled(true);
+    }
+  };
 
   const toggleDarkMode = () => {
     const nextDark = !isDarkMode;
@@ -195,6 +226,18 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
+          {deferredPrompt && !isInstalled && (
+            <button
+              id="header-install-pwa"
+              onClick={handleInstallApp}
+              className="nav-item flex items-center gap-1.5 bg-[#ff6a00] hover:bg-[#e55f00] text-white font-bold border-[#ff6a00] animate-pulse"
+              title="Install Municipal Teachers' Day 2026 Raffle App on this Device"
+            >
+              <Download className="w-3 h-3" />
+              <span>Install App</span>
+            </button>
+          )}
+
           {onLock && (
             <button
               id="header-lock-toggle"
@@ -209,15 +252,22 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Editorial Style Layout Header */}
-      <header className="bg-[#f8f7f4] dark:bg-[#121215] text-[#1a1a1a] dark:text-[#f4f4f5] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 border-[#1a1a1a] dark:border-white/15 transition-colors print:hidden">
-        <div className="header-title">
-          <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 dark:text-neutral-400 mb-0.5">
-            SARANGANI PROVINCE / REGION XII
+      {/* Editorial Style Layout Header with Municipality Seal */}
+      <header className="bg-[#f8f7f4] dark:bg-[#121215] text-[#1a1a1a] dark:text-[#f4f4f5] px-6 sm:px-12 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b-2 border-[#1a1a1a] dark:border-white/15 transition-colors print:hidden">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <img
+            src="/LGU_LOGO1.png"
+            alt="Municipality of Malungon Official Seal"
+            className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-xs flex-shrink-0"
+          />
+          <div className="header-title">
+            <div className="header-meta font-mono text-[10px] uppercase tracking-widest text-[#1a1a1a]/60 dark:text-neutral-400 mb-0.5">
+              SARANGANI PROVINCE / REGION XII
+            </div>
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] dark:text-white -mb-0.5">
+              Teachers&apos; Day 2026
+            </h1>
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] dark:text-white -mb-0.5">
-            Teachers&apos; Day 2026
-          </h1>
         </div>
         <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[#1a1a1a]/70 dark:text-neutral-400">
           MUNICIPALITY OF MALUNGON<br />

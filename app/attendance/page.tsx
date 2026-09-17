@@ -240,6 +240,11 @@ export default function AttendancePage() {
       {/* Top Station Bar - Isolated Workstation for Gate Personnel */}
       <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
         <div className="flex items-center gap-3">
+          <img
+            src="/LGU_LOGO1.png"
+            alt="Municipality of Malungon Seal"
+            className="w-9 h-9 object-contain drop-shadow-xs flex-shrink-0"
+          />
           <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
             <QrCode className="w-5 h-5" />
           </div>
