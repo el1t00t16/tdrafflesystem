@@ -90,8 +90,8 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 margin-left: 0 !important;
                 margin-right: auto !important;
                 margin-top: 0 !important;
-                margin-bottom: auto !important;
-                float: left !important;
+                margin-bottom: 0 !important;
+                float: none !important;
                 clear: both !important;
                 display: block !important;
                 box-sizing: border-box !important;

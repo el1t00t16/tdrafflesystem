@@ -130,9 +130,9 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 margin-left: 0 !important;
                 margin-right: auto !important;
                 margin-top: 0 !important;
-                margin-bottom: auto !important;
+                margin-bottom: 0 !important;
                 padding: 0 !important;
-                float: left !important;
+                float: none !important;
                 clear: both !important;
                 display: block !important;
                 page-break-after: always !important;
@@ -141,6 +141,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 break-inside: avoid !important;
                 box-sizing: border-box !important;
                 background: white !important;
+              }
+              .stub-sheet-page + .stub-sheet-page {
+                page-break-before: always !important;
+                break-before: page !important;
               }
               .stub-sheet-page:last-child {
                 page-break-after: auto !important;
@@ -151,21 +155,38 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
         }} />
 
         {winners.map((winner, idx) => (
-          <div
-            key={winner.winnerId}
-            className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"
-          >
-            {/* Screen Header Indicator */}
-            <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
-              <span className="font-bold text-indigo-900">
-                Sheet {idx + 1} of {winners.length} (Pre-Cut 1/4 Letter)
-              </span>
-              <span>Ticket: {winner.winnerId}</span>
+          <React.Fragment key={winner.winnerId}>
+            <div
+              className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"
+            >
+              {/* Screen Header Indicator */}
+              <div className="w-full max-w-[3.95in] pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[10px] uppercase flex justify-between items-center print:hidden">
+                <span className="font-bold text-indigo-900">
+                  Sheet {idx + 1} of {winners.length} (Pre-Cut 1/4 Letter)
+                </span>
+                <span>Ticket: {winner.winnerId}</span>
+              </div>
+
+              {/* Verification Stub */}
+              <WinnerVerificationStub winner={winner} isModal={false} isBatchChild={true} />
             </div>
 
-            {/* Verification Stub */}
-            <WinnerVerificationStub winner={winner} isModal={false} isBatchChild={true} />
-          </div>
+            {/* Print-only forced page break divider (ensures exactly 1 stub per sheet) */}
+            {idx < winners.length - 1 && (
+              <div
+                className="hidden print:block"
+                style={{
+                  breakAfter: 'page',
+                  pageBreakAfter: 'always',
+                  height: 0,
+                  maxHeight: 0,
+                  margin: 0,
+                  padding: 0,
+                  clear: 'both'
+                }}
+              />
+            )}
+          </React.Fragment>
         ))}
       </div>
     </div>
