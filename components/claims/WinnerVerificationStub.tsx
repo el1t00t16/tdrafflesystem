@@ -150,7 +150,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
               <span className="text-[7.5px] font-mono uppercase text-neutral-500 font-bold block">
                 WINNER NAME
               </span>
-              <div className="font-black text-xs sm:text-sm uppercase text-black leading-tight truncate">
+              <div className="font-black text-xs sm:text-sm uppercase text-black leading-tight break-words">
                 {winner.name}
               </div>
             </div>
@@ -166,7 +166,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 <span className="text-[7px] font-mono uppercase text-neutral-500 font-bold block">
                   POSITION
                 </span>
-                <span className="font-bold text-neutral-800 truncate block">{winner.position}</span>
+                <span className="font-bold text-neutral-800 break-words block">{winner.position}</span>
               </div>
             </div>
 
@@ -174,7 +174,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
               <span className="text-[7px] font-mono uppercase text-neutral-500 font-bold block">
                 SCHOOL / STATION
               </span>
-              <div className="font-bold text-[8.5px] text-neutral-900 truncate">
+              <div className="font-bold text-[8.5px] text-neutral-900 leading-tight break-words">
                 {winner.school}
               </div>
             </div>
