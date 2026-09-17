@@ -112,7 +112,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
             Republic of the Philippines • Region XII
           </div>
           <div className="text-[8.5px] font-mono font-black uppercase text-black leading-none tracking-wider">
-            MUNICIPALITY OF MALUNGON • DEPED SUB-OFFICE
+            MUNICIPALITY OF MALUNGON
           </div>
           <div className="text-xs font-serif font-black uppercase tracking-tight text-black pt-0.5">
             MUNICIPAL TEACHERS&apos; DAY 2026
@@ -135,11 +135,6 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           <div className="font-serif font-black text-xs sm:text-sm uppercase text-black leading-tight">
             {winner.prizeName}
           </div>
-          {winner.unitValue > 0 && (
-            <div className="font-mono text-[9px] font-bold text-neutral-800 mt-0.5">
-              Value: ₱{winner.unitValue.toLocaleString()}
-            </div>
-          )}
         </div>
 
         {/* Middle Grid: Winner Information + QR Code */}
