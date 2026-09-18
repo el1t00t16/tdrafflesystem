@@ -238,7 +238,7 @@ export default function AttendancePage() {
   return (
     <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-black">
       {/* Top Station Bar - Isolated Workstation for Gate Personnel */}
-      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none">
+      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none print:hidden">
         <div className="flex items-center gap-3">
           <img
             src="/LGU_LOGO1.png"
@@ -318,10 +318,10 @@ export default function AttendancePage() {
       </header>
 
       {/* Main Scanner Workstation */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-3 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-3 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none">
         {/* Status notification toast if sync just ran */}
         {lastSyncStatus && (
-          <div className="mb-3 bg-neutral-900 border border-[#22c55e]/40 text-[#22c55e] px-3.5 py-2 text-xs font-mono flex items-center gap-2">
+          <div className="mb-3 bg-neutral-900 border border-[#22c55e]/40 text-[#22c55e] px-3.5 py-2 text-xs font-mono flex items-center gap-2 print:hidden">
             <Database className="w-3.5 h-3.5 text-[#22c55e]" />
             <span>{lastSyncStatus}</span>
           </div>
@@ -329,7 +329,7 @@ export default function AttendancePage() {
 
         {/* Empty Roster Guidance Alert */}
         {participants.length === 0 && (
-          <div className="mb-4 bg-amber-950/40 border-2 border-amber-500/70 p-4 rounded-sm text-amber-200 font-mono text-xs space-y-2.5">
+          <div className="mb-4 bg-amber-950/40 border-2 border-amber-500/70 p-4 rounded-sm text-amber-200 font-mono text-xs space-y-2.5 print:hidden">
             <div className="flex items-center gap-2 font-bold text-white uppercase text-sm">
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
               <span>ROSTER EMPTY ON THIS DEVICE (0 REGISTERED)</span>
@@ -372,7 +372,7 @@ export default function AttendancePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#1a1a1a]/15 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2">
+      <footer className="bg-white border-t border-[#1a1a1a]/15 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2 print:hidden">
         <span>Municipal Teachers&apos; Day 2026 • Malungon Gate Entrance Scanner • Region XII</span>
         <span className="text-neutral-400 text-[10px]">Station: {gateSession.stationId}</span>
       </footer>

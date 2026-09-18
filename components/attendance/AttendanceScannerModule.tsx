@@ -35,6 +35,7 @@ import QRCode from 'qrcode';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Participant, District, AttendanceRecord } from '../../lib/types';
 import { soundSynthesizer } from '../../lib/sound';
+import { PrintableBadgeSheets } from './PrintableBadgeSheets';
 import {
   isSupabaseConfigured,
   SUPABASE_SQL_SCHEMA,
@@ -120,10 +121,6 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ELIGIBLE' | 'INELIGIBLE'>('ALL');
 
-  // Badge print states
-  const [badgeSearch, setBadgeSearch] = useState<string>('');
-  const [badgeDistrict, setBadgeDistrict] = useState<string>('ALL');
-  const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
   const [copiedSchema, setCopiedSchema] = useState<boolean>(false);
 
   // Supabase live configuration states
@@ -477,49 +474,6 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
     }
   }, [activeTab]);
 
-  // Generate QR Codes for the first 30 visible items in Badges tab
-  const badgeFiltered = useMemo(() => {
-    return participants.filter((p) => {
-      if (badgeDistrict !== 'ALL' && p.district !== badgeDistrict) return false;
-      if (badgeSearch) {
-        const q = badgeSearch.toLowerCase();
-        return (
-          (p.fullName || '').toLowerCase().includes(q) ||
-          (p.id || '').toLowerCase().includes(q) ||
-          (p.depedId ? String(p.depedId).toLowerCase().includes(q) : false) ||
-          (p.school || '').toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [participants, badgeDistrict, badgeSearch]);
-
-  useEffect(() => {
-    if (activeTab === 'badges') {
-      const generateVisibleQrs = async () => {
-        const slice = badgeFiltered.slice(0, 40);
-        const map: Record<string, string> = {};
-        for (const p of slice) {
-          try {
-            const url = await QRCode.toDataURL(p.id, {
-              width: 160,
-              margin: 1,
-              color: {
-                dark: '#000000',
-                light: '#ffffff'
-              }
-            });
-            map[p.id] = url;
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        setQrDataUrls((prev) => ({ ...prev, ...map }));
-      };
-      generateVisibleQrs();
-    }
-  }, [activeTab, badgeFiltered]);
-
   // Manual list filtering
   const manualFiltered = useMemo(() => {
     return participants.filter((p) => {
@@ -858,7 +812,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           </div>
 
           {/* Top Header & Operational Banner */}
-          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm print:hidden">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
                 <QrCode className="w-6 h-6" />
@@ -943,7 +897,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           </div>
 
           {/* Live Statistics Overview Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 print:hidden">
             <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3.5 rounded-sm shadow-xs">
               <div className="flex items-center justify-between text-neutral-600 dark:text-[#71717a] text-[11px] font-mono uppercase">
                 <span>Registered</span>
@@ -1015,7 +969,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           </div>
 
           {/* District Attendance Breakdown Pills */}
-          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] px-4 py-2.5 rounded-sm flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-xs">
+          <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] px-4 py-2.5 rounded-sm flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-xs print:hidden">
             <span className="text-neutral-600 dark:text-[#71717a] text-[11px] uppercase tracking-wider">Districts Turnout:</span>
             {(['NORTH', 'SOUTH', 'EAST', 'WEST', 'PRIVATE'] as District[]).map((d) => {
               const dStat = stats.districts[d] || { total: 0, present: 0 };
@@ -1035,7 +989,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       )}
 
       {/* Module Navigation Tabs */}
-      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0 order-1 lg:order-2">
+      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0 order-1 lg:order-2 print:hidden">
         <button
           onClick={() => {
             soundSynthesizer.playClick();
@@ -1131,8 +1085,8 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
       {/* Main Tab Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 order-2 lg:order-3">
-        {/* Left Interactive Operation Area (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col gap-4">
+        {/* Left Interactive Operation Area (12 cols if badges tab, else 8 cols) */}
+        <div className={`${activeTab === 'badges' ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col gap-4`}>
           {/* TAB 1: Camera QR Scanner */}
           {activeTab === 'camera' && (
             <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col gap-4 shadow-sm">
@@ -1431,108 +1385,9 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             </div>
           )}
 
-          {/* TAB 4: Printable Badges / QR Slips */}
+          {/* TAB 4: Printable Badges / QR Slips (3x7 Grid for Philippine Long Bond 8.5"x13" & Legal) */}
           {activeTab === 'badges' && (
-            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-5 rounded-sm flex flex-col gap-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-mono font-bold text-[#1a1a1a] dark:text-white uppercase flex items-center gap-2">
-                    <Printer className="w-4 h-4 text-[#ff6a00]" />
-                    <span>Printable QR Code Badges &amp; Slips</span>
-                  </h2>
-                  <p className="text-xs text-neutral-600 dark:text-[#a1a1aa]">
-                    Print attendee cards with scannable QR codes for distribution prior to venue entrance.
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    soundSynthesizer.playClick();
-                    window.print();
-                  }}
-                  className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-black rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2 shadow"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Badges Page</span>
-                </button>
-              </div>
-
-              {/* Filter controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={badgeSearch}
-                  onChange={(e) => setBadgeSearch(e.target.value)}
-                  placeholder="Filter teachers for printing..."
-                  className="bg-[#f8f7f4] dark:bg-[#27272a] border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-[#1a1a1a] dark:text-white text-xs px-3 py-2 rounded-sm focus:outline-none"
-                />
-                <select
-                  value={badgeDistrict}
-                  onChange={(e) => setBadgeDistrict(e.target.value)}
-                  className="bg-[#f8f7f4] dark:bg-[#27272a] border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-[#1a1a1a] dark:text-white text-xs px-3 py-2 rounded-sm focus:outline-none"
-                >
-                  <option value="ALL">All Districts</option>
-                  <option value="NORTH">North District</option>
-                  <option value="EAST">East District</option>
-                  <option value="WEST">West District</option>
-                  <option value="SOUTH">South District</option>
-                  <option value="PRIVATE">Private (ECCD + Private School + LSB)</option>
-                </select>
-              </div>
-
-              {/* Printable Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto p-1">
-                {badgeFiltered.slice(0, 30).map((p) => {
-                  const qr = qrDataUrls[p.id];
-                  return (
-                    <div
-                      key={p.id}
-                      className="bg-white text-black p-4 rounded-sm border-2 border-black flex items-center gap-4 relative shadow-sm"
-                    >
-                      {/* Left: QR Code */}
-                      <div className="flex flex-col items-center justify-center">
-                        {qr ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={qr} alt={p.id} className="w-24 h-24 object-contain border border-gray-300" />
-                        ) : (
-                          <div className="w-24 h-24 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
-                            Generating...
-                          </div>
-                        )}
-                        <span className="font-mono text-[9px] font-bold mt-1 text-gray-700">{p.id}</span>
-                      </div>
-
-                      {/* Right: Details */}
-                      <div className="flex-1 flex flex-col justify-between overflow-hidden">
-                        <div>
-                          <div className="text-[9px] uppercase font-bold tracking-widest text-[#ff6a00]">
-                            DepEd Malungon • Teachers&apos; Day 2026
-                          </div>
-                          <div className="text-sm font-bold text-black leading-snug mt-0.5 truncate">
-                            {p.fullName}
-                          </div>
-                          <div className="text-[10px] text-gray-600 truncate">{p.position}</div>
-                        </div>
-
-                        <div className="mt-2 pt-2 border-t border-gray-200 grid grid-cols-2 gap-1 text-[10px] font-mono">
-                          <div>
-                            <span className="text-gray-400 block text-[8px] uppercase">District</span>
-                            <span className="font-bold text-gray-900">{p.district}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400 block text-[8px] uppercase">DepEd ID</span>
-                            <span className="font-bold text-gray-900">{p.depedId || 'N/A'}</span>
-                          </div>
-                          <div className="col-span-2 truncate">
-                            <span className="text-gray-400 block text-[8px] uppercase">School</span>
-                            <span className="text-gray-800 text-[9px] truncate block">{p.school}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <PrintableBadgeSheets participants={participants} />
           )}
 
           {/* TAB 5: Attendance Scan Audit Logs */}
@@ -1860,7 +1715,8 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         </div>
 
         {/* Right Verification Card & Scanned Badge Area (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
+        {activeTab !== 'badges' && (
+          <div className="lg:col-span-4 flex flex-col gap-4 print:hidden">
           <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-5 rounded-sm flex flex-col gap-4 sticky top-4 shadow-sm">
             <h3 className="text-xs font-mono uppercase tracking-wider text-neutral-700 dark:text-[#a1a1aa] flex items-center justify-between">
               <span>Scan Verification Result</span>
@@ -2002,6 +1858,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             </div>
           </div>
         </div>
+      )}
       </div>
     </div>
   );
