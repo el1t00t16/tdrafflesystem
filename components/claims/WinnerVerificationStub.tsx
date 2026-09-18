@@ -107,7 +107,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       )}
       <div className={`w-full max-w-[3.95in] min-h-[5.15in] max-h-[5.18in] p-2.5 sm:p-3 bg-white text-black border-2 border-black flex flex-col justify-between text-[10.5px] leading-tight font-sans relative overflow-hidden select-none box-border ${!isBatchChild ? 'winner-stub-printable' : ''} print:border-black print:border-solid print:m-0 print:p-2.5`}>
         {/* Top Government & Event Header */}
-        <div className="border-b border-black pb-1 space-y-0.5">
+        <div className="border-b border-black pb-1.5 space-y-1">
           <div className="flex items-center justify-between gap-1">
             <img
               src="/LGU_LOGO1.png"
@@ -115,24 +115,18 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
               className="w-8 h-8 object-contain flex-shrink-0"
             />
             <div className="text-center flex-1">
-              <div className="text-[7px] font-mono uppercase tracking-widest text-neutral-600 font-bold leading-none">
-                Republic of the Philippines • Region XII
-              </div>
-              <div className="text-[8.5px] font-mono font-black uppercase text-black leading-none tracking-wider">
+              <div className="text-[9px] font-mono font-black uppercase text-black leading-none tracking-wider">
                 MUNICIPALITY OF MALUNGON
               </div>
               <div className="text-[11px] font-serif font-black uppercase tracking-tight text-black pt-0.5">
-                MUNICIPAL TEACHERS&apos; DAY 2026
+                MUNICIPAL TEACHERS&apos; DAY CELEBRATION
               </div>
             </div>
             <div className="w-8 flex-shrink-0" /> {/* Spacer for balance */}
           </div>
-          <div className="flex items-center justify-between gap-1 mt-0.5">
-            <span className="inline-block bg-black text-white text-[7px] font-mono font-black uppercase px-2 py-0.5 tracking-widest">
-              OFFICIAL PRIZE CLAIM &amp; VERIFICATION STUB
-            </span>
-            <span className="font-mono font-black text-[8.5px] text-red-700 print:text-black tracking-wider border border-black px-1.5 py-0.5 bg-neutral-100 whitespace-nowrap">
-              {winner.district} • {winner.drawNumber}
+          <div className="text-center mt-1">
+            <span className="inline-block bg-black text-white text-[7.5px] font-mono font-black uppercase px-2.5 py-0.5 tracking-widest">
+              OFFICIAL PRIZE CLAIM &amp; DISBURSEMENT VOUCHER
             </span>
           </div>
         </div>
@@ -264,7 +258,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
 
         {/* Security Footer Notice */}
         <div className="text-center text-[6.5px] text-neutral-500 uppercase tracking-tight pt-0.5">
-          Present stub with DepEd ID at Prize Claim Station • Valid for Teachers&apos; Day 2026
+          Present stub with DepEd ID at Prize Claim Station • Valid for Teachers&apos; Day Celebration
         </div>
       </div>
     </>

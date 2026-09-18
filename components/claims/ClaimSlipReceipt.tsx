@@ -79,14 +79,11 @@ export const ClaimSlipReceipt: React.FC<ClaimSlipReceiptProps> = ({
         <div className="p-6 sm:p-8 space-y-5 font-sans print:p-4 text-xs text-neutral-900 leading-normal">
           {/* Header */}
           <div className="text-center border-b-2 border-black pb-4 space-y-1">
-            <div className="font-mono text-[10px] tracking-widest uppercase text-neutral-600 font-bold">
-              Republic of the Philippines • Province of Sarangani
-            </div>
-            <div className="font-mono text-[11px] tracking-wider uppercase font-black text-black">
-              MUNICIPALITY OF MALUNGON • DEPED MALUNGON SUB-OFFICE
+            <div className="font-mono text-[12px] tracking-wider uppercase font-black text-black">
+              MUNICIPALITY OF MALUNGON
             </div>
             <h2 className="font-serif font-black text-lg sm:text-xl uppercase tracking-tight text-black pt-1">
-              MUNICIPAL TEACHERS&apos; DAY 2026
+              MUNICIPAL TEACHERS&apos; DAY CELEBRATION
             </h2>
             <div className="inline-block px-3 py-0.5 bg-black text-white font-mono text-[10px] uppercase font-bold tracking-widest mt-1">
               OFFICIAL PRIZE CLAIM &amp; DISBURSEMENT VOUCHER
@@ -177,7 +174,7 @@ export const ClaimSlipReceipt: React.FC<ClaimSlipReceiptProps> = ({
           {/* Audit Verification Note */}
           <div className="text-[10px] text-neutral-500 italic leading-snug border-l-2 border-black pl-2.5">
             I hereby certify that the above prize has been physically released and received in good condition in
-            accordance with the Municipal Teachers&apos; Day 2026 Grand Raffle Guidelines.
+            accordance with the Municipal Teachers&apos; Day Celebration Grand Raffle Guidelines.
           </div>
 
           {/* Signatures Block */}
