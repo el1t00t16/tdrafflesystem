@@ -1038,6 +1038,81 @@ export async function clearAllParticipantsFromSupabase(): Promise<{ success: boo
   }
 }
 
+// Delete a single participant from Supabase
+export async function deleteParticipantFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabase();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('participants').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting participant from Supabase:', formatSupabaseError(error));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error deleting participant from Supabase:', err);
+    return false;
+  }
+}
+
+// Delete multiple participants from Supabase (for duplicate removal)
+export async function deleteParticipantsBatchFromSupabase(ids: string[]): Promise<boolean> {
+  const client = getSupabase();
+  if (!client || ids.length === 0) return false;
+  try {
+    const { error } = await client.from('participants').delete().in('id', ids);
+    if (error) {
+      console.error('Error batch deleting participants from Supabase:', formatSupabaseError(error));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error batch deleting participants from Supabase:', err);
+    return false;
+  }
+}
+
+// Upsert a single participant to Supabase
+export async function upsertSingleParticipantToSupabase(p: Participant): Promise<boolean> {
+  const client = getSupabase();
+  if (!client) return false;
+  try {
+    const row = {
+      id: String(p.id).trim(),
+      deped_id: p.depedId ? String(p.depedId).trim() : null,
+      last_name: String(p.lastName || '').trim(),
+      first_name: String(p.firstName || '').trim(),
+      middle_name: String(p.middleName || '').trim(),
+      suffix: p.suffix ? String(p.suffix).trim() : null,
+      full_name: String(p.fullName || '').trim() || String(p.id).trim(),
+      district: String(p.district || 'SOUTH').trim(),
+      original_district: p.originalDistrict ? String(p.originalDistrict).trim() : null,
+      personnel_type: String(p.personnelType || 'TEACHING').trim(),
+      type_of_personnel: p.typeOfPersonnel ? String(p.typeOfPersonnel).trim() : null,
+      school: String(p.school || '').trim(),
+      position: String(p.position || '').trim(),
+      sex: p.sex ? String(p.sex).trim() : null,
+      contact_number: p.contactNumber ? String(p.contactNumber).trim() : null,
+      email: p.email ? String(p.email).trim() : null,
+      eligible: String(p.eligible || 'INELIGIBLE'),
+      winner: String(p.winner || 'NO'),
+      claimed: String(p.claimed || 'NO'),
+      attended_at: p.attendedAt || null,
+      attended_by: p.attendedBy || null,
+      status: String(p.status || 'ACTIVE')
+    };
+    const { error } = await client.from('participants').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.error('Error upserting participant to Supabase:', formatSupabaseError(error));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error upserting participant to Supabase:', err);
+    return false;
+  }
+}
+
 export async function resetParticipantsInSupabase(options?: {
   resetAttendance?: boolean;
 }): Promise<{ success: boolean; error?: string }> {

@@ -42,6 +42,9 @@ import {
   isSupabaseConfigured,
   executeFullEventResetInSupabase,
   clearAllParticipantsFromSupabase,
+  deleteParticipantFromSupabase,
+  deleteParticipantsBatchFromSupabase,
+  upsertSingleParticipantToSupabase,
   syncWinnerPrintStatusToSupabase
 } from '../lib/supabase';
 import {
@@ -1219,6 +1222,64 @@ export default function Home() {
     }
   };
 
+  // Delete single participant (e.g. duplicate removal)
+  const handleDeleteParticipant = async (id: string) => {
+    soundSynthesizer.playClick();
+    setParticipants((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      try {
+        localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    if (isSupabaseConfigured()) {
+      deleteParticipantFromSupabase(id).catch((err) => console.warn('Supabase delete participant sync:', err));
+    }
+  };
+
+  // Batch delete multiple participants (e.g. batch duplicate resolution)
+  const handleBatchDeleteParticipants = async (ids: string[]) => {
+    soundSynthesizer.playClick();
+    const idSet = new Set(ids);
+    setParticipants((prev) => {
+      const updated = prev.filter((p) => !idSet.has(p.id));
+      try {
+        localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    if (isSupabaseConfigured()) {
+      deleteParticipantsBatchFromSupabase(ids).catch((err) => console.warn('Supabase batch delete participants sync:', err));
+    }
+  };
+
+  // Merge duplicate participant records into a primary record
+  const handleMergeParticipants = async (primaryId: string, mergedData: Participant, secondaryIds: string[]) => {
+    soundSynthesizer.playSuccess();
+    const secIdSet = new Set(secondaryIds);
+    setParticipants((prev) => {
+      const updated = prev
+        .filter((p) => !secIdSet.has(p.id))
+        .map((p) => (p.id === primaryId ? mergedData : p));
+      try {
+        localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    if (isSupabaseConfigured()) {
+      upsertSingleParticipantToSupabase(mergedData).catch((err) => console.warn('Supabase merged participant upsert:', err));
+      if (secondaryIds.length > 0) {
+        deleteParticipantsBatchFromSupabase(secondaryIds).catch((err) => console.warn('Supabase batch delete duplicates:', err));
+      }
+    }
+  };
+
   // Prize Management Handlers
   const handleAddPrize = (newPrize: Prize) => {
     soundSynthesizer.playSuccess();
@@ -1817,6 +1878,9 @@ export default function Home() {
             onToggleEligibility={handleToggleEligibility}
             onImportParticipants={handleImportParticipants}
             onClearAllParticipants={handleClearAllParticipants}
+            onDeleteParticipant={handleDeleteParticipant}
+            onBatchDeleteParticipants={handleBatchDeleteParticipants}
+            onMergeParticipants={handleMergeParticipants}
             onAddPrize={handleAddPrize}
             onDeletePrize={handleDeletePrize}
             onClearAllPrizes={handleClearAllPrizes}

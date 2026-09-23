@@ -41,6 +41,9 @@ interface AdminDashboardProps {
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
   onClearAllParticipants?: () => void;
+  onDeleteParticipant?: (id: string) => Promise<void> | void;
+  onBatchDeleteParticipants?: (ids: string[]) => Promise<void> | void;
+  onMergeParticipants?: (primaryId: string, mergedData: Participant, secondaryIds: string[]) => Promise<void> | void;
   onAddPrize: (prize: Prize) => void;
   onDeletePrize?: (prizeId: string) => void;
   onClearAllPrizes?: () => void;
@@ -86,6 +89,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onToggleEligibility,
   onImportParticipants,
   onClearAllParticipants,
+  onDeleteParticipant,
+  onBatchDeleteParticipants,
+  onMergeParticipants,
   onAddPrize,
   onDeletePrize,
   onClearAllPrizes,
@@ -230,6 +236,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onToggleEligibility={onToggleEligibility}
           onImportParticipants={onImportParticipants}
           onClearAllParticipants={onClearAllParticipants}
+          onDeleteParticipant={onDeleteParticipant}
+          onBatchDeleteParticipants={onBatchDeleteParticipants}
+          onMergeParticipants={onMergeParticipants}
         />
       )}
 

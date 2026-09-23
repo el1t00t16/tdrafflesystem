@@ -1,33 +1,70 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { District, Participant, EligibilityStatus, YesNo } from '../../lib/types';
 import { parseProfilingTSV, isTeachingPersonnel } from '../../lib/data';
-import { Search, Filter, CheckCircle, XCircle, Trophy, UserCheck, ChevronLeft, ChevronRight, UploadCloud, FileSpreadsheet, X, Check, Cloud, CloudOff, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  CheckCircle,
+  XCircle,
+  Trophy,
+  UserCheck,
+  ChevronLeft,
+  ChevronRight,
+  UploadCloud,
+  FileSpreadsheet,
+  X,
+  Check,
+  Cloud,
+  CloudOff,
+  AlertCircle,
+  Trash2,
+  AlertTriangle,
+  Copy,
+  GitMerge,
+  Sparkles
+} from 'lucide-react';
 import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
+import {
+  findDuplicateParticipants,
+  deduplicateBatch,
+  DuplicateCluster
+} from '../../lib/duplicateChecker';
+import { DuplicateResolutionModal } from './DuplicateResolutionModal';
 
 interface ParticipantsManagerProps {
   participants: Participant[];
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
   onClearAllParticipants?: () => void;
+  onDeleteParticipant?: (id: string) => Promise<void> | void;
+  onBatchDeleteParticipants?: (ids: string[]) => Promise<void> | void;
+  onMergeParticipants?: (primaryId: string, mergedData: Participant, secondaryIds: string[]) => Promise<void> | void;
 }
 
 export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   participants,
   onToggleEligibility,
   onImportParticipants,
-  onClearAllParticipants
+  onClearAllParticipants,
+  onDeleteParticipant,
+  onBatchDeleteParticipants,
+  onMergeParticipants
 }) => {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [eligibleFilter, setEligibleFilter] = useState<string>('ALL');
   const [winnerFilter, setWinnerFilter] = useState<string>('ALL');
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [ignoredKeys, setIgnoredKeys] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [pastedTsv, setPastedTsv] = useState('');
   const [importEligibilityMode, setImportEligibilityMode] = useState<EligibilityStatus>('INELIGIBLE');
+  const [importDedupeMode, setImportDedupeMode] = useState<'SKIP_EXISTING' | 'OVERWRITE_EXISTING' | 'APPEND_ALL'>('SKIP_EXISTING');
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [syncingCloud, setSyncingCloud] = useState(false);
   const [syncProgress, setSyncProgress] = useState<string | null>(null);
@@ -36,6 +73,34 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [purgeInput, setPurgeInput] = useState('');
   const [isPurging, setIsPurging] = useState(false);
   const pageSize = 25;
+
+  // Load ignored duplicate keys from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('td26_ignored_duplicate_keys');
+      if (saved) {
+        setIgnoredKeys(new Set(JSON.parse(saved)));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [isDuplicateModalOpen]);
+
+  // Compute duplicate clusters live
+  const duplicateClusters = useMemo(() => {
+    return findDuplicateParticipants(participants, ignoredKeys);
+  }, [participants, ignoredKeys]);
+
+  // Map participant ID -> reason / conflict label for quick table lookup
+  const duplicateParticipantIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cluster of duplicateClusters) {
+      for (const p of cluster.participants) {
+        map.set(p.id, cluster.reason);
+      }
+    }
+    return map;
+  }, [duplicateClusters]);
 
   const handleConfirmPurge = async () => {
     if (purgeInput !== 'PURGE') return;
@@ -71,7 +136,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       }
       if (typeFilter !== 'ALL' && p.personnelType !== typeFilter) return false;
       if (eligibleFilter !== 'ALL' && p.eligible !== eligibleFilter) return false;
-      if (winnerFilter !== 'ALL' && p.winner !== winnerFilter) return false;
+      if (showDuplicatesOnly && !duplicateParticipantIdMap.has(p.id)) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
@@ -85,7 +150,16 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       }
       return true;
     });
-  }, [participants, districtFilter, typeFilter, eligibleFilter, winnerFilter, search]);
+  }, [
+    participants,
+    districtFilter,
+    typeFilter,
+    eligibleFilter,
+    winnerFilter,
+    search,
+    showDuplicatesOnly,
+    duplicateParticipantIdMap
+  ]);
 
   const totalPages = Math.ceil(filtered.length / pageSize) || 1;
   const currentPage = Math.min(page, totalPages);
@@ -126,28 +200,45 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       setImportStatus('No valid teacher profiling records could be parsed. Check column format.');
       return;
     }
+
+    // Apply intelligent deduplication based on user choice
+    const { finalList, internalDuplicatesRemoved, existingSkippedOrMerged } = deduplicateBatch(
+      parsed,
+      participants,
+      importDedupeMode
+    );
+
     if (onImportParticipants) {
-      onImportParticipants(parsed);
+      onImportParticipants(finalList);
+
+      const dedupeNotes: string[] = [];
+      if (internalDuplicatesRemoved > 0) {
+        dedupeNotes.push(`${internalDuplicatesRemoved} duplicate rows in pasted sheet removed`);
+      }
+      if (existingSkippedOrMerged > 0) {
+        dedupeNotes.push(`${existingSkippedOrMerged} existing records ${importDedupeMode === 'OVERWRITE_EXISTING' ? 'merged' : 'skipped'}`);
+      }
+      const noteStr = dedupeNotes.length > 0 ? ` (${dedupeNotes.join(', ')})` : '';
       
       if (isSupabaseConfigured()) {
-        setImportStatus(`Imported locally! Syncing ${parsed.length} records to Supabase Cloud...`);
-        const res = await batchSyncParticipantsToSupabase(parsed, (done, total) => {
+        setImportStatus(`Imported locally! Syncing ${finalList.length} records to Supabase Cloud...${noteStr}`);
+        const res = await batchSyncParticipantsToSupabase(finalList, (done, total) => {
           setImportStatus(`Syncing to Supabase Cloud: ${done} / ${total}...`);
         });
         if (res.success) {
-          setImportStatus(`Successfully synced ${res.count} participants to Supabase Cloud!`);
+          setImportStatus(`Successfully synced ${res.count} participants to Supabase Cloud!${noteStr}`);
         } else {
           setImportStatus(`Saved locally. Supabase error: ${res.error}`);
         }
       } else {
-        setImportStatus(`Loaded ${parsed.length} teacher records in Offline Mode (saved to browser storage).`);
+        setImportStatus(`Loaded ${finalList.length} teacher records in Offline Mode (saved to browser storage).${noteStr}`);
       }
 
       setTimeout(() => {
         setIsImportModalOpen(false);
         setPastedTsv('');
         setImportStatus(null);
-      }, 2000);
+      }, 2500);
     }
   };
 
@@ -233,6 +324,23 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 <span>{syncingCloud ? (syncProgress || 'Syncing...') : 'Sync to Cloud'}</span>
               </button>
             )}
+
+            <button
+              onClick={() => setIsDuplicateModalOpen(true)}
+              className={`px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap border ${
+                duplicateClusters.length > 0
+                  ? 'bg-amber-400 text-black border-amber-500 hover:bg-amber-300 shadow-xs'
+                  : 'bg-[#1a1a1a] text-white hover:bg-[#ff6a00] border-transparent'
+              }`}
+              title="Inspect and resolve duplicate teacher entries"
+            >
+              <Copy className={`w-4 h-4 ${duplicateClusters.length > 0 ? 'text-black' : 'text-[#ff6a00]'}`} />
+              <span>
+                {duplicateClusters.length > 0
+                  ? `Duplicates (${duplicateClusters.length})`
+                  : 'Duplicates (0)'}
+              </span>
+            </button>
 
             <button
               onClick={() => setIsImportModalOpen(true)}
@@ -351,6 +459,46 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             </select>
           </div>
         </div>
+
+        {/* Duplicate Detection Active Banner & Filter Pill */}
+        {duplicateClusters.length > 0 && (
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[#1a1a1a]/15 font-mono text-xs flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase text-amber-800 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>Duplicate Detection Active:</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDuplicatesOnly((prev) => !prev);
+                  setPage(1);
+                }}
+                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  showDuplicatesOnly
+                    ? 'bg-amber-400 text-black border-amber-500 shadow-xs'
+                    : 'bg-[#f8f7f4] text-neutral-800 border-[#1a1a1a]/30 hover:bg-amber-100'
+                }`}
+              >
+                <span>
+                  {showDuplicatesOnly
+                    ? `Showing ${duplicateParticipantIdMap.size} Duplicates Only`
+                    : `Show Only Duplicates (${duplicateParticipantIdMap.size})`}
+                </span>
+                {showDuplicatesOnly && <X className="w-3 h-3 ml-1" />}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsDuplicateModalOpen(true)}
+              className="text-[11px] font-bold uppercase tracking-wider text-[#ff6a00] hover:text-[#ff7e1d] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Review in Duplicate Center</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Participants Table */}
@@ -379,21 +527,45 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   </td>
                 </tr>
               ) : (
-                paginated.map((p) => (
-                  <tr key={p.id} className="hover:bg-[#f8f7f4] transition-colors">
-                    <td className="p-3 font-mono font-bold text-[#1a1a1a] text-[11px] whitespace-nowrap">
-                      {p.id}
-                    </td>
-                    <td className="p-3">
-                      <div className="font-display font-bold text-sm text-[#1a1a1a] uppercase whitespace-nowrap">
-                        {p.fullName}
-                      </div>
-                      {p.sex && (
-                        <div className="font-mono text-[10px] text-neutral-500 uppercase">
-                          {p.sex}
+                paginated.map((p) => {
+                  const isDup = duplicateParticipantIdMap.has(p.id);
+                  const dupReason = duplicateParticipantIdMap.get(p.id);
+
+                  return (
+                    <tr
+                      key={p.id}
+                      className={`transition-colors ${
+                        isDup
+                          ? 'bg-amber-50/70 hover:bg-amber-100/70 border-l-4 border-l-amber-500'
+                          : 'hover:bg-[#f8f7f4]'
+                      }`}
+                    >
+                      <td className="p-3 font-mono font-bold text-[#1a1a1a] text-[11px] whitespace-nowrap">
+                        {p.id}
+                      </td>
+                      <td className="p-3">
+                        <div className="font-display font-bold text-sm text-[#1a1a1a] uppercase whitespace-nowrap">
+                          {p.fullName}
                         </div>
-                      )}
-                    </td>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {p.sex && (
+                            <span className="font-mono text-[10px] text-neutral-500 uppercase">
+                              {p.sex}
+                            </span>
+                          )}
+                          {isDup && (
+                            <button
+                              type="button"
+                              onClick={() => setIsDuplicateModalOpen(true)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-200 hover:bg-amber-300 border border-amber-400 text-amber-950 font-mono text-[9px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                              title={`Duplicate detected: ${dupReason}. Click to open Duplicate Resolution Center.`}
+                            >
+                              <AlertTriangle className="w-2.5 h-2.5 text-amber-700" />
+                              <span>DUP: {dupReason}</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     <td className="p-3">
                       <span className="bg-[#1a1a1a] text-white font-mono font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider whitespace-nowrap">
                         {p.district === 'PRIVATE' ? `PRIVATE (${p.originalDistrict || 'LSB/ECCD'})` : `${p.district}`}
@@ -451,8 +623,9 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                         {p.eligible === 'ELIGIBLE' ? 'Flag Ineligible' : 'Set Eligible'}
                       </button>
                     </td>
-                  </tr>
-                ))
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -561,6 +734,60 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 </div>
               </div>
 
+              {/* Duplicate Handling Strategy */}
+              <div className="bg-neutral-100 p-3 border border-[#1a1a1a]/20">
+                <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1a1a1a] mb-2 flex items-center gap-1.5">
+                  <Copy className="w-3.5 h-3.5 text-[#ff6a00]" />
+                  <span>Duplicate Prevention Strategy:</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setImportDedupeMode('SKIP_EXISTING')}
+                    className={`p-2.5 text-left border-2 transition-all ${
+                      importDedupeMode === 'SKIP_EXISTING'
+                        ? 'border-[#ff6a00] bg-white text-[#1a1a1a] shadow-xs'
+                        : 'border-transparent bg-white/70 text-neutral-600 hover:bg-white'
+                    }`}
+                  >
+                    <div className="font-bold text-[#1a1a1a]">SKIP DUPLICATES (Default)</div>
+                    <div className="text-[10px] text-neutral-500 leading-tight mt-0.5">
+                      Cleans duplicates within sheet and skips any teacher already in roster.
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setImportDedupeMode('OVERWRITE_EXISTING')}
+                    className={`p-2.5 text-left border-2 transition-all ${
+                      importDedupeMode === 'OVERWRITE_EXISTING'
+                        ? 'border-indigo-600 bg-white text-[#1a1a1a] shadow-xs'
+                        : 'border-transparent bg-white/70 text-neutral-600 hover:bg-white'
+                    }`}
+                  >
+                    <div className="font-bold text-[#1a1a1a]">OVERWRITE / UPDATE</div>
+                    <div className="text-[10px] text-neutral-500 leading-tight mt-0.5">
+                      Updates existing profiles with newly pasted data while preserving attendance.
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setImportDedupeMode('APPEND_ALL')}
+                    className={`p-2.5 text-left border-2 transition-all ${
+                      importDedupeMode === 'APPEND_ALL'
+                        ? 'border-amber-600 bg-white text-[#1a1a1a] shadow-xs'
+                        : 'border-transparent bg-white/70 text-neutral-600 hover:bg-white'
+                    }`}
+                  >
+                    <div className="font-bold text-[#1a1a1a]">APPEND ALL</div>
+                    <div className="text-[10px] text-neutral-500 leading-tight mt-0.5">
+                      Appends all rows without deduplication. May create duplicate entries.
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <textarea
                 value={pastedTsv}
                 onChange={(e) => setPastedTsv(e.target.value)}
@@ -649,6 +876,16 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Teacher Duplication Resolution Center Modal */}
+      <DuplicateResolutionModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => setIsDuplicateModalOpen(false)}
+        participants={participants}
+        onDeleteParticipant={onDeleteParticipant || (() => {})}
+        onBatchDeleteParticipants={onBatchDeleteParticipants || (() => {})}
+        onMergeParticipants={onMergeParticipants || (() => {})}
+      />
     </div>
   );
 };
