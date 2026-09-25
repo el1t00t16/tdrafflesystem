@@ -1,5 +1,5 @@
-﻿// Service Worker for Municipal Teachers' Day 2026 Raffle System
-const CACHE_NAME = 'td26-raffle-v1';
+// Service Worker for Municipal Teachers' Day 2026 Raffle System
+const CACHE_NAME = 'td26-raffle-v2';
 
 const PRECACHE_ASSETS = [
   '/',

@@ -13,9 +13,18 @@ export default function GlobalError({
     console.error('Global application exception:', error);
   }, [error]);
 
-  const handleClearCache = () => {
+  const handleClearCache = async () => {
     try {
       if (typeof window !== 'undefined') {
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          } catch (err) {
+            console.warn('Cache storage clear failed:', err);
+          }
+        }
+
         const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);

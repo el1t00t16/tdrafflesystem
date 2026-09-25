@@ -10,11 +10,48 @@ interface ErrorProps {
 export default function ErrorBoundary({ error, reset }: ErrorProps) {
   useEffect(() => {
     console.error('Application client-side exception caught:', error);
+
+    // If it's a chunk loading failure caused by a new version deployment,
+    // automatically reload once to fetch the latest bundles without user friction
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      error?.message?.includes('Loading chunk') ||
+      error?.message?.includes('Failed to fetch dynamically imported module');
+
+    if (isChunkError && typeof window !== 'undefined') {
+      const hasAutoReloaded = sessionStorage.getItem('td26_chunk_reload');
+      if (!hasAutoReloaded) {
+        sessionStorage.setItem('td26_chunk_reload', 'true');
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            Promise.all(names.map((n) => caches.delete(n))).finally(() => {
+              window.location.reload();
+            });
+          }).catch(() => {
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
+      }
+    }
   }, [error]);
 
-  const handleResetCache = () => {
+  const handleResetCache = async () => {
     try {
       if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('td26_chunk_reload');
+
+        // Clear Service Worker CacheStorage
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          } catch (err) {
+            console.warn('Cache storage clear failed:', err);
+          }
+        }
+
         const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
