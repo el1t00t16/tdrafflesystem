@@ -21,17 +21,16 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
     if (isChunkError && typeof window !== 'undefined') {
       const hasAutoReloaded = sessionStorage.getItem('td26_chunk_reload');
       if (!hasAutoReloaded) {
-        sessionStorage.setItem('td26_chunk_reload', 'true');
-        if ('caches' in window) {
-          caches.keys().then((names) => {
-            Promise.all(names.map((n) => caches.delete(n))).finally(() => {
-              window.location.reload();
-            });
-          }).catch(() => {
-            window.location.reload();
-          });
-        } else {
+        const reloadPage = () => {
           window.location.reload();
+        };
+
+        if (typeof caches !== 'undefined') {
+          caches.keys().then((names) => {
+            Promise.all(names.map((n) => caches.delete(n))).finally(reloadPage);
+          }).catch(reloadPage);
+        } else {
+          reloadPage();
         }
       }
     }
