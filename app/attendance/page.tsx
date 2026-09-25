@@ -238,90 +238,92 @@ export default function AttendancePage() {
   return (
     <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#09090b] text-[#1a1a1a] dark:text-neutral-100 flex flex-col font-sans selection:bg-[#ff6a00] selection:text-black">
       {/* Top Station Bar - Isolated Workstation for Gate Personnel */}
-      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 select-none print:hidden">
-        <div className="flex items-center gap-3">
-          <img
-            src="/LGU_LOGO1.png"
-            alt="Municipality of Malungon Seal"
-            className="w-9 h-9 object-contain drop-shadow-xs flex-shrink-0"
-          />
-          <div className="w-9 h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00]">
-            <QrCode className="w-5 h-5" />
+      <header className="bg-white dark:bg-[#18181b] text-[#1a1a1a] dark:text-[#f8f7f4] border-b-2 border-[#1a1a1a] dark:border-black px-2.5 sm:px-6 py-2 sm:py-3 select-none print:hidden shadow-xs">
+        <div className="flex items-center justify-between gap-2 max-w-7xl mx-auto w-full">
+          {/* Left Brand & Station */}
+          <div className="flex items-center gap-2 min-w-0">
+            <img
+              src="/LGU_LOGO1.png"
+              alt="Municipality of Malungon Seal"
+              className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-xs shrink-0"
+            />
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-sm bg-[#ff6a00]/15 border border-[#ff6a00]/40 flex items-center justify-center text-[#ff6a00] shrink-0">
+              <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isCloudConfigured ? 'bg-[#22c55e] animate-pulse' : 'bg-yellow-400'
+                  }`}
+                />
+                <h1 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white truncate">
+                  {gateSession.stationId}
+                </h1>
+                <span
+                  className={`text-[8px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded-xs border font-bold uppercase tracking-wider shrink-0 ${
+                    isCloudConfigured
+                      ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#22c55e]'
+                      : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-600 dark:text-yellow-300'
+                  }`}
+                >
+                  {isCloudConfigured ? 'Live' : 'Offline'}
+                </span>
+              </div>
+              <p className="font-mono text-[10px] sm:text-[11px] text-neutral-600 dark:text-neutral-400 truncate">
+                Officer: <strong className="text-[#1a1a1a] dark:text-white">{gateSession.officerName}</strong>
+              </p>
+            </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isCloudConfigured ? 'bg-[#22c55e] animate-pulse' : 'bg-yellow-400'
-                }`}
-              />
-              <h1 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1a1a1a] dark:text-white">
-                {gateSession.stationId}
-              </h1>
-              <span
-                className={`text-[9px] font-mono px-1.5 py-0.5 rounded-xs border font-bold uppercase tracking-wider ${
-                  isCloudConfigured
-                    ? 'bg-[#22c55e]/15 border-[#22c55e]/40 text-[#22c55e]'
-                    : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-600 dark:text-yellow-300'
-                }`}
+
+          {/* Status Counters & Logout */}
+          <div className="flex items-center gap-1 sm:gap-2.5 text-xs font-mono shrink-0">
+            {/* Cloud Sync Refresh Button */}
+            {isCloudConfigured && (
+              <button
+                onClick={triggerCloudHydration}
+                disabled={isHydrating}
+                title="Refresh cloud roster from Supabase"
+                className="p-1.5 bg-[#f8f7f4] dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-[#1a1a1a]/20 dark:border-white/10 text-[#1a1a1a] dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-sm transition-colors"
               >
-                {isCloudConfigured ? 'Cloud Live' : 'Offline Cache'}
+                <RefreshCw className={`w-3.5 h-3.5 ${isHydrating ? 'animate-spin text-[#22c55e]' : ''}`} />
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 bg-[#f8f7f4] dark:bg-white/5 border border-[#1a1a1a]/20 dark:border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-sm">
+              <span className="text-neutral-600 dark:text-neutral-400 text-[10px] uppercase hidden md:inline">CHECKED:</span>
+              <span className="px-1.5 py-0.5 bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30 font-bold text-[11px] sm:text-xs">
+                {presentCount} / {participants.length}
               </span>
             </div>
-            <p className="font-mono text-[11px] text-neutral-600 dark:text-neutral-400">
-              Officer in-charge: <strong className="text-[#1a1a1a] dark:text-white">{gateSession.officerName}</strong>
-            </p>
-          </div>
-        </div>
 
-        {/* Status Counters & Logout */}
-        <div className="flex items-center gap-2.5 text-xs font-mono">
-          {/* Cloud Sync Refresh Button */}
-          {isCloudConfigured && (
+            {/* Theme Toggle Button */}
             <button
-              onClick={triggerCloudHydration}
-              disabled={isHydrating}
-              title="Refresh cloud roster from Supabase"
-              className="p-1.5 bg-[#f8f7f4] dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-[#1a1a1a]/20 dark:border-white/10 text-[#1a1a1a] dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-sm transition-colors"
+              onClick={toggleDarkMode}
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="p-1.5 sm:px-2.5 sm:py-1.5 bg-[#f8f7f4] dark:bg-neutral-800 border border-[#1a1a1a]/25 dark:border-white/20 hover:border-black dark:hover:border-white text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider transition-colors rounded-sm flex items-center gap-1"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isHydrating ? 'animate-spin text-[#22c55e]' : ''}`} />
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 text-yellow-400" /> : <Moon className="w-3.5 h-3.5 text-neutral-600" />}
+              <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
             </button>
-          )}
 
-          <div className="flex items-center gap-1.5 bg-[#f8f7f4] dark:bg-white/5 border border-[#1a1a1a]/20 dark:border-white/10 px-3 py-1.5 rounded-sm">
-            <span className="text-neutral-600 dark:text-neutral-400 text-[11px] uppercase">CHECKED-IN:</span>
-            <span className="px-1.5 py-0.5 bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30 font-bold text-xs">
-              {presentCount} / {participants.length}
-            </span>
+            <button
+              onClick={handleLogout}
+              title="Lock and switch station / officer"
+              className="p-1.5 sm:px-3 sm:py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-red-100 dark:hover:bg-red-950/60 border border-[#1a1a1a]/25 dark:border-white/15 hover:border-red-500/50 text-neutral-700 dark:text-neutral-300 hover:text-red-700 dark:hover:text-red-300 font-bold uppercase tracking-wider transition-colors text-xs rounded-sm flex items-center gap-1"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Lock</span>
+            </button>
           </div>
-
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleDarkMode}
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#f8f7f4] dark:bg-neutral-800 border border-[#1a1a1a]/25 dark:border-white/20 hover:border-black dark:hover:border-white text-[#1a1a1a] dark:text-white font-bold text-xs uppercase tracking-wider transition-colors rounded-sm"
-          >
-            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-yellow-400" /> : <Moon className="w-3.5 h-3.5 text-neutral-600" />}
-            <span className="hidden sm:inline">{isDarkMode ? 'Light' : 'Dark'}</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            title="Lock and switch station / officer"
-            className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-red-100 dark:hover:bg-red-950/60 border border-[#1a1a1a]/25 dark:border-white/15 hover:border-red-500/50 text-neutral-700 dark:text-neutral-300 hover:text-red-700 dark:hover:text-red-300 px-3 py-1.5 font-bold uppercase tracking-wider transition-colors text-xs rounded-sm"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Lock Station</span>
-            <span className="sm:hidden">Lock</span>
-          </button>
         </div>
       </header>
 
       {/* Main Scanner Workstation */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-3 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-2 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none">
         {/* Status notification toast if sync just ran */}
         {lastSyncStatus && (
-          <div className="mb-3 bg-neutral-900 border border-[#22c55e]/40 text-[#22c55e] px-3.5 py-2 text-xs font-mono flex items-center gap-2 print:hidden">
+          <div className="mb-2 bg-neutral-900 border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 text-xs font-mono flex items-center gap-2 print:hidden rounded-xs">
             <Database className="w-3.5 h-3.5 text-[#22c55e]" />
             <span>{lastSyncStatus}</span>
           </div>

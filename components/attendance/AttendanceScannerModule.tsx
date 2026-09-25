@@ -380,8 +380,14 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
 
       onUpdateParticipant(updatedParticipant);
 
+      const stationPrefix = (stationId || 'GATE')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(0, 6)
+        .toUpperCase();
+      const uniqueScanId = `ATT-${stationPrefix || 'GATE'}-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+
       const record: AttendanceRecord = {
-        id: `ATT-${String(attendanceRecords.length + 1).padStart(4, '0')}`,
+        id: uniqueScanId,
         participantId: participant.id,
         depedId: participant.depedId,
         name: participant.fullName,
@@ -415,7 +421,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         message: 'Attendance confirmed! Teacher is now ELIGIBLE for the raffle draw.'
       });
     },
-    [resolveScannedCode, audioFeedback, officerName, stationId, onUpdateParticipant, attendanceRecords.length, onAddAttendanceRecord]
+    [resolveScannedCode, audioFeedback, officerName, stationId, onUpdateParticipant, onAddAttendanceRecord]
   );
 
   // Camera scanner lifecycle
@@ -431,7 +437,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
           { facingMode: 'environment' },
           {
             fps: 10,
-            qrbox: { width: 260, height: 260 }
+            qrbox: { width: 250, height: 250 }
           },
           (decodedText) => {
             if (isSubscribed) {
@@ -466,6 +472,18 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       }
     };
   }, [activeTab, cameraActive, handleProcessScan]);
+
+  // Auto-scroll to camera on mobile when activated
+  useEffect(() => {
+    if (activeTab === 'camera' && cameraActive) {
+      const el = document.getElementById(scannerContainerId);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 350);
+      }
+    }
+  }, [activeTab, cameraActive]);
 
   // Keep gun input focused when on gun tab
   useEffect(() => {
@@ -989,19 +1007,19 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
       )}
 
       {/* Module Navigation Tabs */}
-      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0 order-1 lg:order-2 print:hidden">
+      <div className="flex border-b-2 border-[#1a1a1a] dark:border-[#27272a] gap-1 overflow-x-auto pb-0 order-1 lg:order-2 print:hidden scrollbar-none">
         <button
           onClick={() => {
             soundSynthesizer.playClick();
             setActiveTab('camera');
           }}
-          className={`px-4 py-2 text-xs font-mono font-bold rounded-t-sm border-t-2 border-x-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-mono font-bold rounded-t-sm border-t-2 border-x-2 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
             activeTab === 'camera'
-              ? 'bg-white dark:bg-[#18181b] text-[#ff6a00] border-[#1a1a1a] dark:border-[#3f3f46] border-b-transparent dark:border-b-transparent'
+              ? 'bg-white dark:bg-[#18181b] text-[#ff6a00] border-[#1a1a1a] dark:border-[#3f3f46] border-b-transparent dark:border-b-transparent shadow-xs'
               : 'border-transparent text-neutral-600 dark:text-[#a1a1aa] hover:text-[#1a1a1a] dark:hover:text-white'
           }`}
         >
-          <Camera className="w-4 h-4" />
+          <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ff6a00]" />
           <span>Camera QR Scanner</span>
         </button>
 
@@ -1010,13 +1028,13 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             soundSynthesizer.playClick();
             setActiveTab('gun');
           }}
-          className={`px-4 py-2 text-xs font-mono font-bold rounded-t-sm border-t-2 border-x-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-mono font-bold rounded-t-sm border-t-2 border-x-2 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
             activeTab === 'gun'
-              ? 'bg-white dark:bg-[#18181b] text-[#ff6a00] border-[#1a1a1a] dark:border-[#3f3f46] border-b-transparent dark:border-b-transparent'
+              ? 'bg-white dark:bg-[#18181b] text-[#ff6a00] border-[#1a1a1a] dark:border-[#3f3f46] border-b-transparent dark:border-b-transparent shadow-xs'
               : 'border-transparent text-neutral-600 dark:text-[#a1a1aa] hover:text-[#1a1a1a] dark:hover:text-white'
           }`}
         >
-          <Barcode className="w-4 h-4" />
+          <Barcode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ff6a00]" />
           <span>Barcode / USB Gun Wedge</span>
         </button>
 
@@ -1089,27 +1107,34 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         <div className={`${activeTab === 'badges' ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col gap-4`}>
           {/* TAB 1: Camera QR Scanner */}
           {activeTab === 'camera' && (
-            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-4 sm:p-5 rounded-sm flex flex-col gap-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-mono font-bold text-[#1a1a1a] dark:text-white uppercase flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-[#ff6a00]" />
-                    <span>Real-Time Camera Scanner</span>
-                  </h2>
-                  <p className="text-xs text-neutral-600 dark:text-[#a1a1aa]">
+            <div className="bg-white dark:bg-[#18181b] border-2 border-[#1a1a1a] dark:border-[#27272a] p-3 sm:p-5 rounded-sm flex flex-col gap-3 sm:gap-4 shadow-sm">
+              <div className="flex flex-row items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Camera className="w-4 h-4 text-[#ff6a00] shrink-0" />
+                    <h2 className="text-xs sm:text-base font-mono font-bold text-[#1a1a1a] dark:text-white uppercase truncate">
+                      Camera Scanner
+                    </h2>
+                    {cameraActive && (
+                      <span className="text-[9px] font-mono font-bold text-emerald-700 dark:text-[#22c55e] bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 rounded-xs animate-pulse shrink-0">
+                        LIVE
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-neutral-600 dark:text-[#a1a1aa] hidden sm:block mt-0.5">
                     Position the participant&apos;s QR code in front of the camera lens for immediate verification.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   {cameraActive && (
                     <button
                       type="button"
                       onClick={() => setShowDashboardInFocus((prev) => !prev)}
-                      className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#1a1a1a]/20 dark:border-white/15 text-[#1a1a1a] dark:text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-1.5 transition-colors"
+                      className="px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#1a1a1a]/20 dark:border-white/15 text-[#1a1a1a] dark:text-white rounded-sm font-mono text-[10px] sm:text-xs font-bold uppercase flex items-center gap-1 transition-colors"
                       title={showDashboardInFocus ? 'Hide dashboard to focus on camera' : 'Show dashboard statistics'}
                     >
-                      {showDashboardInFocus ? <EyeOff className="w-3.5 h-3.5 text-[#ff6a00]" /> : <Eye className="w-3.5 h-3.5 text-[#ff6a00]" />}
-                      <span>{showDashboardInFocus ? 'Focus Mode' : 'Show Dashboard'}</span>
+                      {showDashboardInFocus ? <EyeOff className="w-3 h-3 text-[#ff6a00]" /> : <Eye className="w-3 h-3 text-[#ff6a00]" />}
+                      <span className="hidden sm:inline">{showDashboardInFocus ? 'Focus' : 'Dashboard'}</span>
                     </button>
                   )}
                   <button
@@ -1120,30 +1145,30 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                       }
                       setCameraActive((prev) => !prev);
                     }}
-                    className={`px-4 py-2 rounded-sm font-mono text-xs font-bold uppercase transition-colors flex items-center gap-2 ${
+                    className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-sm font-mono text-xs font-bold uppercase transition-colors flex items-center gap-1.5 shadow-xs ${
                       cameraActive
                         ? 'bg-[#ef4444] hover:bg-[#dc2626] text-white'
                         : 'bg-[#ff6a00] hover:bg-[#e05d00] text-white'
                     }`}
                   >
-                    <Camera className="w-4 h-4" />
-                    <span>{cameraActive ? 'Stop Camera' : 'Start Camera'}</span>
+                    <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>{cameraActive ? 'Stop' : 'Start Camera'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Camera Scanner Viewport */}
-              <div className="w-full bg-[#09090b] border-2 border-dashed border-[#27272a] rounded-sm min-h-[300px] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                <div id={scannerContainerId} className="w-full max-w-md mx-auto" />
+              <div className="w-full bg-[#09090b] border-2 border-dashed border-[#27272a] rounded-sm min-h-[200px] sm:min-h-[300px] flex flex-col items-center justify-center p-1 sm:p-4 relative overflow-hidden">
+                <div id={scannerContainerId} className="w-full max-w-sm sm:max-w-md mx-auto" />
 
                 {!cameraActive && (
-                  <div className="text-center p-8 flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-[#27272a] flex items-center justify-center text-[#71717a] mb-3">
-                      <Camera className="w-8 h-8" />
+                  <div className="text-center p-6 sm:p-8 flex flex-col items-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#27272a] flex items-center justify-center text-[#71717a] mb-2 sm:mb-3">
+                      <Camera className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
-                    <div className="text-sm font-mono font-bold text-white mb-1">Camera Scanner Offline</div>
-                    <p className="text-xs text-[#71717a] max-w-sm mb-4">
-                      Click the &quot;Start Camera&quot; button above to activate the device camera and scan QR codes from ID cards or mobile screens.
+                    <div className="text-xs sm:text-sm font-mono font-bold text-white mb-1">Camera Scanner Offline</div>
+                    <p className="text-[11px] sm:text-xs text-[#71717a] max-w-sm mb-3 sm:mb-4">
+                      Tap &quot;Start Camera&quot; to activate the camera and scan attendee QR badges.
                     </p>
                     <button
                       onClick={() => {
@@ -1151,7 +1176,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                         setShowDashboardInFocus(false);
                         setCameraActive(true);
                       }}
-                      className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2"
+                      className="px-4 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-white rounded-sm font-mono text-xs font-bold uppercase flex items-center gap-2 shadow-sm"
                     >
                       <Camera className="w-4 h-4" />
                       <span>Activate Camera</span>
@@ -1174,6 +1199,70 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   </div>
                 )}
               </div>
+
+              {/* Mobile In-Line Verification Result (Visible right below camera, ZERO scrolling needed!) */}
+              {lastScannedResult && (
+                <div className="lg:hidden animate-fade-in mt-1">
+                  {lastScannedResult.status === 'SUCCESS' && (
+                    <div className="bg-emerald-500/15 border-2 border-emerald-500 p-3 rounded-sm flex items-start gap-2.5 text-emerald-950 dark:text-emerald-100 shadow-md">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-[#22c55e] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0 font-mono">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-[#22c55e] bg-emerald-500/20 px-2 py-0.5 rounded-xs">
+                            ✓ CHECK-IN CONFIRMED
+                          </span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                            {lastScannedResult.timestamp.slice(11, 19)}
+                          </span>
+                        </div>
+                        <div className="font-winner font-black text-base text-[#1a1a1a] dark:text-white uppercase truncate mt-1">
+                          {lastScannedResult.participant?.fullName}
+                        </div>
+                        <div className="text-xs text-neutral-700 dark:text-neutral-300 truncate">
+                          <span className="font-bold text-[#ff6a00]">{lastScannedResult.participant?.district}</span> • {lastScannedResult.participant?.school}
+                        </div>
+                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 flex items-center gap-2 mt-0.5">
+                          <span>ID: <strong className="text-[#1a1a1a] dark:text-white">{lastScannedResult.participant?.id}</strong></span>
+                          {lastScannedResult.participant?.depedId && (
+                            <span>DepEd: <strong className="text-[#1a1a1a] dark:text-white">{lastScannedResult.participant.depedId}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {lastScannedResult.status === 'DUPLICATE' && (
+                    <div className="bg-amber-500/15 border-2 border-amber-500 p-3 rounded-sm flex items-start gap-2.5 text-amber-950 dark:text-amber-100 shadow-md">
+                      <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-[#eab308] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0 font-mono">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-[#eab308] bg-amber-500/20 px-2 py-0.5 rounded-xs inline-block">
+                          ⚠️ ALREADY CHECKED IN
+                        </div>
+                        <div className="font-winner font-black text-base text-[#1a1a1a] dark:text-white uppercase truncate mt-1">
+                          {lastScannedResult.participant?.fullName}
+                        </div>
+                        <div className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
+                          {lastScannedResult.message}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {lastScannedResult.status === 'NOT_FOUND' && (
+                    <div className="bg-red-500/15 border-2 border-red-500 p-3 rounded-sm flex items-start gap-2.5 text-red-950 dark:text-red-100 shadow-md">
+                      <UserX className="w-6 h-6 text-red-600 dark:text-[#ef4444] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0 font-mono">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-red-700 dark:text-[#ef4444] bg-red-500/20 px-2 py-0.5 rounded-xs inline-block">
+                          ❌ UNKNOWN PARTICIPANT
+                        </div>
+                        <div className="text-xs text-red-800 dark:text-red-200 mt-1">
+                          Scanned code: <code className="font-bold">{lastScannedResult.rawText}</code>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

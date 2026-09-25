@@ -215,6 +215,27 @@
   }
 }
 
+/* Mobile Camera QR Viewport Optimization */
+#attendance-qr-reader {
+  width: 100% !important;
+  border: none !important;
+}
+
+#attendance-qr-reader video {
+  max-height: 42vh !important;
+  width: 100% !important;
+  object-fit: cover !important;
+  border-radius: 4px;
+}
+
+#attendance-qr-reader__scan_region {
+  min-height: auto !important;
+}
+
+#attendance-qr-reader__dashboard {
+  padding: 4px 0 !important;
+}
+
 @media print {
   html, body {
     background: white !important;
