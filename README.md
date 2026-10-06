@@ -29,13 +29,12 @@ Comprehensive documentation has been prepared specifically for the **Municipal T
   - **Pre-Draw Station (`/admin`):** Batch drawing engine for minor consolation prizes.
   - **Real-Time Claims Desk (`/claims`):** Winner stub verification, proxy claim handling, and signed receipt generation.
   - **Print Queue Station:** Instant printing of official verification stubs and batch sheets.
-- **Zero-Cost Google Workspace Fallback:** Fully operational standalone Google Apps Script and Google Sheets integration in `gas/`.
 
 ---
 
 ## 🚀 Quick Start Guide
 
-### Option A: Modern Web Application (Next.js 15)
+### Modern Web Application (Next.js 15)
 
 1. **Install Dependencies:**
    ```bash
@@ -55,6 +54,3 @@ Comprehensive documentation has been prepared specifically for the **Municipal T
    - **Main Stage & Admin:** `http://localhost:3000` (Default PIN: `2026`)
    - **Gate Registration Desk:** `http://localhost:3000/attendance`
    - **Prize Claims Desk:** `http://localhost:3000/claims`
-
-### Option B: Google Sheets & Apps Script Deployment (Zero-Cost)
-Refer to the complete step-by-step setup in **[`gas/README.md`](gas/README.md)**.

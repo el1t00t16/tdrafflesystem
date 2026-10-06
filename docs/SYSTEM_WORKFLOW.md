@@ -283,14 +283,14 @@ The raffle system executes across **Five Defined Operational Phases**:
        │                  │              │               │               │
        │ Real-Time Socket │ REST Sync    │ Real-Time Pub │ Webhook Push  │ Audit
        │                  │              │               │               │
-┌──────┴─────────┐ ┌──────┴────────┐ ┌───┴──────────┐ ┌──┴────────────┐ ┌┴────┴───────┐
-│ GATE SCANNER   │ │ STAGE ADMIN   │ │ PROJECTOR    │ │ CLAIMS DESK   │ │ GOOGLE SHEETS │
-│ LAPTOP / PHONE │ │ CONTROLLER    │ │ LED WALL     │ │ WORKSTATION   │ │ BACKUP MIRROR │
-│                │ │               │ │              │ │               │ │               │
-│ • Camera QR    │ │ • Prize Select│ │ • 2-2-1 Cards│ │ • Stub Lookup │ │ • Auto-sync   │
-│ • Barcode Gun  │ │ • Draw Trigger│ │ • Single Hero│ │ • Proxy Entry │ │ • Zero-cost   │
-│ • Manual Search│ │ • Redraw/Save │ │ • Confetti FX│ │ • Release Sign│ │   archive     │
-└────────────────┘ └───────────────┘ └──────────────┘ └───────────────┘ └───────────────┘
+┌──────┴─────────┐ ┌──────┴────────┐ ┌───┴──────────┐ ┌──┴────────────┐ ┌┴──────────────┐
+│ GATE SCANNER   │ │ STAGE ADMIN   │ │ PROJECTOR    │ │ CLAIMS DESK   │ │ LOCAL STORAGE  │
+│ LAPTOP / PHONE │ │ CONTROLLER    │ │ LED WALL     │ │ WORKSTATION   │ │ FAILOVER CACHE │
+│                │ │               │ │              │ │               │ │                │
+│ • Camera QR    │ │ • Prize Select│ │ • 2-2-1 Cards│ │ • Stub Lookup │ │ • Auto-backup  │
+│ • Barcode Gun  │ │ • Draw Trigger│ │ • Single Hero│ │ • Proxy Entry │ │ • Zero data    │
+│ • Manual Search│ │ • Redraw/Save │ │ • Confetti FX│ │ • Release Sign│ │   loss offline │
+└────────────────┘ └───────────────┘ └──────────────┘ └───────────────┘ └────────────────┘
 ```
 
 ---

@@ -27,7 +27,10 @@ import {
   Globe,
   Clock,
   ShieldCheck,
-  Search
+  Search,
+  UserCheck,
+  X,
+  Loader2
 } from 'lucide-react';
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -58,6 +61,7 @@ interface PreDrawStationProps {
   winners: Winner[];
   logs: RaffleLog[];
   onConfirmPreDrawBatch: (batch: TemporaryDrawResult) => void;
+  onResetNonWinnersEligibility?: () => Promise<{ success: boolean; count: number; winnersKept: number; error?: string }>;
   allowMultipleWins: boolean;
   initialReelDuration?: number;
 }
@@ -68,6 +72,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   winners,
   logs,
   onConfirmPreDrawBatch,
+  onResetNonWinnersEligibility,
   allowMultipleWins,
   initialReelDuration = 3
 }) => {
@@ -124,6 +129,50 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     SOUTH: [],
     PRIVATE: []
   });
+
+  // Gate attendance transition states
+  const [isGatePrepModalOpen, setIsGatePrepModalOpen] = useState(false);
+  const [isResettingGate, setIsResettingGate] = useState(false);
+  const [gateResetFeedback, setGateResetFeedback] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const confirmedWinnersCount = useMemo(() => {
+    return participants.filter((p) => p.winner === 'YES').length;
+  }, [participants]);
+
+  const nonWinnersCount = useMemo(() => {
+    return participants.filter((p) => p.winner !== 'YES').length;
+  }, [participants]);
+
+  const handleExecuteGatePrep = async () => {
+    if (!onResetNonWinnersEligibility) return;
+    setIsResettingGate(true);
+    setGateResetFeedback(null);
+    try {
+      const res = await onResetNonWinnersEligibility();
+      if (res.success) {
+        soundSynthesizer.playSuccess();
+        setGateResetFeedback({
+          text: `Success! ${res.winnersKept} winners kept intact. ${res.count} non-winners reset to INELIGIBLE for gate scanning.`
+        });
+        setTimeout(() => {
+          setIsGatePrepModalOpen(false);
+          setGateResetFeedback(null);
+        }, 2200);
+      } else {
+        setGateResetFeedback({
+          text: `Sync error: ${res.error || 'Failed to reset non-winners'}`,
+          error: true
+        });
+      }
+    } catch (err: any) {
+      setGateResetFeedback({
+        text: `Error: ${err?.message || err}`,
+        error: true
+      });
+    } finally {
+      setIsResettingGate(false);
+    }
+  };
 
   // Currently selected prize
   const currentPrize = useMemo(() => {
@@ -528,6 +577,39 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           </div>
         </div>
       </div>
+
+      {/* POST-PRE-DRAW GATE ATTENDANCE PREPARATION BANNER */}
+      {onResetNonWinnersEligibility && (
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border-2 border-indigo-500/70 dark:border-indigo-600/60 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="p-1 bg-indigo-600 text-white rounded-xs">
+                <ShieldCheck className="w-4 h-4" />
+              </span>
+              <h3 className="font-mono text-xs sm:text-sm font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
+                FINISHED PRE-DRAWS? PREPARE ROSTER FOR GATE ATTENDANCE
+              </h3>
+              <span className="font-mono text-[9px] bg-indigo-600 text-white px-2 py-0.5 font-bold uppercase">
+                ADMIN WORKFLOW
+              </span>
+            </div>
+            <p className="text-xs text-neutral-700 dark:text-neutral-300 max-w-2xl leading-relaxed font-mono">
+              Keeps all <strong>{confirmedWinnersCount} Confirmed Winners</strong> locked (they cannot win on stage). Resets the remaining <strong>{nonWinnersCount} non-winners to INELIGIBLE</strong> so that teachers must physically scan badges at the entrance gate to qualify for the Live Stage!
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              soundSynthesizer.playClick();
+              setIsGatePrepModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
+          >
+            <UserCheck className="w-4 h-4 text-amber-300" />
+            <span>Prepare Roster for Gate</span>
+          </button>
+        </div>
+      )}
 
       {activeTab === 'console' && (
         <div className="space-y-6">
@@ -1266,6 +1348,106 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           </div>
         </div>
       </div>
+
+      {/* MODAL: Prepare for Gate Attendance Confirmation */}
+      {isGatePrepModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in print:hidden">
+          <div className="bg-white dark:bg-neutral-900 border-2 border-indigo-600 w-full max-w-lg shadow-2xl overflow-hidden animate-scale-up">
+            <div className="bg-indigo-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-amber-300" />
+                <h3 className="font-mono font-black text-sm uppercase tracking-wider">
+                  Prepare Roster for Gate Attendance
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={isResettingGate}
+                onClick={() => setIsGatePrepModalOpen(false)}
+                className="text-white/80 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-mono">
+              <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                This prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Major or Grand Prizes on the Live Stage!
+              </p>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 p-3 rounded-xs flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-emerald-950 dark:text-emerald-200 uppercase">
+                      {confirmedWinnersCount} Confirmed Winners Stay Protected
+                    </div>
+                    <div className="text-[11px] text-emerald-800 dark:text-emerald-300 mt-0.5 leading-normal">
+                      All winners keep their prize records, claim slips, and audit logs. They can still scan in at the gate for meal/attendance turnout, but are <strong>100% blocked from winning again on stage</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-800 p-3 rounded-xs flex items-start gap-3">
+                  <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-indigo-950 dark:text-indigo-200 uppercase">
+                      {nonWinnersCount} Non-Winners Reset to INELIGIBLE
+                    </div>
+                    <div className="text-[11px] text-indigo-800 dark:text-indigo-300 mt-0.5 leading-normal">
+                      Only becomes eligible once their QR code is scanned at the entrance gate scanner. Absent teachers will not be able to win on stage!
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {gateResetFeedback && (
+                <div className={`p-3 border font-bold text-xs flex items-center gap-2 ${
+                  gateResetFeedback.error
+                    ? 'bg-red-50 border-red-300 text-red-700'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                }`}>
+                  {gateResetFeedback.error ? (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  )}
+                  <span>{gateResetFeedback.text}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-white/10">
+                <button
+                  type="button"
+                  disabled={isResettingGate}
+                  onClick={() => setIsGatePrepModalOpen(false)}
+                  className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-bold uppercase transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isResettingGate}
+                  onClick={handleExecuteGatePrep}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold uppercase flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                >
+                  {isResettingGate ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Syncing Roster...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirm &amp; Reset Non-Winners for Gate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

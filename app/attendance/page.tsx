@@ -93,21 +93,39 @@ export default function AttendancePage() {
         fetchAttendanceRecordsFromSupabase()
       ]);
 
-      if (cloudParts && cloudParts.length > 0) {
-        setParticipants(cloudParts);
-        try {
-          localStorage.setItem('td26_profiling_participants', JSON.stringify(cloudParts));
-        } catch (e) {
-          console.error(e);
+      if (Array.isArray(cloudParts)) {
+        if (cloudParts.length > 0) {
+          setParticipants(cloudParts);
+          try {
+            localStorage.setItem('td26_profiling_participants', JSON.stringify(cloudParts));
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setParticipants([]);
+          try {
+            localStorage.removeItem('td26_profiling_participants');
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
 
-      if (cloudAtt && cloudAtt.length > 0) {
-        setAttendanceRecords(cloudAtt);
-        try {
-          localStorage.setItem('td26_attendance_records', JSON.stringify(cloudAtt));
-        } catch (e) {
-          console.error(e);
+      if (Array.isArray(cloudAtt)) {
+        if (cloudAtt.length > 0) {
+          setAttendanceRecords(cloudAtt);
+          try {
+            localStorage.setItem('td26_attendance_records', JSON.stringify(cloudAtt));
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setAttendanceRecords([]);
+          try {
+            localStorage.removeItem('td26_attendance_records');
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
 
@@ -206,6 +224,21 @@ export default function AttendancePage() {
       }
       return next;
     });
+  };
+
+  const handleClearStationData = () => {
+    if (window.confirm("⚠️ Are you sure you want to clear all locally cached participants and check-in records on this phone?")) {
+      try {
+        localStorage.removeItem('td26_profiling_participants');
+        localStorage.removeItem('td26_attendance_records');
+      } catch (e) {
+        console.error(e);
+      }
+      setParticipants([]);
+      setAttendanceRecords([]);
+      setLastSyncStatus("Station cache cleared! (0 records)");
+      setTimeout(() => setLastSyncStatus(null), 3000);
+    }
   };
 
   const handleLogout = () => {
@@ -367,6 +400,7 @@ export default function AttendancePage() {
           onUpdateParticipant={handleUpdateParticipant}
           onBatchUpdateParticipants={handleBatchUpdateParticipants}
           onAddAttendanceRecord={handleAddAttendanceRecord}
+          onClearStationData={handleClearStationData}
           initialStationId={gateSession.stationId}
           initialOfficerName={gateSession.officerName}
           isStandaloneGate={true}

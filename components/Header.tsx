@@ -5,8 +5,8 @@ import { Lock, ExternalLink, Sun, Moon, Download } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
-  currentView: 'display' | 'admin' | 'claim' | 'attendance' | 'gas';
-  onViewChange: (view: 'display' | 'admin' | 'claim' | 'attendance' | 'gas') => void;
+  currentView: 'display' | 'admin' | 'claim' | 'attendance';
+  onViewChange: (view: 'display' | 'admin' | 'claim' | 'attendance') => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   isFullscreen: boolean;
@@ -161,13 +161,6 @@ export const Header: React.FC<HeaderProps> = ({
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <button
-            id="nav-btn-gas"
-            onClick={() => onViewChange('gas')}
-            className={`nav-item ${currentView === 'gas' ? 'active' : ''}`}
-          >
-            Google Apps Script
-          </button>
         </div>
 
         <div className="flex items-center gap-2">

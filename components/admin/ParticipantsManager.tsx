@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   Copy,
   GitMerge,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
 import {
@@ -41,6 +43,7 @@ interface ParticipantsManagerProps {
   onDeleteParticipant?: (id: string) => Promise<void> | void;
   onBatchDeleteParticipants?: (ids: string[]) => Promise<void> | void;
   onMergeParticipants?: (primaryId: string, mergedData: Participant, secondaryIds: string[]) => Promise<void> | void;
+  onResetNonWinnersEligibility?: () => Promise<{ success: boolean; count: number; winnersKept: number; error?: string }>;
 }
 
 export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
@@ -50,7 +53,8 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   onClearAllParticipants,
   onDeleteParticipant,
   onBatchDeleteParticipants,
-  onMergeParticipants
+  onMergeParticipants,
+  onResetNonWinnersEligibility
 }) => {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState<string>('ALL');
@@ -72,7 +76,48 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [purgeInput, setPurgeInput] = useState('');
   const [isPurging, setIsPurging] = useState(false);
+  const [isResetNonWinnersModalOpen, setIsResetNonWinnersModalOpen] = useState(false);
+  const [isResettingNonWinners, setIsResettingNonWinners] = useState(false);
+  const [resetNonWinnersFeedback, setResetNonWinnersFeedback] = useState<{ text: string; error?: boolean } | null>(null);
   const pageSize = 25;
+
+  const confirmedWinnersCount = useMemo(() => {
+    return participants.filter((p) => p.winner === 'YES').length;
+  }, [participants]);
+
+  const nonWinnersCount = useMemo(() => {
+    return participants.filter((p) => p.winner !== 'YES').length;
+  }, [participants]);
+
+  const handleExecuteResetNonWinners = async () => {
+    if (!onResetNonWinnersEligibility) return;
+    setIsResettingNonWinners(true);
+    setResetNonWinnersFeedback(null);
+    try {
+      const res = await onResetNonWinnersEligibility();
+      if (res.success) {
+        setResetNonWinnersFeedback({
+          text: `Success! ${res.winnersKept} winners kept intact. ${res.count} non-winners reset to INELIGIBLE for gate scanning.`
+        });
+        setTimeout(() => {
+          setIsResetNonWinnersModalOpen(false);
+          setResetNonWinnersFeedback(null);
+        }, 2200);
+      } else {
+        setResetNonWinnersFeedback({
+          text: `Sync error: ${res.error || 'Failed to reset non-winners'}`,
+          error: true
+        });
+      }
+    } catch (err: any) {
+      setResetNonWinnersFeedback({
+        text: `Error: ${err?.message || err}`,
+        error: true
+      });
+    } finally {
+      setIsResettingNonWinners(false);
+    }
+  };
 
   // Load ignored duplicate keys from localStorage
   useEffect(() => {
@@ -349,6 +394,21 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
               <FileSpreadsheet className="w-4 h-4 text-[#ff6a00] hover:text-white" />
               <span>Import Sheet</span>
             </button>
+
+            {participants.length > 0 && onResetNonWinnersEligibility && (
+              <button
+                type="button"
+                onClick={() => {
+                  setResetNonWinnersFeedback(null);
+                  setIsResetNonWinnersModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white border-2 border-indigo-600 text-indigo-700 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-xs cursor-pointer"
+                title="Prepare roster for gate check-in: keeps winners intact, resets non-winners to Ineligible"
+              >
+                <UserCheck className="w-4 h-4 text-indigo-600 group-hover:text-white" />
+                <span>Reset Non-Winners for Gate</span>
+              </button>
+            )}
 
             {participants.length > 0 && onClearAllParticipants && (
               <button
@@ -872,6 +932,106 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
               >
                 {isPurging ? 'Purging...' : 'Permanently Purge'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Prepare for Gate Attendance / Reset Non-Winners Confirmation */}
+      {isResetNonWinnersModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white border-2 border-indigo-600 w-full max-w-lg shadow-2xl overflow-hidden animate-scale-up">
+            <div className="bg-indigo-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-amber-300" />
+                <h3 className="font-mono font-black text-sm uppercase tracking-wider">
+                  Prepare Roster for Gate Attendance Check-in
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={isResettingNonWinners}
+                onClick={() => setIsResetNonWinnersModalOpen(false)}
+                className="text-white/80 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-mono">
+              <p className="text-neutral-700 leading-relaxed">
+                This safely prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Major or Grand Prizes on the Live Stage!
+              </p>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xs flex items-start gap-3">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-emerald-950 uppercase">
+                      {confirmedWinnersCount} Confirmed Winners Stay Protected
+                    </div>
+                    <div className="text-[11px] text-emerald-800 mt-0.5 leading-normal">
+                      All winners keep their prize records, claim slips, and audit logs. They can still scan in at the gate for turnout and meal stubs, but are <strong>100% blocked from winning again on stage</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-300 p-3 rounded-xs flex items-start gap-3">
+                  <UserCheck className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-indigo-950 uppercase">
+                      {nonWinnersCount} Non-Winners Reset to INELIGIBLE
+                    </div>
+                    <div className="text-[11px] text-indigo-800 mt-0.5 leading-normal">
+                      Non-winning teachers will only become eligible once their QR code is scanned at the entrance gate. Absent teachers will not be able to win on stage!
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {resetNonWinnersFeedback && (
+                <div className={`p-3 border font-bold text-xs flex items-center gap-2 ${
+                  resetNonWinnersFeedback.error
+                    ? 'bg-red-50 border-red-300 text-red-700'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                }`}>
+                  {resetNonWinnersFeedback.error ? (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  )}
+                  <span>{resetNonWinnersFeedback.text}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200">
+                <button
+                  type="button"
+                  disabled={isResettingNonWinners}
+                  onClick={() => setIsResetNonWinnersModalOpen(false)}
+                  className="px-4 py-2 border border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-bold uppercase transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isResettingNonWinners}
+                  onClick={handleExecuteResetNonWinners}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold uppercase flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                >
+                  {isResettingNonWinners ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Syncing Roster...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Confirm &amp; Reset Non-Winners for Gate</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -38,6 +38,7 @@ interface AdminDashboardProps {
   onSelectPrize: (id: string) => void;
   onLaunchDraw: () => void;
   onConfirmPreDrawBatch?: (batch: TemporaryDrawResult) => void;
+  onResetNonWinnersEligibility?: () => Promise<{ success: boolean; count: number; winnersKept: number; error?: string }>;
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
   onClearAllParticipants?: () => void;
@@ -86,6 +87,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSelectPrize,
   onLaunchDraw,
   onConfirmPreDrawBatch,
+  onResetNonWinnersEligibility,
   onToggleEligibility,
   onImportParticipants,
   onClearAllParticipants,
@@ -214,6 +216,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           winners={winners}
           logs={logs}
           onConfirmPreDrawBatch={onConfirmPreDrawBatch}
+          onResetNonWinnersEligibility={onResetNonWinnersEligibility}
           allowMultipleWins={settings.allowMultipleWins}
           initialReelDuration={settings.preDrawDuration || 3}
         />
@@ -239,6 +242,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onDeleteParticipant={onDeleteParticipant}
           onBatchDeleteParticipants={onBatchDeleteParticipants}
           onMergeParticipants={onMergeParticipants}
+          onResetNonWinnersEligibility={onResetNonWinnersEligibility}
         />
       )}
 

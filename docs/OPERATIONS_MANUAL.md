@@ -16,8 +16,7 @@
 7. [Print Queue Station Operations](#7-print-queue-station-operations)
 8. [Real-Time Claims Workstation Operations](#8-real-time-claims-workstation-operations)
 9. [Reports & Audit Trail Generation](#9-reports--audit-trail-generation)
-10. [Google Apps Script Standalone Mirror Setup](#10-google-apps-script-standalone-mirror-setup)
-11. [Troubleshooting & Emergency Failovers](#11-troubleshooting--emergency-failovers)
+10. [Troubleshooting & Emergency Failovers](#10-troubleshooting--emergency-failovers)
 
 ---
 
@@ -279,27 +278,7 @@ The Claims Desk verifies winners and releases physical prizes.
 
 ---
 
-## 10. Google Apps Script Standalone Mirror Setup
-
-If the committee prefers to run entirely within **Google Workspace** (with zero servers or cloud database), the system includes a complete standalone Google Apps Script version located in the `gas/` directory.
-
-### Quick 5-Minute Setup:
-1. Open a blank Google Sheet at [sheets.new](https://sheets.new).
-2. Go to **Extensions > Apps Script**.
-3. Copy code from the project:
-   - Paste `gas/Code.gs` into the script editor.
-   - Click `+` > HTML, create a file named `Index`, and paste `gas/Index.html`.
-   - Click `+` > Script, create `SetupSheets.gs`, and paste `gas/SetupSheets.gs`.
-4. In the function dropdown, select `runInitialSetup` and click **Run**. Grant permissions.
-5. All 5 sheets (`PARTICIPANTS`, `PRIZES`, `WINNERS`, `RAFFLE_LOG`, `SETTINGS`) will be automatically generated with styled headers!
-6. Click **Deploy > New Deployment > Web App**. Set access to **Anyone**.
-7. Open the generated URL:
-   - Projector: `.../exec?page=raffle`
-   - Admin Controller: `.../exec?page=admin`
-
----
-
-## 11. Troubleshooting & Emergency Failovers
+## 10. Troubleshooting & Emergency Failovers
 
 ### Q1: The Gymnasium Wi-Fi disconnects during the event. What happens?
 - **Automatic Fallback:** The web app operates seamlessly in **Offline Mode**.

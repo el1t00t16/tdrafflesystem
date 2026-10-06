@@ -110,6 +110,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   } | null>(null);
   const scannerContainerId = 'html5qr-claim-reader';
   const scannerInstanceRef = useRef<Html5Qrcode | null>(null);
+  const isStartingRef = useRef<boolean>(false);
   const lastScanTimeRef = useRef<number>(0);
   const lastScannedTextRef = useRef<string>('');
 
@@ -270,30 +271,65 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
     [resolveScannedCode, statusTab]
   );
 
+  // Keep latest handleProcessScan in ref so camera scanner never restarts on external state changes
+  const handleProcessScanRef = useRef(handleProcessScan);
+  useEffect(() => {
+    handleProcessScanRef.current = handleProcessScan;
+  }, [handleProcessScan]);
+
   // Camera QR Scanner lifecycle
   useEffect(() => {
     let isSubscribed = true;
+    let localScanner: Html5Qrcode | null = null;
 
     if (isCameraActive) {
-      setCameraError(null);
-      const scanner = new Html5Qrcode(scannerContainerId);
-      scannerInstanceRef.current = scanner;
+      // 1. Clean container DOM before initializing to prevent stacked duplicate video elements
+      const container = document.getElementById(scannerContainerId);
+      if (container) {
+        container.innerHTML = '';
+      }
 
-      scanner
+      setCameraError(null);
+      localScanner = new Html5Qrcode(scannerContainerId);
+      scannerInstanceRef.current = localScanner;
+      isStartingRef.current = true;
+
+      const qrboxConfig = (viewfinderWidth: number, viewfinderHeight: number) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const size = Math.max(180, Math.min(Math.floor(minEdge * 0.72), 260));
+        return { width: size, height: size };
+      };
+
+      localScanner
         .start(
           { facingMode: cameraFacingMode },
           {
             fps: 10,
-            qrbox: { width: 240, height: 240 }
+            qrbox: qrboxConfig
           },
           (decodedText) => {
             if (isSubscribed) {
-              handleProcessScan(decodedText);
+              handleProcessScanRef.current(decodedText);
             }
           },
           () => {} // frame error callback ignored
         )
+        .then(() => {
+          isStartingRef.current = false;
+          if (!isSubscribed && localScanner) {
+            try {
+              if (localScanner.isScanning) {
+                localScanner.stop().then(() => {
+                  try { localScanner?.clear(); } catch (_) {}
+                  const c = document.getElementById(scannerContainerId);
+                  if (c) c.innerHTML = '';
+                }).catch(() => {});
+              }
+            } catch (_) {}
+          }
+        })
         .catch((err) => {
+          isStartingRef.current = false;
           if (isSubscribed) {
             console.error('Camera QR scan error:', err);
             setCameraError(
@@ -306,19 +342,43 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
 
     return () => {
       isSubscribed = false;
-      if (scannerInstanceRef.current) {
-        scannerInstanceRef.current
-          .stop()
-          .then(() => {
-            scannerInstanceRef.current?.clear();
-            scannerInstanceRef.current = null;
-          })
-          .catch(() => {
-            scannerInstanceRef.current = null;
-          });
+      const scanner = localScanner || scannerInstanceRef.current;
+      scannerInstanceRef.current = null;
+
+      const stopAndClean = (s: Html5Qrcode) => {
+        try {
+          if (s.isScanning) {
+            s.stop()
+              .then(() => {
+                try { s.clear(); } catch (_) {}
+                const c = document.getElementById(scannerContainerId);
+                if (c) c.innerHTML = '';
+              })
+              .catch(() => {
+                try { s.clear(); } catch (_) {}
+                const c = document.getElementById(scannerContainerId);
+                if (c) c.innerHTML = '';
+              });
+          } else {
+            try { s.clear(); } catch (_) {}
+            const c = document.getElementById(scannerContainerId);
+            if (c) c.innerHTML = '';
+          }
+        } catch (_) {
+          const c = document.getElementById(scannerContainerId);
+          if (c) c.innerHTML = '';
+        }
+      };
+
+      if (scanner) {
+        if (isStartingRef.current) {
+          setTimeout(() => stopAndClean(scanner), 350);
+        } else {
+          stopAndClean(scanner);
+        }
       }
     };
-  }, [isCameraActive, cameraFacingMode, handleProcessScan]);
+  }, [isCameraActive, cameraFacingMode]);
 
   // Filtered Winners List
   const filteredWinners = useMemo(() => {

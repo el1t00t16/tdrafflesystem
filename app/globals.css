@@ -45,6 +45,7 @@
 @layer utilities {
   .font-winner {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
   }
 
   .hero-title {
@@ -216,22 +217,42 @@
 }
 
 /* Mobile Camera QR Viewport Optimization */
+#html5qr-attendance-reader,
+#html5qr-claim-reader,
 #attendance-qr-reader {
   width: 100% !important;
   border: none !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
+#html5qr-attendance-reader video,
+#html5qr-claim-reader video,
 #attendance-qr-reader video {
-  max-height: 42vh !important;
+  max-height: 48vh !important;
   width: 100% !important;
+  max-width: 100% !important;
   object-fit: cover !important;
-  border-radius: 4px;
+  border-radius: 6px !important;
+  display: block !important;
+  margin: 0 auto !important;
 }
 
+/* Guard against any duplicate stacked videos */
+#html5qr-attendance-reader video:not(:first-of-type),
+#html5qr-claim-reader video:not(:first-of-type),
+#attendance-qr-reader video:not(:first-of-type) {
+  display: none !important;
+}
+
+#html5qr-attendance-reader__scan_region,
+#html5qr-claim-reader__scan_region,
 #attendance-qr-reader__scan_region {
   min-height: auto !important;
 }
 
+#html5qr-attendance-reader__dashboard,
+#html5qr-claim-reader__dashboard,
 #attendance-qr-reader__dashboard {
   padding: 4px 0 !important;
 }

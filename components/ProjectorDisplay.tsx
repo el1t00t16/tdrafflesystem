@@ -76,6 +76,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   onToggleFullscreen
 }) => {
   const [internalFullStage, setInternalFullStage] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselMode, setCarouselMode] = useState<'carousel' | 'grid'>('carousel');
   const fullStageActive = isFullStage !== undefined ? isFullStage : internalFullStage;
 
   const setFullStage = (active: boolean) => {
@@ -98,10 +100,34 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
       if (e.key === 'Escape' && fullStageActive) {
         setFullStage(false);
       }
+      // Carousel arrow key navigation
+      if (drawStatus === 'REVEALED' && carouselMode === 'carousel') {
+        if (e.key === 'ArrowRight') {
+          setCarouselIndex(prev => (prev + 1) % 5);
+        } else if (e.key === 'ArrowLeft') {
+          setCarouselIndex(prev => (prev - 1 + 5) % 5);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullStageActive]);
+  }, [fullStageActive, drawStatus, carouselMode]);
+
+  // Auto-rotate carousel when winners are revealed
+  useEffect(() => {
+    if (drawStatus !== 'REVEALED' || carouselMode !== 'carousel') return;
+    const timer = setInterval(() => {
+      setCarouselIndex(prev => (prev + 1) % 5);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [drawStatus, carouselMode]);
+
+  // Reset carousel index when a new draw starts
+  useEffect(() => {
+    if (isDrawing) {
+      setCarouselIndex(0);
+    }
+  }, [isDrawing]);
 
   // Group revealed winners by district
   const winnersByDistrict: Record<District, Participant[]> = {
@@ -249,6 +275,36 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </button>
             )}
 
+            {/* Carousel/Grid Mode Toggle (LED Display) */}
+            {drawStatus === 'REVEALED' && (
+              <div className="inline-flex border border-white/20 rounded-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setCarouselMode('carousel')}
+                  className={`px-2 sm:px-2.5 py-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
+                    carouselMode === 'carousel'
+                      ? 'bg-[#ff6a00] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                  title="Auto-rotating single district view (best for LED)"
+                >
+                  📺 Carousel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCarouselMode('grid')}
+                  className={`px-2 sm:px-2.5 py-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
+                    carouselMode === 'grid'
+                      ? 'bg-[#ff6a00] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                  title="Show all 5 districts at once"
+                >
+                  🔲 Grid
+                </button>
+              </div>
+            )}
+
             <button
               onClick={() => setFullStage(false)}
               className="px-2.5 sm:px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-[#1a1a1a] font-mono text-xs font-bold uppercase tracking-wider border border-white/20 transition-all flex items-center gap-1.5 shadow-xs rounded-xs"
@@ -293,6 +349,37 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 <span>⛶</span>
               </button>
             </div>
+
+            {/* Carousel Mode Toggle (visible when winners revealed) */}
+            {drawStatus === 'REVEALED' && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/50 font-bold">Display:</span>
+                <div className="inline-flex border border-[#1a1a1a]/20 rounded-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setCarouselMode('carousel')}
+                    className={`px-2 py-0.5 font-mono text-[10px] font-bold uppercase transition-all ${
+                      carouselMode === 'carousel'
+                        ? 'bg-[#ff6a00] text-white'
+                        : 'bg-white text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+                    }`}
+                  >
+                    📺 Carousel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCarouselMode('grid')}
+                    className={`px-2 py-0.5 font-mono text-[10px] font-bold uppercase transition-all ${
+                      carouselMode === 'grid'
+                        ? 'bg-[#ff6a00] text-white'
+                        : 'bg-white text-[#1a1a1a]/60 hover:text-[#1a1a1a]'
+                    }`}
+                  >
+                    🔲 Grid
+                  </button>
+                </div>
+              </div>
+            )}
 
             <h2 className="font-display text-2xl sm:text-3xl font-black uppercase text-[#1a1a1a] tracking-tight leading-none">
               Grand Raffle Draw
@@ -677,6 +764,101 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 </div>
               </div>
             </div>
+          ) : drawStatus === 'REVEALED' && carouselMode === 'carousel' ? (
+            /* Auto-Rotating Carousel - One District at a Time (LED Optimized) */
+            <div className="w-full max-w-[97vw] 2xl:max-w-[1850px] mx-auto flex flex-col items-center justify-center animate-fade-in">
+              {(() => {
+                const currentDistrict = DISTRICT_CONFIG[carouselIndex];
+                const winners = winnersByDistrict[currentDistrict.id];
+                const hasWinners = winners.length > 0;
+
+                return (
+                  <>
+                    <div
+                      key={carouselIndex}
+                      className="w-full bg-white border-3 sm:border-4 border-emerald-600 rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse flex flex-col justify-between min-h-[350px] sm:min-h-[420px] lg:min-h-[500px] xl:min-h-[560px] max-h-[78vh] overflow-hidden"
+                    >
+                      {/* District Header */}
+                      <div className="shrink-0 text-center pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex flex-col items-center">
+                        <div className="font-mono text-xs sm:text-sm text-emerald-600 font-bold uppercase tracking-[0.3em] mb-1">
+                          🏆 District Winners
+                        </div>
+                        <h3 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.25em] text-[#ff6a00]">
+                          {currentDistrict.title}
+                        </h3>
+                        {hasWinners && (
+                          <div className="font-mono text-sm sm:text-base font-bold text-[#ff6a00]/70 bg-[#ff6a00]/10 px-4 py-1 rounded-full mt-2">
+                            {winners.length} Winner{winners.length > 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Winner Names - Maximum Size for LED Readability */}
+                      <div className="flex-1 flex flex-col justify-center items-center py-4 overflow-hidden">
+                        {hasWinners ? (
+                          <div className={`flex flex-col justify-center items-center w-full ${winners.length > 2 ? 'space-y-2 sm:space-y-3' : 'space-y-3 sm:space-y-5'}`}>
+                            {winners.map((w, idx) => (
+                              <div key={idx} className="text-center w-full animate-fade-in">
+                                <div
+                                  className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-[1.1] drop-shadow-sm ${
+                                    winners.length === 1
+                                      ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl'
+                                      : winners.length <= 3
+                                      ? 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'
+                                      : winners.length <= 5
+                                      ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
+                                      : 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                                  }`}
+                                >
+                                  {w.fullName}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="font-mono text-lg sm:text-2xl text-[#1a1a1a]/30 text-center font-semibold tracking-wider uppercase">
+                            No winners in this district
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="shrink-0 text-center pt-3 flex flex-col items-center">
+                        <div className="w-32 sm:w-52 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-2 rounded-full" />
+                        <span className="font-mono text-[11px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
+                          MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Carousel Navigation Dots */}
+                    <div className="flex items-center justify-center gap-2.5 mt-5">
+                      {DISTRICT_CONFIG.map((d, idx) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setCarouselIndex(idx)}
+                          className={`transition-all duration-300 rounded-full ${
+                            idx === carouselIndex
+                              ? 'w-8 h-3 bg-[#ff6a00] shadow-md'
+                              : winnersByDistrict[d.id].length > 0
+                              ? 'w-3 h-3 bg-emerald-400 hover:bg-emerald-500 hover:scale-110'
+                              : 'w-3 h-3 bg-neutral-300 hover:bg-neutral-400 hover:scale-110'
+                          }`}
+                          title={`${d.title}${winnersByDistrict[d.id].length > 0 ? ` (${winnersByDistrict[d.id].length} winner${winnersByDistrict[d.id].length > 1 ? 's' : ''})` : ''}`}
+                          aria-label={`Go to ${d.title}`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Keyboard hint */}
+                    <div className="font-mono text-[10px] text-neutral-400 mt-2 tracking-wider uppercase">
+                      ← → Arrow keys to navigate • Auto-cycling every 5s
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           ) : (
             /* Multi-District 2 + 2 + 1 Layout */
             <div className="w-full max-w-[97vw] 2xl:max-w-[1850px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
@@ -718,7 +900,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                           <div className="min-h-[85px] sm:min-h-[105px] lg:min-h-[125px] flex items-center justify-center w-full px-3">
                             <div
                               key={shufflingNames[id]?.name}
-                              className="font-winner font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs animate-reel-slide"
+                              className="font-winner font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs animate-reel-slide"
                             >
                               {shufflingNames[id]?.name || 'DepEd Participant'}
                             </div>
@@ -739,12 +921,12 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                             >
                               {/* In-Focus Well-Proportioned Teacher Name in Plus Jakarta Sans font */}
                               <div
-                                className={`font-winner font-black text-[#111827] uppercase tracking-tight leading-tight ${
+                                className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-tight ${
                                   winners.length === 1
-                                    ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
+                                    ? 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl'
                                     : winners.length <= 3
-                                    ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
-                                    : 'text-base sm:text-lg md:text-xl lg:text-2xl'
+                                    ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
+                                    : 'text-lg sm:text-xl md:text-2xl lg:text-3xl'
                                 }`}
                               >
                                 {w.fullName}

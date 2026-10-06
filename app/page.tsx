@@ -15,7 +15,6 @@ import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { ProjectorDisplay } from '../components/ProjectorDisplay';
 import { AdminDashboard } from '../components/AdminDashboard';
-import { GasGuideView } from '../components/GasGuideView';
 import { ClaimsStation } from '../components/admin/ClaimsStation';
 import { PrizeClaimModule } from '../components/PrizeClaimModule';
 import { AttendanceScannerModule } from '../components/attendance/AttendanceScannerModule';
@@ -42,6 +41,7 @@ import {
   isSupabaseConfigured,
   executeFullEventResetInSupabase,
   clearAllParticipantsFromSupabase,
+  clearAttendanceRecordsFromSupabase,
   deleteParticipantFromSupabase,
   deleteParticipantsBatchFromSupabase,
   upsertSingleParticipantToSupabase,
@@ -57,7 +57,7 @@ import {
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
 export default function Home() {
-  const [currentView, setCurrentView] = useState<'display' | 'admin' | 'claim' | 'attendance' | 'gas'>('display');
+  const [currentView, setCurrentView] = useState<'display' | 'admin' | 'claim' | 'attendance'>('display');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -534,8 +534,6 @@ export default function Home() {
         setCurrentView('attendance');
       } else if (page === 'admin') {
         setCurrentView('admin');
-      } else if (page === 'gas') {
-        setCurrentView('gas');
       } else if (page === 'projector' || page === 'display') {
         setCurrentView('display');
       }
@@ -546,7 +544,7 @@ export default function Home() {
     return () => window.removeEventListener('popstate', syncFromUrl);
   }, []);
 
-  const handleViewChange = (view: 'display' | 'admin' | 'claim' | 'attendance' | 'gas') => {
+  const handleViewChange = (view: 'display' | 'admin' | 'claim' | 'attendance') => {
     soundSynthesizer.playClick();
     if (view !== 'display') {
       setIsFullStage(false);
@@ -1280,6 +1278,78 @@ export default function Home() {
     }
   };
 
+  // Reset all non-winning participants to INELIGIBLE (Prepares roster for gate scanning after Pre-Draws)
+  // Keeps all confirmed winners (winner === 'YES') 100% intact!
+  const handleResetNonWinnersEligibility = async (): Promise<{
+    success: boolean;
+    count: number;
+    winnersKept: number;
+    error?: string;
+  }> => {
+    soundSynthesizer.playClick();
+
+    let nonWinnersCount = 0;
+    let winnersCount = 0;
+
+    const updatedParticipants = participants.map((p) => {
+      if (p.winner === 'YES') {
+        winnersCount++;
+        return p; // Preserves winner status, prizeWon, etc.
+      }
+      nonWinnersCount++;
+      return {
+        ...p,
+        eligible: 'INELIGIBLE' as EligibilityStatus,
+        attendedAt: undefined,
+        attendedBy: undefined
+      };
+    });
+
+    setParticipants(updatedParticipants);
+    try {
+      localStorage.setItem('td26_profiling_participants', JSON.stringify(updatedParticipants));
+    } catch (e) {
+      console.error(e);
+    }
+
+    // Reset gate attendance scan records so scanner counts start clean for gate opening
+    setAttendanceRecords([]);
+    try {
+      localStorage.removeItem('td26_attendance_records');
+    } catch (e) {
+      console.error(e);
+    }
+
+    // Sync to Supabase Cloud if connected
+    if (isSupabaseConfigured()) {
+      try {
+        await clearAttendanceRecordsFromSupabase();
+        const res = await batchSyncParticipantsToSupabase(updatedParticipants);
+        if (!res.success) {
+          return {
+            success: false,
+            count: nonWinnersCount,
+            winnersKept: winnersCount,
+            error: res.error
+          };
+        }
+      } catch (err: any) {
+        return {
+          success: false,
+          count: nonWinnersCount,
+          winnersKept: winnersCount,
+          error: err?.message || String(err)
+        };
+      }
+    }
+
+    return {
+      success: true,
+      count: nonWinnersCount,
+      winnersKept: winnersCount
+    };
+  };
+
   // Prize Management Handlers
   const handleAddPrize = (newPrize: Prize) => {
     soundSynthesizer.playSuccess();
@@ -1875,6 +1945,7 @@ export default function Home() {
             }}
             onLaunchDraw={handleOpenDrawPreview}
             onConfirmPreDrawBatch={handleConfirmPreDrawBatch}
+            onResetNonWinnersEligibility={handleResetNonWinnersEligibility}
             onToggleEligibility={handleToggleEligibility}
             onImportParticipants={handleImportParticipants}
             onClearAllParticipants={handleClearAllParticipants}
@@ -1903,8 +1974,6 @@ export default function Home() {
             districtEligibleCounts={districtEligibleCounts}
           />
         )}
-
-        {currentView === 'gas' && <GasGuideView />}
       </div>
 
       {/* Draw Preview Modal (Before Start) */}
