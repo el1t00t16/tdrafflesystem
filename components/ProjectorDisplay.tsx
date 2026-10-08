@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { District, DistributionMode, Participant, Prize, Winner } from '../lib/types';
-import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
+import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown } from 'lucide-react';
 
 interface ProjectorDisplayProps {
   selectedPrize: Prize | null;
@@ -78,6 +78,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   const [internalFullStage, setInternalFullStage] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselMode, setCarouselMode] = useState<'carousel' | 'grid'>('carousel');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
   const fullStageActive = isFullStage !== undefined ? isFullStage : internalFullStage;
 
   const setFullStage = (active: boolean) => {
@@ -91,14 +95,33 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   useEffect(() => {
     if (isDrawing) {
       setFullStage(true);
+      setIsMenuOpen(false);
+      setIsHovered(false);
     }
   }, [isDrawing]);
 
-  // Keyboard shortcut: Esc to exit full stage
+  // Click outside to dismiss stage menu
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Keyboard shortcut: Esc to close menu or exit full stage
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && fullStageActive) {
-        setFullStage(false);
+      if (e.key === 'Escape') {
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+          return;
+        }
+        if (fullStageActive) {
+          setFullStage(false);
+        }
       }
       // Carousel arrow key navigation
       if (drawStatus === 'REVEALED' && carouselMode === 'carousel') {
@@ -111,7 +134,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullStageActive, drawStatus, carouselMode]);
+  }, [fullStageActive, drawStatus, carouselMode, isMenuOpen]);
 
   // Group revealed winners by district
   const winnersByDistrict: Record<District, Participant[]> = {
@@ -214,11 +237,11 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     <div className={`flex-1 flex flex-col relative ${fullStageActive ? 'h-screen overflow-hidden' : ''}`}>
       {/* Cinematic Stage Top Bar when in Full Stage Mode */}
       {fullStageActive && (
-        <div className="bg-[#1a1a1a] text-[#f8f7f4] px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 border-b-2 border-[#1a1a1a] shadow-md animate-fade-in select-none relative min-h-[72px] sm:min-h-[82px] shrink-0">
-          {/* Left: Status Badge */}
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="bg-[#1a1a1a] text-[#f8f7f4] px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 border-b-2 border-[#1a1a1a] shadow-md animate-fade-in select-none relative min-h-[76px] sm:min-h-[90px] shrink-0">
+          {/* Left: Status Badge Container (Balanced width matching right side) */}
+          <div className="w-32 sm:w-48 lg:w-56 flex items-center justify-start shrink-0">
             <span
-              className={`font-mono text-xs sm:text-sm uppercase px-2.5 sm:px-3 py-1 text-white font-black tracking-wider shadow-xs rounded-xs ${
+              className={`font-mono text-xs sm:text-sm uppercase px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-white font-black tracking-wider shadow-sm rounded-xs ${
                 isDrawing
                   ? 'bg-[#ff6a00] animate-pulse'
                   : hasPendingReview
@@ -238,119 +261,220 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
             </span>
           </div>
 
-          {/* Center: The Name of the Prize Being Drawn (Flex-1, Naturally Centered, Never Collides With Buttons) */}
-          <div className="flex-1 text-center px-2 sm:px-4 min-w-0">
-            <div className="font-display text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black uppercase tracking-tight text-white leading-tight drop-shadow-md truncate">
+          {/* Center: The Name of the Prize Being Drawn - Maximized, Majestic & Centered */}
+          <div className="flex-1 text-center px-2 sm:px-4 min-w-0 flex flex-col items-center justify-center">
+            <div className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black uppercase tracking-tight text-white leading-none drop-shadow-lg truncate max-w-full">
               {selectedPrize ? selectedPrize.name : 'GRAND RAFFLE DRAW'}
             </div>
-            <div className="font-mono text-[10px] sm:text-xs lg:text-sm text-[#ff6a00] font-bold uppercase tracking-wider mt-0.5 truncate">
+            <div className="font-mono text-[10px] sm:text-xs md:text-sm text-[#ff6a00] font-bold uppercase tracking-widest mt-1 sm:mt-1.5 truncate max-w-full flex items-center gap-1.5 justify-center">
               {selectedPrize?.description && (
                 <span>{selectedPrize.description} • </span>
               )}
-              {distributionMode === 'EQUAL_PER_DISTRICT'
-                ? `${winnersPerDistrict} PER DISTRICT (5 DISTRICTS = ${totalWinnersToDraw} WINNERS)`
-                : targetDistrict && targetDistrict !== 'ALL'
-                ? `${totalWinnersToDraw} WINNER${totalWinnersToDraw > 1 ? 'S' : ''} • ${targetDistrict} DISTRICT EXCLUSIVE REDRAW`
-                : `${totalWinnersToDraw} WINNER${totalWinnersToDraw > 1 ? 'S' : ''} (COMBINED POOL — ALL DISTRICTS)`}
+              <span>
+                {distributionMode === 'EQUAL_PER_DISTRICT'
+                  ? `${winnersPerDistrict} PER DISTRICT (5 DISTRICTS = ${totalWinnersToDraw} WINNERS)`
+                  : targetDistrict && targetDistrict !== 'ALL'
+                  ? `${totalWinnersToDraw} WINNER${totalWinnersToDraw > 1 ? 'S' : ''} • ${targetDistrict} DISTRICT EXCLUSIVE REDRAW`
+                  : `${totalWinnersToDraw} WINNER${totalWinnersToDraw > 1 ? 'S' : ''} (COMBINED POOL — ALL DISTRICTS)`}
+              </span>
             </div>
           </div>
 
-          {/* Right: Actions & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+          {/* Right: Actions & Hover Controls Dropdown (Balanced width matching left side) */}
+          <div className="w-32 sm:w-48 lg:w-56 flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 relative">
+            {/* Primary Action Button: Confirm Winners directly visible when pending */}
             {hasPendingReview && onConfirmWinners && (
-              <>
-                {onRedraw && (
+              <button
+                type="button"
+                onClick={onConfirmWinners}
+                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs sm:text-sm font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/40 active:scale-95 animate-pulse rounded-xs shrink-0 cursor-pointer"
+                title="Confirm winners and record permanently"
+              >
+                <CheckCircle className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Confirm</span>
+                <span className="sm:hidden">Confirm</span>
+              </button>
+            )}
+
+            {/* Hover / Click Dropdown Menu for Controls */}
+            <div
+              ref={menuRef}
+              className="relative"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                className={`px-2.5 sm:px-3 py-1.5 sm:py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 rounded-xs border shadow-xs cursor-pointer ${
+                  isMenuOpen || isHovered
+                    ? 'bg-neutral-700 text-white border-white/40'
+                    : 'bg-neutral-800/90 hover:bg-neutral-700 text-neutral-200 hover:text-white border-white/20'
+                }`}
+                title="Stage Controls & Display Options"
+                aria-expanded={isMenuOpen || isHovered}
+              >
+                <Settings className="w-3.5 h-3.5 text-neutral-300 shrink-0" />
+                <span className="hidden md:inline">Controls</span>
+                <ChevronDown
+                  className={`w-3 h-3 text-neutral-400 transition-transform duration-200 shrink-0 ${
+                    isMenuOpen || isHovered ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Floating Dropdown Panel */}
+              <div
+                className={`absolute right-0 top-full mt-2 w-64 sm:w-72 bg-[#18181b] border-2 border-neutral-700 shadow-2xl rounded-xl p-2.5 z-50 text-left transition-all duration-150 ${
+                  isMenuOpen || isHovered
+                    ? 'opacity-100 visible translate-y-0 pointer-events-auto'
+                    : 'opacity-0 invisible -translate-y-1 pointer-events-none'
+                }`}
+              >
+                {/* Section 1: Redraw (Only visible if pending review) */}
+                {hasPendingReview && onRedraw && (
+                  <div className="pb-2 mb-2 border-b border-white/10">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold px-1.5 pb-1">
+                      Draw Actions
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsHovered(false);
+                        if (confirm('Discard these drawn winners and redraw this round?')) {
+                          onRedraw();
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-left font-mono text-xs font-bold uppercase tracking-wide text-red-400 hover:text-white bg-red-950/20 hover:bg-red-900/60 border border-red-800/40 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                      <span>Discard & Redraw</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Section 2: Display Mode Toggle (Multi-District only) */}
+                {drawStatus === 'REVEALED' && !isSingleWinnerHero && (
+                  <div className="pb-2 mb-2 border-b border-white/10">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold px-1.5 pb-1">
+                      Display Mode
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/40 rounded-lg border border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCarouselMode('carousel');
+                          setIsMenuOpen(false);
+                          setIsHovered(false);
+                        }}
+                        className={`px-2 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          carouselMode === 'carousel'
+                            ? 'bg-[#ff6a00] text-white shadow-sm'
+                            : 'text-neutral-400 hover:text-white hover:bg-white/10'
+                        }`}
+                        title="Auto-rotating carousel by district"
+                      >
+                        <span>📺</span>
+                        <span>Carousel</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCarouselMode('grid');
+                          setIsMenuOpen(false);
+                          setIsHovered(false);
+                        }}
+                        className={`px-2 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          carouselMode === 'grid'
+                            ? 'bg-[#ff6a00] text-white shadow-sm'
+                            : 'text-neutral-400 hover:text-white hover:bg-white/10'
+                        }`}
+                        title="Show all 5 districts at once"
+                      >
+                        <span>🔲</span>
+                        <span>Grid</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Section 3: Audio & Screen Quick Toggles */}
+                <div className="pb-2 mb-2 border-b border-white/10 space-y-1">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold px-1.5 pb-0.5">
+                    Stage Audio & Display
+                  </div>
+                  {onToggleSound && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleSound();
+                      }}
+                      className="w-full px-2.5 py-1.5 text-left font-mono text-xs font-bold uppercase tracking-wide text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        {soundEnabled ? (
+                          <Volume2 className="w-3.5 h-3.5 text-[#ff6a00] shrink-0" />
+                        ) : (
+                          <VolumeX className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                        )}
+                        <span>Sound SFX</span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                          soundEnabled ? 'bg-[#ff6a00]/20 text-[#ff6a00]' : 'bg-neutral-800 text-neutral-500'
+                        }`}
+                      >
+                        {soundEnabled ? 'ON' : 'MUTED'}
+                      </span>
+                    </button>
+                  )}
+                  {onToggleFullscreen && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleFullscreen();
+                      }}
+                      className="w-full px-2.5 py-1.5 text-left font-mono text-xs font-bold uppercase tracking-wide text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        {isFullscreen ? (
+                          <Minimize2 className="w-3.5 h-3.5 text-[#ff6a00] shrink-0" />
+                        ) : (
+                          <Maximize2 className="w-3.5 h-3.5 text-neutral-300 shrink-0" />
+                        )}
+                        <span>Fullscreen</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-neutral-800 text-neutral-400">
+                        {isFullscreen ? 'ACTIVE' : 'OFF'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Section 4: Exit Full Stage */}
+                <div>
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm('Discard these drawn winners and redraw this round?')) {
-                        onRedraw();
-                      }
+                      setIsMenuOpen(false);
+                      setIsHovered(false);
+                      setFullStage(false);
                     }}
-                    className="px-2.5 sm:px-3 py-1.5 bg-neutral-800 hover:bg-red-950/80 text-neutral-300 hover:text-red-300 border border-white/20 hover:border-red-500/50 font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 rounded-xs"
-                    title="Discard temporary winners and redraw"
+                    className="w-full px-2.5 py-2 text-left font-mono text-xs font-bold uppercase tracking-wide text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                    title="Exit full stage mode (Esc)"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Redraw</span>
+                    <div className="flex items-center gap-2">
+                      <Settings className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span>Exit Full Stage</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-neutral-800 text-neutral-400 font-mono rounded">
+                      Esc
+                    </span>
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onConfirmWinners}
-                  className="px-3 sm:px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs sm:text-sm font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/40 active:scale-95 animate-pulse rounded-xs"
-                  title="Confirm winners and record permanently"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Confirm Winners</span>
-                </button>
-              </>
-            )}
-
-            {/* Quick Audio & Fullscreen shortcuts */}
-            {onToggleSound && (
-              <button
-                type="button"
-                onClick={onToggleSound}
-                className={`p-1.5 border font-mono text-xs transition-colors rounded-xs ${
-                  soundEnabled
-                    ? 'border-[#ff6a00] text-[#ff6a00] bg-[#ff6a00]/10'
-                    : 'border-white/20 text-white/50 hover:text-white'
-                }`}
-                title={soundEnabled ? 'Mute Sound' : 'Enable Sound'}
-                aria-label="Toggle Sound"
-              >
-                {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-              </button>
-            )}
-            {onToggleFullscreen && (
-              <button
-                type="button"
-                onClick={onToggleFullscreen}
-                className="p-1.5 border border-white/20 hover:border-white text-white/70 hover:text-white font-mono text-xs transition-colors rounded-xs"
-                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-                aria-label="Toggle Fullscreen"
-              >
-                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </button>
-            )}
-
-            {/* Carousel/Grid Mode Toggle (LED Display) - Only shown for multi-district draws */}
-            {drawStatus === 'REVEALED' && !isSingleWinnerHero && (
-              <div className="inline-flex border border-white/20 rounded-xs overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setCarouselMode('carousel')}
-                  className={`px-2 sm:px-2.5 py-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
-                    carouselMode === 'carousel'
-                      ? 'bg-[#ff6a00] text-white'
-                      : 'bg-white/10 text-white/60 hover:text-white'
-                  }`}
-                  title="Auto-rotating single district view (best for LED)"
-                >
-                  📺 Carousel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCarouselMode('grid')}
-                  className={`px-2 sm:px-2.5 py-1.5 font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
-                    carouselMode === 'grid'
-                      ? 'bg-[#ff6a00] text-white'
-                      : 'bg-white/10 text-white/60 hover:text-white'
-                  }`}
-                  title="Show all 5 districts at once"
-                >
-                  🔲 Grid
-                </button>
+                </div>
               </div>
-            )}
-
-            <button
-              onClick={() => setFullStage(false)}
-              className="px-2.5 sm:px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-[#1a1a1a] font-mono text-xs font-bold uppercase tracking-wider border border-white/20 transition-all flex items-center gap-1.5 shadow-xs rounded-xs"
-              title="Show navigation bar and controls sidebar (Esc)"
-            >
-              <span>⚙️ Controls / Exit</span>
-            </button>
+            </div>
           </div>
         </div>
       )}
@@ -359,7 +483,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
       <div
         className={`w-full flex-1 bg-[#f8f7f4] flex flex-col ${
           fullStageActive
-            ? 'h-[calc(100vh-72px)] sm:h-[calc(100vh-82px)] overflow-hidden'
+            ? 'h-[calc(100vh-76px)] sm:h-[calc(100vh-90px)] overflow-hidden'
             : 'min-h-[calc(100vh-140px)] lg:grid lg:grid-cols-[1.1fr_2fr]'
         }`}
       >
