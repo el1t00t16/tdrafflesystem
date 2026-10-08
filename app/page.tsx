@@ -259,6 +259,16 @@ export default function Home() {
 
     // 1. Immediate local cache hydration (offline-first)
     try {
+      const cachedSettings = localStorage.getItem('td26_settings');
+      if (cachedSettings) {
+        const parsed = JSON.parse(cachedSettings);
+        if (parsed) setSettings(parsed);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    try {
       const cachedWinners = localStorage.getItem('td26_winners');
       if (cachedWinners) {
         const parsed = JSON.parse(cachedWinners);
@@ -1943,6 +1953,7 @@ export default function Home() {
           totalWinnersCount={winners.length}
           presentCount={presentCount}
           onLock={handleLockAdmin}
+          eventName={settings.eventName}
         />
       )}
 
@@ -1982,6 +1993,7 @@ export default function Home() {
             onToggleSound={handleToggleSound}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
+            eventName={settings.eventName}
           />
         )}
 

@@ -34,6 +34,7 @@ interface ProjectorDisplayProps {
   onToggleSound?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  eventName?: string;
 }
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -73,7 +74,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   soundEnabled,
   onToggleSound,
   isFullscreen,
-  onToggleFullscreen
+  onToggleFullscreen,
+  eventName
 }) => {
   const [internalFullStage, setInternalFullStage] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -929,7 +931,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 <div className="shrink-0 text-center pt-2 sm:pt-3 flex flex-col items-center">
                   <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-2 rounded-full" />
                   <span className="font-mono text-[11px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
-                    MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
+                    {eventName ? eventName.toUpperCase() : "MALUNGON MUNICIPAL TEACHERS' DAY 2026"}
                   </span>
                 </div>
               </div>

@@ -15,6 +15,7 @@ interface HeaderProps {
   totalWinnersCount?: number;
   presentCount?: number;
   onLock?: () => void;
+  eventName?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   unclaimedCount = 0,
   totalWinnersCount = 0,
   presentCount = 0,
-  onLock
+  onLock,
+  eventName
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -258,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({
               SARANGANI PROVINCE / REGION XII
             </div>
             <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold uppercase leading-none text-[#1a1a1a] dark:text-white -mb-0.5">
-              Teachers&apos; Day 2026
+              {(eventName && eventName.trim()) || "Teachers' Day 2026"}
             </h1>
           </div>
         </div>
