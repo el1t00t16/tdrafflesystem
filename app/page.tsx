@@ -1450,7 +1450,8 @@ export default function Home() {
       idPresented: details?.idPresented || 'DepEd Employee ID',
       proxyName: details?.proxyName,
       proxyRelationship: details?.proxyRelationship,
-      claimNotes: details?.claimNotes
+      claimNotes: details?.claimNotes,
+      participantId: participantId
     }).catch((err) => console.warn('Supabase claim update:', err));
 
     if (participantId) {
@@ -1471,19 +1472,26 @@ export default function Home() {
     }
   };
 
-  // Revert / Undo Claim
+  // Revert / Undo Claim or Re-activate Forfeited Prize
   const handleUnclaimPrize = (winnerId: string) => {
     soundSynthesizer.playClick();
-    let participantId = '';
+    const targetWinner = winners.find((w) => w.winnerId === winnerId);
+    const wasForfeited = targetWinner?.claimStatus === 'FORFEITED';
+    const participantId = targetWinner?.participantId || '';
+    const prizeId = targetWinner?.prizeId || '';
+    const prizeName = targetWinner?.prizeName || '';
+
+    // 1. Update Winner status to UNCLAIMED
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {
-          participantId = w.participantId;
           return {
             ...w,
             claimStatus: 'UNCLAIMED' as const,
             claimedAt: undefined,
-            claimedBy: undefined
+            claimedBy: undefined,
+            forfeitedAt: undefined,
+            forfeitReason: undefined
           };
         }
         return w;
@@ -1496,16 +1504,25 @@ export default function Home() {
       return updated;
     });
 
-    // Cloud Sync: Revert claim in Supabase
+    // 2. Cloud Sync: Revert claim / re-activate in Supabase
     updateClaimInSupabase(winnerId, {
-      claimStatus: 'UNCLAIMED'
+      claimStatus: 'UNCLAIMED',
+      participantId: participantId,
+      prizeId: prizeId,
+      prizeName: prizeName,
+      wasForfeited: wasForfeited
     }).catch((err) => console.warn('Supabase unclaim update:', err));
 
+    // 3. Update Participant status (restore winner = 'YES' if re-activating)
     if (participantId) {
       setParticipants((prev) => {
         const updated = prev.map((p) => {
           if (p.id === participantId) {
-            return { ...p, claimed: 'NO' as const };
+            return {
+              ...p,
+              winner: 'YES' as const,
+              claimed: 'NO' as const
+            };
           }
           return p;
         });
@@ -1516,6 +1533,52 @@ export default function Home() {
         }
         return updated;
       });
+    }
+
+    // 4. If re-activating a previously forfeited ticket: DEDUCT 1 Unit from active prize inventory (-1 remaining, +1 drawn)
+    if (wasForfeited && (prizeId || prizeName)) {
+      setPrizes((prev) => {
+        const updated = prev.map((p) => {
+          if (
+            (prizeId && p.id === prizeId) ||
+            (prizeName && p.name.trim().toLowerCase() === prizeName.trim().toLowerCase())
+          ) {
+            const newDrawn = (p.drawnQuantity || 0) + 1;
+            const newRemaining = Math.max(0, (p.quantity || 1) - newDrawn);
+            return {
+              ...p,
+              drawnQuantity: newDrawn,
+              remainingQuantity: newRemaining,
+              status: (newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED') as PrizeStatus
+            };
+          }
+          return p;
+        });
+        try {
+          localStorage.setItem('td26_prizes', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+        syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on reactivate:', err));
+        return updated;
+      });
+
+      // Audit Log for Re-activation
+      const reactivateLog: RaffleLog = {
+        logId: `LOG-${String(logs.length + 1).padStart(4, '0')}`,
+        drawNumber: `REACTIVATE-${winnerId}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        prizeId: prizeId,
+        prizeName: prizeName || 'Raffle Prize',
+        numberOfWinners: 1,
+        eligiblePoolSize: eligiblePool.length,
+        winnerIds: participantId ? [participantId] : [],
+        winnerNames: targetWinner?.name ? [targetWinner.name] : [],
+        status: 'CONFIRMED',
+        admin: 'Stage Admin Desk',
+        distributionMode: 'COMBINED_POOL'
+      };
+      setLogs((prev) => [reactivateLog, ...prev]);
     }
   };
 
@@ -1560,7 +1623,10 @@ export default function Home() {
     updateClaimInSupabase(winnerId, {
       claimStatus: 'FORFEITED',
       forfeitedAt: timestamp,
-      forfeitReason: reason || 'Unclaimed by deadline / Absent on stage'
+      forfeitReason: reason || 'Unclaimed by deadline / Absent on stage',
+      participantId: targetParticipantId,
+      prizeId: targetPrizeId,
+      prizeName: targetPrizeName
     }).catch((err) => console.warn('Supabase forfeit update:', err));
 
     // 3. Reset Participant winner flag to 'NO' so they don't block inventory
@@ -1581,12 +1647,15 @@ export default function Home() {
       });
     }
 
-    // 4. Return 1 Unit of Prize back to Active Inventory
-    if (targetPrizeId) {
+    // 4. Return 1 Unit of Prize back to Active Inventory (+1 remaining, -1 drawn)
+    if (targetPrizeId || targetPrizeName) {
       let prizeToSelect: string | null = null;
       setPrizes((prev) => {
         const updated = prev.map((p) => {
-          if (p.id === targetPrizeId) {
+          if (
+            (targetPrizeId && p.id === targetPrizeId) ||
+            (targetPrizeName && p.name.trim().toLowerCase() === targetPrizeName.trim().toLowerCase())
+          ) {
             const newDrawn = Math.max(0, p.drawnQuantity - 1);
             const newRemaining = Math.max(0, p.quantity - newDrawn);
             prizeToSelect = p.id;
@@ -1594,7 +1663,7 @@ export default function Home() {
               ...p,
               drawnQuantity: newDrawn,
               remainingQuantity: newRemaining,
-              status: newRemaining > 0 ? ('AVAILABLE' as PrizeStatus) : ('EXHAUSTED' as PrizeStatus)
+              status: (newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED') as PrizeStatus
             };
           }
           return p;

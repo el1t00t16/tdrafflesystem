@@ -660,6 +660,16 @@ export const PrizeClaimModule: React.FC<PrizeClaimModuleProps> = ({
                       Audit Trail: Ticket {selectedWinner.winnerId} cannot be disbursed.
                     </div>
                   </div>
+
+                  {onUnclaimPrize && (
+                    <button
+                      onClick={() => onUnclaimPrize(selectedWinner.winnerId)}
+                      className="w-full py-2.5 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Re-activate Prize to Unclaimed</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 /* UNCLAIMED DISBURSEMENT VERIFICATION FORM */

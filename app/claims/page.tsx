@@ -5,14 +5,16 @@ import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, S
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
 import { RealtimeClaimsWorkstation } from '../../components/claims/RealtimeClaimsWorkstation';
 import { PrintQueueStation } from '../../components/admin/PrintQueueStation';
-import { Winner, ClaimStationSession } from '../../lib/types';
+import { Winner, ClaimStationSession, RaffleLog } from '../../lib/types';
 import {
   isSupabaseConfigured,
   setSupabaseCredentials,
   fetchWinnersFromSupabase,
   updateClaimInSupabase,
   subscribeToRealtimeUpdates,
-  syncWinnerPrintStatusToSupabase
+  syncWinnerPrintStatusToSupabase,
+  syncPrizesToSupabase,
+  pushLogToSupabase
 } from '../../lib/supabase';
 import {
   markWinnerAsPrintedInStorage,
@@ -195,6 +197,7 @@ export default function ClaimsPage() {
     }
   ) => {
     const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const targetWinner = winners.find((w) => w.winnerId === winnerId);
 
     setWinners((prev) => {
       const updated = prev.map((w) => {
@@ -230,12 +233,17 @@ export default function ClaimsPage() {
       isProxyClaim: details?.isProxyClaim ?? false,
       proxyName: details?.proxyName,
       proxyRelationship: details?.proxyRelationship,
-      claimNotes: details?.claimNotes
+      claimNotes: details?.claimNotes,
+      participantId: targetWinner?.participantId,
+      prizeId: targetWinner?.prizeId
     }).catch((err) => console.warn('Supabase claim update failed:', err));
   };
 
-  // Handle Unclaim (Revert)
+  // Handle Unclaim (Revert or Re-activate)
   const handleUnclaimPrize = async (winnerId: string) => {
+    const targetWinner = winners.find((w) => w.winnerId === winnerId);
+    const wasForfeited = targetWinner?.claimStatus === 'FORFEITED';
+
     setWinners((prev) => {
       const updated = prev.map((w) => {
         if (w.winnerId === winnerId) {
@@ -243,7 +251,9 @@ export default function ClaimsPage() {
             ...w,
             claimStatus: 'UNCLAIMED' as const,
             claimedAt: undefined,
-            claimedBy: undefined
+            claimedBy: undefined,
+            forfeitedAt: undefined,
+            forfeitReason: undefined
           };
         }
         return w;
@@ -256,14 +266,89 @@ export default function ClaimsPage() {
       return updated;
     });
 
+    // If re-activating a previously forfeited ticket:
+    if (wasForfeited) {
+      // 1. Mark participant back as winner = 'YES'
+      if (targetWinner?.participantId) {
+        try {
+          const cachedParticipants = localStorage.getItem('td26_profiling_participants');
+          if (cachedParticipants) {
+            const parsed = JSON.parse(cachedParticipants);
+            if (Array.isArray(parsed)) {
+              const updated = parsed.map((p: any) =>
+                p.id === targetWinner.participantId ? { ...p, winner: 'YES', claimed: 'NO' } : p
+              );
+              localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // 2. Consume / Deduct 1 unit from local prize inventory if cached on this device
+      if (targetWinner?.prizeId || targetWinner?.prizeName) {
+        try {
+          const cachedPrizes = localStorage.getItem('td26_prizes');
+          if (cachedPrizes) {
+            const parsed = JSON.parse(cachedPrizes);
+            if (Array.isArray(parsed)) {
+              const updated = parsed.map((p: any) => {
+                if (
+                  (targetWinner.prizeId && p.id === targetWinner.prizeId) ||
+                  (targetWinner.prizeName && (p.name || '').trim().toLowerCase() === targetWinner.prizeName.trim().toLowerCase())
+                ) {
+                  const newDrawn = (p.drawnQuantity || 0) + 1;
+                  const newRemaining = Math.max(0, (p.quantity || 1) - newDrawn);
+                  return {
+                    ...p,
+                    drawnQuantity: newDrawn,
+                    remainingQuantity: newRemaining,
+                    status: newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED'
+                  };
+                }
+                return p;
+              });
+              localStorage.setItem('td26_prizes', JSON.stringify(updated));
+              syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on claims reactivate:', err));
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // 3. Audit log for re-activation
+      const reactivateLog: RaffleLog = {
+        logId: `LOG-${Date.now().toString(36).toUpperCase()}`,
+        drawNumber: `REACTIVATE-${winnerId}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        prizeId: targetWinner?.prizeId || '',
+        prizeName: targetWinner?.prizeName || 'Raffle Prize',
+        numberOfWinners: 1,
+        eligiblePoolSize: 0,
+        winnerIds: targetWinner?.participantId ? [targetWinner.participantId] : [],
+        winnerNames: targetWinner?.name ? [targetWinner.name] : [],
+        status: 'CONFIRMED',
+        admin: `${claimSession?.officerName || 'Claims Desk'} (${claimSession?.stationId || 'FORFEIT-DESK'})`,
+        distributionMode: 'MANUAL_REACTIVATE' as any
+      };
+      pushLogToSupabase(reactivateLog).catch((err) => console.warn('Supabase reactivate log error:', err));
+    }
+
     await updateClaimInSupabase(winnerId, {
-      claimStatus: 'UNCLAIMED'
+      claimStatus: 'UNCLAIMED',
+      participantId: targetWinner?.participantId,
+      prizeId: targetWinner?.prizeId,
+      prizeName: targetWinner?.prizeName,
+      wasForfeited
     }).catch((err) => console.warn('Supabase unclaim update failed:', err));
   };
 
   // Handle Forfeiture
   const handleForfeitPrize = async (winnerId: string, reason?: string) => {
     const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const targetWinner = winners.find((w) => w.winnerId === winnerId);
 
     setWinners((prev) => {
       const updated = prev.map((w) => {
@@ -285,10 +370,80 @@ export default function ClaimsPage() {
       return updated;
     });
 
+    // Reset local participant if cached in localStorage on this device
+    if (targetWinner?.participantId) {
+      try {
+        const cachedParticipants = localStorage.getItem('td26_profiling_participants');
+        if (cachedParticipants) {
+          const parsed = JSON.parse(cachedParticipants);
+          if (Array.isArray(parsed)) {
+            const updated = parsed.map((p: any) =>
+              p.id === targetWinner.participantId ? { ...p, winner: 'NO', claimed: 'NO' } : p
+            );
+            localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Restore local prize quantity if cached in localStorage on this device (+1 remaining, -1 drawn)
+    if (targetWinner?.prizeId || targetWinner?.prizeName) {
+      try {
+        const cachedPrizes = localStorage.getItem('td26_prizes');
+        if (cachedPrizes) {
+          const parsed = JSON.parse(cachedPrizes);
+          if (Array.isArray(parsed)) {
+            const updated = parsed.map((p: any) => {
+              if (
+                (targetWinner.prizeId && p.id === targetWinner.prizeId) ||
+                (targetWinner.prizeName && (p.name || '').trim().toLowerCase() === targetWinner.prizeName.trim().toLowerCase())
+              ) {
+                const newDrawn = Math.max(0, (p.drawnQuantity || 0) - 1);
+                const newRemaining = Math.max(0, (p.quantity || 1) - newDrawn);
+                return {
+                  ...p,
+                  drawnQuantity: newDrawn,
+                  remainingQuantity: newRemaining,
+                  status: newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED'
+                };
+              }
+              return p;
+            });
+            localStorage.setItem('td26_prizes', JSON.stringify(updated));
+            syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on claims forfeit:', err));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Push Forfeiture Audit Log
+    const forfeitLog: RaffleLog = {
+      logId: `LOG-${Date.now().toString(36).toUpperCase()}`,
+      drawNumber: `FORFEIT-${winnerId}`,
+      timestamp: timestamp,
+      prizeId: targetWinner?.prizeId || '',
+      prizeName: targetWinner?.prizeName || 'Raffle Prize',
+      numberOfWinners: 1,
+      eligiblePoolSize: 0,
+      winnerIds: targetWinner?.participantId ? [targetWinner.participantId] : [],
+      winnerNames: targetWinner?.name ? [targetWinner.name] : [],
+      status: 'FORFEITED',
+      admin: `${claimSession?.officerName || 'Claims Desk'} (${claimSession?.stationId || 'FORFEIT-DESK'})`,
+      distributionMode: 'MANUAL_FORFEIT' as any
+    };
+    pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase forfeit log error:', err));
+
     await updateClaimInSupabase(winnerId, {
       claimStatus: 'FORFEITED',
       forfeitedAt: timestamp,
-      forfeitReason: reason || 'Unclaimed by deadline / Absent on stage'
+      forfeitReason: reason || 'Unclaimed by deadline / Absent on stage',
+      participantId: targetWinner?.participantId,
+      prizeId: targetWinner?.prizeId,
+      prizeName: targetWinner?.prizeName
     }).catch((err) => console.warn('Supabase forfeit update failed:', err));
   };
 

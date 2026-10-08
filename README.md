@@ -8,12 +8,18 @@
 
 Comprehensive documentation has been prepared specifically for the **Municipal Teachers' Day Organizing Committee**, DepEd district supervisors, school principals, and technical working groups:
 
-1. **[Executive System Presentation (Slide Deck)](docs/TEACHERS_COMMITTEE_PRESENTATION.md)**  
+1. **[Teachers' Committee Easy Guide & Handbook](docs/TEACHERS_COMMITTEE_GUIDE.md)**  
+   *Plain-language, non-technical handbook for School Principals, District Supervisors, and Committee Members explaining fairness, the 4 stations, eligibility, and common questions.*
+2. **[Master System Documentation & Architecture Guide](docs/MASTER_SYSTEM_DOCUMENTATION.md)**  
+   *Comprehensive master manual detailing technical architecture, data schemas, 5-district rules, Fisher-Yates algorithm, multi-station sync, sound engine, and disaster recovery.*
+3. **[Executive System Presentation (Slide Deck)](docs/TEACHERS_COMMITTEE_PRESENTATION.md)**  
    *16-slide presentation deck covering system objectives, 5-district architecture, mathematical fairness guarantees, stage visuals, anti-error safeguards, and event-day execution timeline.*
-2. **[End-to-End System Workflow](docs/SYSTEM_WORKFLOW.md)**  
+4. **[End-to-End System Workflow](docs/SYSTEM_WORKFLOW.md)**  
    *Detailed phase-by-phase visual workflows, data synchronization diagrams, security controls, and multi-station communication paths.*
-3. **[Standard Operating Procedures & User Operations Manual](docs/OPERATIONS_MANUAL.md)**  
+5. **[Standard Operating Procedures & User Operations Manual](docs/OPERATIONS_MANUAL.md)**  
    *Complete SOP manual for all 6 committee roles: System Administrator, Gate Registration Officers, Stage Projector Operators, Pre-Draw Station Marshals, Claims & Disbursing Officers, and Audit Leads.*
+6. **[System Testing Checklist & Verification Plan](docs/SYSTEM_TESTING_CHECKLIST.md)**  
+   *Quality assurance checklist, multi-station dependency graphs, and dry-run verification protocols.*
 
 ---
 

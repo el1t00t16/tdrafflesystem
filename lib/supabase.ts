@@ -218,8 +218,22 @@ create table if not exists public.winners (
   is_proxy_claim boolean default false,
   proxy_name text,
   proxy_relationship text,
-  claim_notes text
+  claim_notes text,
+  forfeited_at text,
+  forfeit_reason text,
+  draw_type text default 'LIVE_STAGE',
+  is_printed boolean default false,
+  printed_at timestamp with time zone,
+  printed_by text
 );
+
+-- Ensure all winner columns exist if table was previously created
+alter table public.winners add column if not exists forfeited_at text;
+alter table public.winners add column if not exists forfeit_reason text;
+alter table public.winners add column if not exists draw_type text default 'LIVE_STAGE';
+alter table public.winners add column if not exists is_printed boolean default false;
+alter table public.winners add column if not exists printed_at timestamp with time zone;
+alter table public.winners add column if not exists printed_by text;
 
 create index if not exists idx_winners_claim_status on public.winners(claim_status);
 create index if not exists idx_winners_draw_number on public.winners(draw_number);
@@ -324,7 +338,7 @@ export async function pushWinnerToSupabase(winner: Winner): Promise<boolean> {
   if (!client) return false;
 
   try {
-    const { error: winnerErr } = await client.from('winners').upsert({
+    const payload: Record<string, any> = {
       winner_id: winner.winnerId,
       participant_id: winner.participantId,
       deped_id: winner.depedId || null,
@@ -352,7 +366,52 @@ export async function pushWinnerToSupabase(winner: Winner): Promise<boolean> {
       proxy_name: winner.proxyName || null,
       proxy_relationship: winner.proxyRelationship || null,
       claim_notes: winner.claimNotes || null
-    });
+    };
+
+    if (winner.forfeitedAt !== undefined) {
+      payload.forfeited_at = winner.forfeitedAt;
+    }
+    if (winner.forfeitReason !== undefined) {
+      payload.forfeit_reason = winner.forfeitReason;
+    }
+    if (winner.drawType !== undefined) {
+      payload.draw_type = winner.drawType;
+    }
+    if (winner.isPrinted !== undefined) {
+      payload.is_printed = Boolean(winner.isPrinted);
+    }
+    if (winner.printedAt !== undefined) {
+      payload.printed_at = winner.printedAt;
+    }
+    if (winner.printedBy !== undefined) {
+      payload.printed_by = winner.printedBy;
+    }
+
+    let { error: winnerErr } = await client.from('winners').upsert(payload, { onConflict: 'winner_id' });
+
+    // Fallback if schema doesn't have the optional columns yet
+    if (
+      winnerErr &&
+      (winnerErr.message?.includes('forfeited_at') ||
+        winnerErr.message?.includes('forfeit_reason') ||
+        winnerErr.message?.includes('draw_type') ||
+        winnerErr.message?.includes('is_printed') ||
+        winnerErr.message?.includes('printed_at') ||
+        winnerErr.message?.includes('printed_by') ||
+        (winnerErr as any).code === '42703' ||
+        (winnerErr as any).code === 'PGRST204')
+    ) {
+      const basicPayload = { ...payload };
+      delete basicPayload.forfeited_at;
+      delete basicPayload.forfeit_reason;
+      delete basicPayload.draw_type;
+      delete basicPayload.is_printed;
+      delete basicPayload.printed_at;
+      delete basicPayload.printed_by;
+      const retryResult = await client.from('winners').upsert(basicPayload, { onConflict: 'winner_id' });
+      winnerErr = retryResult.error;
+    }
+
     if (winnerErr) throw winnerErr;
 
     // Mark participant as WINNER = YES in participants table
@@ -364,12 +423,169 @@ export async function pushWinnerToSupabase(winner: Winner): Promise<boolean> {
 
     return true;
   } catch (err) {
-    console.error('Supabase winner sync error:', err);
+    console.error('Supabase winner sync error:', formatSupabaseError(err));
     return false;
   }
 }
 
-// Helper: Update Claim Status in Supabase
+// Helper: Return 1 Unit of Prize back to active inventory in Supabase (on Forfeiture)
+export async function returnPrizeUnitInSupabase(prizeId: string, prizeName?: string): Promise<boolean> {
+  const client = getSupabase();
+  if (!client || (!prizeId && !prizeName)) return false;
+
+  try {
+    const cleanId = String(prizeId || '').trim();
+    let prize: any = null;
+
+    if (cleanId) {
+      const { data, error } = await client
+        .from('prizes')
+        .select('id, name, quantity, drawn_quantity, remaining_quantity')
+        .eq('id', cleanId)
+        .maybeSingle();
+
+      if (!error && data) {
+        prize = data;
+      }
+    }
+
+    // Fallback: If not found by ID, look up by prize name
+    if (!prize && prizeName) {
+      const cleanName = String(prizeName).trim();
+      const { data, error } = await client
+        .from('prizes')
+        .select('id, name, quantity, drawn_quantity, remaining_quantity')
+        .ilike('name', cleanName)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        prize = data;
+      }
+    }
+
+    if (!prize) {
+      console.warn(`Prize not found in Supabase (id="${prizeId}", name="${prizeName}")`);
+      return false;
+    }
+
+    const currentDrawn = Number(prize.drawn_quantity) || 0;
+    const totalQty = Math.max(1, Number(prize.quantity) || 1);
+    const newDrawn = Math.max(0, currentDrawn - 1);
+    const newRemaining = Math.max(0, totalQty - newDrawn);
+    const newStatus = newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED';
+
+    let { error: updateErr } = await client
+      .from('prizes')
+      .update({
+        drawn_quantity: newDrawn,
+        remaining_quantity: newRemaining,
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', prize.id);
+
+    if (updateErr) {
+      // Retry without updated_at in case the column is not in the user's prizes table
+      const { error: retryErr } = await client
+        .from('prizes')
+        .update({
+          drawn_quantity: newDrawn,
+          remaining_quantity: newRemaining,
+          status: newStatus
+        })
+        .eq('id', prize.id);
+      if (retryErr) {
+        console.warn('Error returning prize unit in Supabase:', retryErr);
+        return false;
+      }
+    }
+    return true;
+  } catch (err) {
+    console.warn('Error in returnPrizeUnitInSupabase:', err);
+    return false;
+  }
+}
+
+// Helper: Deduct 1 Unit of Prize from active inventory in Supabase (on Re-activate / Draw)
+export async function consumePrizeUnitInSupabase(prizeId: string, prizeName?: string): Promise<boolean> {
+  const client = getSupabase();
+  if (!client || (!prizeId && !prizeName)) return false;
+
+  try {
+    const cleanId = String(prizeId || '').trim();
+    let prize: any = null;
+
+    if (cleanId) {
+      const { data, error } = await client
+        .from('prizes')
+        .select('id, name, quantity, drawn_quantity, remaining_quantity')
+        .eq('id', cleanId)
+        .maybeSingle();
+
+      if (!error && data) {
+        prize = data;
+      }
+    }
+
+    // Fallback: If not found by ID, look up by prize name
+    if (!prize && prizeName) {
+      const cleanName = String(prizeName).trim();
+      const { data, error } = await client
+        .from('prizes')
+        .select('id, name, quantity, drawn_quantity, remaining_quantity')
+        .ilike('name', cleanName)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        prize = data;
+      }
+    }
+
+    if (!prize) {
+      console.warn(`Prize not found in Supabase (id="${prizeId}", name="${prizeName}")`);
+      return false;
+    }
+
+    const currentDrawn = Number(prize.drawn_quantity) || 0;
+    const totalQty = Math.max(1, Number(prize.quantity) || 1);
+    const newDrawn = currentDrawn + 1;
+    const newRemaining = Math.max(0, totalQty - newDrawn);
+    const newStatus = newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED';
+
+    let { error: updateErr } = await client
+      .from('prizes')
+      .update({
+        drawn_quantity: newDrawn,
+        remaining_quantity: newRemaining,
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', prize.id);
+
+    if (updateErr) {
+      const { error: retryErr } = await client
+        .from('prizes')
+        .update({
+          drawn_quantity: newDrawn,
+          remaining_quantity: newRemaining,
+          status: newStatus
+        })
+        .eq('id', prize.id);
+      if (retryErr) {
+        console.warn('Error consuming prize unit in Supabase:', retryErr);
+        return false;
+      }
+    }
+    return true;
+  } catch (err) {
+    console.warn('Error in consumePrizeUnitInSupabase:', err);
+    return false;
+  }
+}
+
+// Helper: Update Claim Status in Supabase with resilient schema fallback & participant reset
 export async function updateClaimInSupabase(
   winnerId: string,
   claimData: {
@@ -383,12 +599,39 @@ export async function updateClaimInSupabase(
     claimNotes?: string;
     forfeitedAt?: string;
     forfeitReason?: string;
+    participantId?: string;
+    prizeId?: string;
+    prizeName?: string;
+    wasForfeited?: boolean;
   }
 ): Promise<boolean> {
   const client = getSupabase();
   if (!client) return false;
 
   try {
+    // 1. Fetch existing winner row BEFORE updating so we reliably detect if previous status was FORFEITED
+    let partId = claimData.participantId;
+    let przId = claimData.prizeId;
+    let przName = claimData.prizeName;
+    let isReactivatingForfeited = Boolean(claimData.wasForfeited);
+
+    const { data: existingRow } = await client
+      .from('winners')
+      .select('claim_status, participant_id, prize_id, prize_name')
+      .eq('winner_id', winnerId)
+      .maybeSingle();
+
+    if (existingRow) {
+      if (!partId && existingRow.participant_id) partId = existingRow.participant_id;
+      if (!przId && existingRow.prize_id) przId = existingRow.prize_id;
+      if (!przName && existingRow.prize_name) przName = existingRow.prize_name;
+      // If winner was previously FORFEITED and is now transitioned to UNCLAIMED or CLAIMED, mark as re-activation!
+      if (claimData.claimStatus !== 'FORFEITED' && existingRow.claim_status === 'FORFEITED') {
+        isReactivatingForfeited = true;
+      }
+    }
+
+    // 2. Prepare winner update payload
     const updatePayload: Record<string, any> = {
       claim_status: claimData.claimStatus,
       claimed_at: claimData.claimedAt || null,
@@ -400,19 +643,86 @@ export async function updateClaimInSupabase(
       claim_notes: claimData.claimNotes || null
     };
 
-    if (claimData.forfeitedAt !== undefined) {
-      updatePayload.forfeited_at = claimData.forfeitedAt;
-    }
-    if (claimData.forfeitReason !== undefined) {
-      updatePayload.forfeit_reason = claimData.forfeitReason;
+    if (claimData.claimStatus === 'UNCLAIMED') {
+      updatePayload.forfeited_at = null;
+      updatePayload.forfeit_reason = null;
+    } else {
+      if (claimData.forfeitedAt !== undefined) {
+        updatePayload.forfeited_at = claimData.forfeitedAt;
+      }
+      if (claimData.forfeitReason !== undefined) {
+        updatePayload.forfeit_reason = claimData.forfeitReason;
+      }
     }
 
-    const { error } = await client.from('winners').update(updatePayload).eq('winner_id', winnerId);
+    let { error } = await client.from('winners').update(updatePayload).eq('winner_id', winnerId);
+
+    // Resilient fallback: If the database table does not yet have forfeited_at or forfeit_reason columns,
+    // retry updating with only standard columns so claim_status is never lost or reverted!
+    if (
+      error &&
+      (error.message?.includes('forfeited_at') ||
+        error.message?.includes('forfeit_reason') ||
+        error.details?.includes('forfeited_at') ||
+        error.details?.includes('forfeit_reason') ||
+        (error as any).code === '42703' ||
+        (error as any).code === 'PGRST204')
+    ) {
+      console.warn('Retrying claim update without optional forfeit columns (schema update recommended):', error.message);
+      const fallbackPayload = { ...updatePayload };
+      delete fallbackPayload.forfeited_at;
+      delete fallbackPayload.forfeit_reason;
+      const retryResult = await client.from('winners').update(fallbackPayload).eq('winner_id', winnerId);
+      error = retryResult.error;
+    }
 
     if (error) throw error;
+
+    // 3. Synchronize Participant status in Supabase
+    if (partId) {
+      try {
+        if (claimData.claimStatus === 'FORFEITED') {
+          await client
+            .from('participants')
+            .update({ winner: 'NO', claimed: 'NO' })
+            .eq('id', partId);
+        } else if (claimData.claimStatus === 'CLAIMED') {
+          await client
+            .from('participants')
+            .update({ winner: 'YES', claimed: 'YES' })
+            .eq('id', partId);
+        } else if (claimData.claimStatus === 'UNCLAIMED') {
+          await client
+            .from('participants')
+            .update({ winner: 'YES', claimed: 'NO' })
+            .eq('id', partId);
+        }
+      } catch (e) {
+        console.warn('Supabase participant status sync notice:', e);
+      }
+    }
+
+    // 4. Inventory adjustments:
+    // A. If prize is forfeited, return 1 unit back to inventory in Supabase (+1 remaining, -1 drawn)
+    if (claimData.claimStatus === 'FORFEITED') {
+      if (przId || przName) {
+        await returnPrizeUnitInSupabase(przId || '', przName).catch((e) =>
+          console.warn('Supabase return prize unit notice:', e)
+        );
+      }
+    }
+    // B. If prize is re-activated back to unclaimed or claimed, consume 1 unit from inventory in Supabase (-1 remaining, +1 drawn)
+    else if (isReactivatingForfeited) {
+      if (przId || przName) {
+        await consumePrizeUnitInSupabase(przId || '', przName).catch((e) =>
+          console.warn('Supabase consume prize unit notice:', e)
+        );
+      }
+    }
+
     return true;
   } catch (err) {
-    console.error('Supabase claim update error:', err);
+    console.error('Supabase claim update error:', formatSupabaseError(err));
     return false;
   }
 }
@@ -717,6 +1027,7 @@ export async function fetchWinnersFromSupabase(): Promise<Winner[] | null> {
       isProxyClaim: Boolean(row.is_proxy_claim),
       proxyName: row.proxy_name || undefined,
       proxyRelationship: row.proxy_relationship || undefined,
+      claimNotes: row.claim_notes || undefined,
       forfeitedAt: row.forfeited_at || undefined,
       forfeitReason: row.forfeit_reason || undefined,
       drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE'),
@@ -1307,7 +1618,13 @@ export function subscribeToRealtimeUpdates({
               isProxyClaim: Boolean(row.is_proxy_claim),
               proxyName: row.proxy_name || undefined,
               proxyRelationship: row.proxy_relationship || undefined,
-              claimNotes: row.claim_notes || undefined
+              claimNotes: row.claim_notes || undefined,
+              forfeitedAt: row.forfeited_at || undefined,
+              forfeitReason: row.forfeit_reason || undefined,
+              drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE'),
+              isPrinted: Boolean(row.is_printed),
+              printedAt: row.printed_at || undefined,
+              printedBy: row.printed_by || undefined
             });
           }
         }
@@ -1344,7 +1661,8 @@ export function subscribeToRealtimeUpdates({
               drawnQuantity: Number(row.drawn_quantity) || 0,
               remainingQuantity: Number(row.remaining_quantity) || 0,
               totalValue: Number(row.total_value) || 0,
-              status: row.status || 'AVAILABLE'
+              status: row.status || 'AVAILABLE',
+              category: row.category || 'MINOR'
             });
           }
         }

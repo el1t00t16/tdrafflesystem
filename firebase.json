@@ -40,6 +40,13 @@
         ]
       }
     ],
+    "redirects": [
+      {
+        "source": "/claim",
+        "destination": "/claims",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
