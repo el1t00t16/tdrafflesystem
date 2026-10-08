@@ -690,14 +690,26 @@ export default function Home() {
     setSelectedPrizeId(prizeId);
     const targetPrize = prizeList.find((p) => p.id === prizeId);
     if (targetPrize) {
-      const maxPerDistrict = Math.floor(targetPrize.remainingQuantity / 5);
-      if (maxPerDistrict >= 1) {
-        setDistributionMode('EQUAL_PER_DISTRICT');
-        setWinnersPerDistrict(targetPrize.remainingQuantity === 15 ? 3 : Math.min(3, maxPerDistrict));
-      } else {
+      if (targetPrize.category === 'GRAND' || targetPrize.remainingQuantity === 1) {
         setDistributionMode('COMBINED_POOL');
+        setCombinedWinnersCount(1);
+        setTargetDistrict('ALL');
+      } else {
+        const maxPerDistrict = Math.floor(targetPrize.remainingQuantity / 5);
+        if (maxPerDistrict >= 1) {
+          setDistributionMode('EQUAL_PER_DISTRICT');
+          setWinnersPerDistrict(targetPrize.remainingQuantity === 15 ? 3 : Math.min(3, maxPerDistrict));
+        } else {
+          setDistributionMode('COMBINED_POOL');
+        }
+        setCombinedWinnersCount(Math.max(1, Math.min(targetPrize.remainingQuantity, 15)));
+        setTargetDistrict('ALL');
       }
-      setCombinedWinnersCount(Math.max(1, Math.min(targetPrize.remainingQuantity, 15)));
+    }
+    // If the previous draw was already revealed and completed, reset draw status so the stage is ready for the new draw
+    if (drawStatus === 'REVEALED') {
+      setDrawStatus('IDLE');
+      setRevealedWinners([]);
     }
   };
 
@@ -1018,12 +1030,8 @@ export default function Home() {
     setIsReviewModalOpen(false);
     setTemporaryDrawResult(null);
 
-    // Automatically select the next available prize if this one was exhausted
-    const remainingPrizes = updatedPrizes;
-    const nextAvailable = remainingPrizes.find((p) => p.remainingQuantity > 0);
-    if (nextAvailable) {
-      handleSelectPrize(nextAvailable.id, remainingPrizes);
-    }
+    // Keep the current prize and confirmed winners displayed proudly on screen
+    // The operator will select the next prize from the selector when ready for the next round.
   };
 
   // Handle Confirmation of Pre-Draw Batch (Advance Draws)

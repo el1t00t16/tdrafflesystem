@@ -113,22 +113,6 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [fullStageActive, drawStatus, carouselMode]);
 
-  // Auto-rotate carousel when winners are revealed
-  useEffect(() => {
-    if (drawStatus !== 'REVEALED' || carouselMode !== 'carousel') return;
-    const timer = setInterval(() => {
-      setCarouselIndex(prev => (prev + 1) % 5);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [drawStatus, carouselMode]);
-
-  // Reset carousel index when a new draw starts
-  useEffect(() => {
-    if (isDrawing) {
-      setCarouselIndex(0);
-    }
-  }, [isDrawing]);
-
   // Group revealed winners by district
   const winnersByDistrict: Record<District, Participant[]> = {
     NORTH: [],
@@ -150,6 +134,61 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     distributionMode === 'EQUAL_PER_DISTRICT'
       ? winnersPerDistrict * 5
       : combinedWinnersCount;
+
+  // Single Winner Hero Spotlight mode:
+  // 1. If 1 winner is revealed -> ALWAYS Hero Spotlight (NEVER cycling carousel!)
+  // 2. If Grand Prize is drawn/revealed -> ALWAYS Hero Spotlight!
+  // 3. If in ready/drawing state with 1 planned winner -> Hero Spotlight!
+  const isSingleWinnerHero =
+    (drawStatus === 'REVEALED' && revealedWinners.length === 1) ||
+    (selectedPrize?.category === 'GRAND' && revealedWinners.length <= 1) ||
+    (drawStatus !== 'REVEALED' && (totalWinnersToDraw === 1 || selectedPrize?.category === 'GRAND')) ||
+    (distributionMode === 'COMBINED_POOL' && totalWinnersToDraw === 1);
+
+  // Auto-rotate carousel when winners are revealed, BUT ONLY for multi-district draws with >= 2 active districts!
+  useEffect(() => {
+    if (drawStatus !== 'REVEALED' || carouselMode !== 'carousel' || isSingleWinnerHero) return;
+
+    // Find all districts that actually have at least 1 winner
+    const activeDistrictIndices = DISTRICT_CONFIG.map((d, idx) => ({
+      idx,
+      hasWinners: (winnersByDistrict[d.id] || []).length > 0
+    }))
+      .filter((item) => item.hasWinners)
+      .map((item) => item.idx);
+
+    // If 1 or 0 districts have winners, NEVER rotate through empty districts!
+    if (activeDistrictIndices.length <= 1) {
+      if (activeDistrictIndices.length === 1) {
+        setCarouselIndex(activeDistrictIndices[0]);
+      }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCarouselIndex((prev) => {
+        const currentPos = activeDistrictIndices.indexOf(prev);
+        if (currentPos === -1) return activeDistrictIndices[0];
+        const nextPos = (currentPos + 1) % activeDistrictIndices.length;
+        return activeDistrictIndices[nextPos];
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [drawStatus, carouselMode, isSingleWinnerHero, revealedWinners]);
+
+  // Reset carousel index when a new draw starts or focus on first winning district
+  useEffect(() => {
+    if (isDrawing) {
+      setCarouselIndex(0);
+    } else if (drawStatus === 'REVEALED' && !isSingleWinnerHero) {
+      const firstActive = DISTRICT_CONFIG.findIndex((d) => (winnersByDistrict[d.id] || []).length > 0);
+      if (firstActive >= 0) {
+        setCarouselIndex(firstActive);
+      }
+    }
+  }, [isDrawing, drawStatus, isSingleWinnerHero, revealedWinners]);
+
   const singleWinnerShufflingName =
     targetDistrict && targetDistrict !== 'ALL'
       ? shufflingNames[targetDistrict]?.name || 'DepEd Participant'
@@ -275,8 +314,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </button>
             )}
 
-            {/* Carousel/Grid Mode Toggle (LED Display) */}
-            {drawStatus === 'REVEALED' && (
+            {/* Carousel/Grid Mode Toggle (LED Display) - Only shown for multi-district draws */}
+            {drawStatus === 'REVEALED' && !isSingleWinnerHero && (
               <div className="inline-flex border border-white/20 rounded-xs overflow-hidden">
                 <button
                   type="button"
@@ -350,8 +389,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </button>
             </div>
 
-            {/* Carousel Mode Toggle (visible when winners revealed) */}
-            {drawStatus === 'REVEALED' && (
+            {/* Carousel Mode Toggle (visible when winners revealed for multi-district draws) */}
+            {drawStatus === 'REVEALED' && !isSingleWinnerHero && (
               <div className="flex items-center gap-2 pt-1">
                 <span className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/50 font-bold">Display:</span>
                 <div className="inline-flex border border-[#1a1a1a]/20 rounded-sm overflow-hidden">
@@ -639,7 +678,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
         {/* Main Stage: Single Winner Hero Spotlight OR 2 + 2 + 1 Multi-District Layout */}
         <main className="main-stage flex-1 p-3 sm:p-6 lg:p-8 bg-[#f8f7f4] flex flex-col justify-center items-center overflow-y-auto">
-          {distributionMode === 'COMBINED_POOL' && totalWinnersToDraw === 1 ? (
+          {isSingleWinnerHero ? (
             /* Single Winner Hero Spotlight Card - Balanced, Proportional & Majestic */
             <div className="w-full max-w-4xl lg:max-w-5xl 2xl:max-w-6xl mx-auto flex flex-col justify-center animate-fade-in my-auto">
               <div
@@ -655,6 +694,13 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 <div className="shrink-0 text-center flex flex-col items-center justify-center pb-2">
                   {drawStatus === 'REVEALED' && revealedWinners.length > 0 ? (
                     <>
+                      {selectedPrize?.category === 'GRAND' && (
+                        <div className="font-mono text-xs sm:text-sm md:text-base font-black uppercase tracking-[0.25em] text-amber-500 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-600/40 px-3 py-1 rounded-full mb-1 flex items-center gap-2 shadow-xs">
+                          <span>👑</span>
+                          <span>GRAND PRIZE WINNER</span>
+                          <span>👑</span>
+                        </div>
+                      )}
                       <div className="font-mono text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-emerald-600 flex items-center gap-2 sm:gap-3 drop-shadow-xs">
                         <span className="text-xl sm:text-3xl lg:text-4xl">🎉</span>
                         <span>CONGRATULATIONS!</span>
