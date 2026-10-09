@@ -290,6 +290,13 @@ export default function Home() {
         return correctDistrict !== p.district ? { ...p, district: correctDistrict } : p;
       });
 
+    // Helper to normalize prize tiers into the 2 supported categories: GRAND and MINOR
+    const normalizePrizeList = (list: Prize[]): Prize[] =>
+      list.map((p) => ({
+        ...p,
+        category: p.category === 'GRAND' ? ('GRAND' as const) : ('MINOR' as const)
+      }));
+
     try {
       const cachedParticipants = localStorage.getItem('td26_profiling_participants');
       if (cachedParticipants) {
@@ -324,7 +331,7 @@ export default function Home() {
       const cachedPrizes = localStorage.getItem('td26_prizes');
       if (cachedPrizes) {
         const parsed = JSON.parse(cachedPrizes);
-        if (Array.isArray(parsed)) setPrizes(parsed);
+        if (Array.isArray(parsed)) setPrizes(normalizePrizeList(parsed));
       }
     } catch (e) {
       console.error(e);
@@ -387,7 +394,7 @@ export default function Home() {
           }
 
           if (Array.isArray(cloudPrizes) && cloudPrizes.length > 0) {
-            setPrizes(cloudPrizes);
+            setPrizes(normalizePrizeList(cloudPrizes));
           }
 
           if (Array.isArray(cloudLogs)) {
@@ -669,10 +676,14 @@ export default function Home() {
     }
   }, [prizes, selectedPrizeId]);
 
-  // Eligible pool calculations - strictly Teaching Personnel only (Non-Teaching excluded from raffle draws)
+  // Eligible pool calculations:
+  // - GRAND prizes: strictly Teaching Personnel only (Non-Teaching excluded)
+  // - MINOR prizes: both Teaching and Non-Teaching Personnel are eligible
   const eligiblePool = useMemo(() => {
-    return participants.filter((p) => isEligibleForDraw(p, settings.allowMultipleWins));
-  }, [participants, settings.allowMultipleWins]);
+    return participants.filter((p) =>
+      isEligibleForDraw(p, settings.allowMultipleWins, currentPrize?.category)
+    );
+  }, [participants, settings.allowMultipleWins, currentPrize?.category]);
 
   const excludedWinnersCount = useMemo(() => {
     return participants.filter((p) => p.winner === 'YES').length;

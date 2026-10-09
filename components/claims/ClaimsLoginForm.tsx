@@ -12,7 +12,7 @@ interface ClaimsLoginFormProps {
 
 const PRESET_STATIONS = [
   'Disbursement Desk 1 (Minor Prizes)',
-  'Disbursement Desk 2 (Major & Grand Prizes)',
+  'Disbursement Desk 2 (Grand Prizes)',
   'Disbursement Desk 3 (Cash & Vouchers)',
   'Disbursement Desk 4 (Fast-Track Express)',
   'Claims Station - Main Gym Stage'

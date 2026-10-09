@@ -190,10 +190,10 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     return participants.filter((p) => p.winner === 'YES').length;
   }, [participants]);
 
-  // Filter eligible participants - strictly Teaching Personnel only (Non-Teaching excluded from raffle draws)
+  // Filter eligible participants (Pre-Draw advance draws for Minor Prizes include both Teaching & Non-Teaching)
   const eligiblePool = useMemo(() => {
-    return participants.filter((p) => isEligibleForDraw(p, allowMultipleWins));
-  }, [participants, allowMultipleWins]);
+    return participants.filter((p) => isEligibleForDraw(p, allowMultipleWins, currentPrize?.category || 'MINOR'));
+  }, [participants, allowMultipleWins, currentPrize?.category]);
 
   // District Eligible Pool Breakdown
   const districtEligibleCounts = useMemo<Record<District, number>>(() => {
@@ -1372,7 +1372,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
             <div className="p-5 space-y-4 text-xs font-mono">
               <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                This prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Major or Grand Prizes on the Live Stage!
+                This prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Grand Prizes on the Live Stage!
               </p>
 
               <div className="grid grid-cols-1 gap-2.5">

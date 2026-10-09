@@ -638,8 +638,8 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                           {p.typeOfPersonnel || p.personnelType}
                         </span>
                         {!isTeachingPersonnel(p) && (
-                          <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[8px] font-mono font-bold px-1.5 py-0.5 uppercase tracking-wider">
-                            Raffle Ineligible
+                          <span className="bg-sky-100 text-sky-900 border border-sky-300 text-[8px] font-mono font-bold px-1.5 py-0.5 uppercase tracking-wider">
+                            Minor Raffle Only
                           </span>
                         )}
                       </div>
@@ -960,7 +960,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
 
             <div className="p-5 space-y-4 text-xs font-mono">
               <p className="text-neutral-700 leading-relaxed">
-                This safely prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Major or Grand Prizes on the Live Stage!
+                This safely prepares your database for entrance gate opening. It ensures that <strong>only teachers who physically arrive and scan their badge at the gate</strong> can win Grand Prizes on the Live Stage!
               </p>
 
               <div className="grid grid-cols-1 gap-2.5">

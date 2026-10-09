@@ -1,4 +1,4 @@
-import { District, EligibilityStatus, Participant, PersonnelType, Prize, SystemSettings, Winner, RaffleLog } from './types';
+import { District, EligibilityStatus, Participant, PersonnelType, Prize, PrizeCategory, SystemSettings, Winner, RaffleLog } from './types';
 
 const FIRST_NAMES_MALE = [
   'Juan', 'Mark', 'Pedro', 'Jose', 'Christian', 'Angelo', 'Paolo', 'Ronaldo',
@@ -104,16 +104,22 @@ export function isTeachingPersonnel(p?: {
  * Requirements:
  * 1. Must be registered ELIGIBLE or attended at gate (attendedAt).
  * 2. Must not have won yet (unless allowMultipleWins is enabled).
- * 3. Must strictly be TEACHING personnel (Non-Teaching personnel are excluded from raffle draws).
+ * 3. Grand Raffle Prizes: Strictly TEACHING personnel only (Non-Teaching excluded).
+ * 4. Minor Raffle Prizes: Both TEACHING and NON-TEACHING personnel are eligible.
  */
 export function isEligibleForDraw(
   p?: Participant | null,
-  allowMultipleWins: boolean = false
+  allowMultipleWins: boolean = false,
+  prizeCategory?: PrizeCategory
 ): boolean {
   if (!p) return false;
   if (p.eligible !== 'ELIGIBLE' && !p.attendedAt) return false;
   if (!allowMultipleWins && p.winner === 'YES') return false;
-  if (!isTeachingPersonnel(p)) return false;
+
+  // Non-Teaching personnel are strictly excluded from Grand Prize draws only
+  if (prizeCategory === 'GRAND' && !isTeachingPersonnel(p)) {
+    return false;
+  }
   return true;
 }
 

@@ -93,18 +93,6 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
             ★ Grand Prize
           </span>
         );
-      case 'MAJOR':
-        return (
-          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30 whitespace-nowrap">
-            ◆ Major Prize
-          </span>
-        );
-      case 'CONSOLATION':
-        return (
-          <span className="px-2 py-0.5 font-black text-[9px] uppercase tracking-wider bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/30 whitespace-nowrap">
-            Consolation
-          </span>
-        );
       case 'MINOR':
       default:
         return (
@@ -362,9 +350,7 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
                   className="w-full bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/30 dark:border-white/15 p-2.5 text-[#1a1a1a] dark:text-white outline-none focus:border-[#FF1E1E] uppercase font-bold text-xs"
                 >
                   <option value="MINOR">Minor Prize</option>
-                  <option value="MAJOR">Major Prize</option>
                   <option value="GRAND">Grand Prize</option>
-                  <option value="CONSOLATION">Consolation Prize</option>
                 </select>
               </div>
 

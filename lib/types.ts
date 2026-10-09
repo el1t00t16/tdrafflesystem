@@ -57,7 +57,7 @@ export interface AttendanceRecord {
 
 export type DrawType = 'LIVE' | 'PRE_DRAW';
 
-export type PrizeCategory = 'GRAND' | 'MAJOR' | 'MINOR' | 'CONSOLATION';
+export type PrizeCategory = 'GRAND' | 'MINOR';
 
 export interface Prize {
   id: string; // e.g. P001
