@@ -75,15 +75,15 @@ The raffle system executes across **Five Defined Operational Phases**:
      - `NORTH`, `EAST`, `WEST`, `SOUTH`, or `PRIVATE`.
      - PSDS entries covering South & East are placed into `EAST`; PSDS covering North & West into `NORTH`.
      - Daycare (ECCD), Private schools, and Local School Board (LSB) teachers are placed into `PRIVATE`.
-   - Distinguishes **Teaching Personnel** (eligible for raffle) from **Non-Teaching Personnel** (profiled for attendance/badges, excluded from draw pool).
+   - Profiles **Teaching Personnel** (eligible for both Minor Prizes and Grand Prizes) and **Non-Teaching Personnel** (eligible for Minor Prizes only; excluded from Grand Prizes).
 3. **Duplicate Resolution:**
    - Run the built-in **Duplicate Resolution Modal**.
    - Review exact and fuzzy matches (teachers registered twice due to maiden/married name variations or re-submissions).
    - Use the **One-Click Merge** tool to combine history into a single clean participant profile.
 4. **Prize Catalog Staging:**
    - Under the **Prizes Manager** tab, stage all sponsored items.
-   - Assign categories: `GRAND`, `MAJOR`, `MINOR`, or `CONSOLATION`.
-   - Set unit cash values and total quantities.
+   - Assign categories: `GRAND` (Grand Prize) or `MINOR` (Minor Prize).
+   - Set reward formats (Physical Item or Cash Value in ₱) and quantities.
    - Designate whether a prize is eligible for the **Pre-Draw Station**.
 5. **Print Badge Sheets:**
    - Open **Printable Badge Sheets** under Gate Attendance.

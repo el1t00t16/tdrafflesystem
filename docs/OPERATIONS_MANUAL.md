@@ -36,7 +36,7 @@ The Municipal Teachers' Day 2026 Raffle System is built to handle over **2,000 p
 | **Stage & Projector Control** | 1x Laptop (Core i5/Ryzen 5+, 8GB RAM, HDMI out) + 1x External LED Wall / Projector | Primary display and draw execution |
 | **Stage Audio Feed** | 3.5mm Aux or Bluetooth connection to Gymnasium Audio Console | Delivers sound ticks, reel sound, and victory fanfare |
 | **Gate Attendance Desks** | 2–4x Laptops or Tablets with webcams or USB 2D Barcode Guns | Entrance check-in of arriving teachers |
-| **Pre-Draw Station** | 1x Laptop located in Committee Secretariat Room | Batch execution of minor consolation prizes |
+| **Pre-Draw Station** | 1x Laptop located in Committee Secretariat Room | Batch execution of Minor Prizes |
 | **Claims & Disbursing Desk** | 1–2x Laptops + 1x Desktop Laser/Inkjet Printer | Winner verification, claim slip printing, physical release |
 | **Local Network / Wi-Fi** | 1x Dedicated 4G/5G Pocket Wi-Fi or Venue Router | Cloud synchronization across all active stations |
 
@@ -44,7 +44,7 @@ The Municipal Teachers' Day 2026 Raffle System is built to handle over **2,000 p
 
 ## 2. Role-Based Access & Security PINs
 
-The system implements security locks to prevent accidental or unauthorized actions during the event.
+The system implements security locks to prevent accidental or unauthorized actions during the event. All views operate on both local intranet (`http://localhost:3000`) and the live cloud platform (`https://teachers-day-raffle-system.web.app`).
 
 | Station / View | Direct URL Path | Default Security PIN | Access Level |
 |---|---|---|---|
@@ -54,7 +54,7 @@ The system implements security locks to prevent accidental or unauthorized actio
 | **Projector Display** | `/` (Display view) | None (Public) | Fullscreen Stage Animation & Draw Review |
 
 > [!TIP]
-> Master Admin can modify the `gateAccessPin` and `adminAccessPin` at any time under **Settings > Security & PIN Configuration**.
+> Master Admin can modify the `gateAccessPin` and `adminAccessPin` at any time under **Settings > Security & PIN Configuration**. The Event Name can also be customized under Settings to reflect dynamically in the system header.
 
 ---
 
@@ -63,13 +63,15 @@ The system implements security locks to prevent accidental or unauthorized actio
 ### 3.1 Importing the Participant Masterlist
 1. Open the **Master Admin Console** (`/admin`).
 2. Navigate to the **Participants** tab.
-3. Click the **📥 Import CSV** button.
-4. Prepare your CSV with standard DepEd columns:
+3. Click the **📥 Import CSV / TSV** button.
+4. Prepare your roster with standard DepEd columns:
    - `Participant ID` (e.g. `TD26-0001` or Profiling ID `W-2026-XXXXX`)
    - `DepEd ID` (Employee Number)
    - `First Name`, `Middle Name`, `Last Name`
    - `District` (`NORTH`, `SOUTH`, `EAST`, `WEST`, `PRIVATE`)
    - `Personnel Type` (`TEACHING` or `NON-TEACHING`)
+     - *Teaching Personnel:* Qualified for all raffle draws (Minor Prizes and Grand Prizes).
+     - *Non-Teaching Personnel:* Included in Minor Raffle draws, but strictly excluded from Grand Prize draws.
    - `School`
    - `Position`
    - `Contact Number`
@@ -93,8 +95,8 @@ The system implements security locks to prevent accidental or unauthorized actio
 3. Fill out the prize specification:
    - **Prize ID:** e.g., `P-001`
    - **Prize Name:** e.g., `₱10,000 Cash Incentive` or `55-inch Smart 4K TV`
-   - **Category:** `GRAND`, `MAJOR`, `MINOR`, or `CONSOLATION`
-   - **Unit Value:** Numeric amount in Philippine Pesos (₱)
+   - **Category:** `GRAND` (Grand Prize) or `MINOR` (Minor Prize)
+   - **Reward Format:** Physical Item / Sponsored Gift or Cash Value (₱)
    - **Total Quantity:** Number of units sponsored
    - **Pre-Draw Eligible:** Check **YES** if this prize should be drawn at the Pre-Draw station.
 4. Click **Save Prize**.
@@ -253,11 +255,12 @@ The Claims Desk verifies winners and releases physical prizes.
 4. Click **Verify & Confirm Disbursement**.
 5. Print the 2-part acknowledgment receipt for the proxy to sign.
 
-#### Scenario C: Prize Forfeiture
-1. If a winner fails to claim within the announced grace period or declines the prize:
-2. Click **Forfeit Prize**.
-3. Select or enter the **Mandatory Forfeiture Justification** (e.g., *Unclaimed after 3 announcements / Ineligible non-teaching entry*).
-4. The item is marked `FORFEITED` and can be re-added to inventory by the Committee Lead.
+#### Scenario C: Prize Forfeiture & Instant Redraw Inventory Restoral
+1. If a winner fails to claim within the announced grace period, declines the prize, or is disqualified:
+2. Click **Mark as Forfeited** in the Claims Desk or Draw Review.
+3. Select or enter the **Mandatory Forfeiture Justification** (e.g., *Unclaimed after 3 announcements / Absent during call*).
+4. The system logs the audit reason, marks the claim as `FORFEITED`, and **automatically returns +1 back to the prize's remaining quantity** (`remainingQuantity += 1`).
+5. The prize is immediately available to be drawn again on the live stage or at the Pre-Draw station.
 
 ---
 

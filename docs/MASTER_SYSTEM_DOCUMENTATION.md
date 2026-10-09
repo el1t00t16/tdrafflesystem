@@ -136,7 +136,7 @@ export interface Prize {
   remainingQuantity: number;   // Available units left
   totalValue: number;          // unitValue * quantity
   status: PrizeStatus;         // 'AVAILABLE' | 'EXHAUSTED'
-  category?: PrizeCategory;    // 'GRAND' | 'MAJOR' | 'MINOR' | 'CONSOLATION'
+  category?: PrizeCategory;    // 'GRAND' | 'MINOR'
   isPreDraw?: boolean;         // Flagged for Secretariat Pre-Draw
 }
 ```
@@ -190,9 +190,12 @@ Teachers are routed into five visual districts using `determineParticipantDistri
    - Standard public elementary and secondary schools route directly to **NORTH**, **EAST**, **WEST**, or **SOUTH**.
 
 ### 5.2 Personnel Type Isolation (Teaching vs. Non-Teaching)
-- **Teaching Personnel:** Classroom teachers, Master Teachers, and Head Teachers who qualify for active raffle drawings.
+- **Teaching Personnel:** Classroom teachers, Master Teachers, and Head Teachers who qualify for active raffle drawings across all prize tiers (both Minor Prizes and Grand Prizes).
 - **Non-Teaching Personnel:** Administrative assistants, bookkeepers, security officers, nurses, and utility staff.
-- **Enforcement:** The `isTeachingPersonnel()` and `isEligibleForDraw()` guards strictly isolate non-teaching staff from draw candidate pools. They can scan at gates and receive attendance badges, but will never appear on the raffle wheel.
+- **Dual-Tier Eligibility Enforcement:**
+  - **Minor Raffle Draws (`category === 'MINOR'`):** Both Teaching and Non-Teaching personnel are fully eligible.
+  - **Grand Raffle Draws (`category === 'GRAND'`):** Non-Teaching personnel are strictly excluded by the `isTeachingPersonnel()` check inside `isEligibleForDraw(p, allowMultipleWins, prizeCategory)`.
+  - Non-Teaching staff receive attendance badges and food stubs at the gates, can participate in minor consolation drawings, but are isolated from Grand Prize live draws.
 
 ### 5.3 Smart 4-Tier Duplicate Resolution Engine
 To handle dual submissions or name variations across district lists, `duplicateChecker.ts` runs 4 detection routines:
@@ -209,7 +212,8 @@ $$\mathcal{O}(n) \text{ time complexity}$$
 - Pools are dynamically filtered at the moment of draw trigger:
   - Must be marked `ELIGIBLE` or `attendedAt != null`.
   - Must have `winner == 'NO'` (unless `allowMultipleWins` is enabled).
-  - Must be verified `TEACHING` personnel.
+  - For `GRAND` prizes: strictly verified `TEACHING` personnel only.
+  - For `MINOR` prizes: open to both `TEACHING` and `NON-TEACHING` personnel.
 
 ### 5.5 Two-Stage Confirmation & Zero-Side-Effect Redraws
 When a draw is executed on stage, results remain in a **provisional state**:
@@ -250,13 +254,19 @@ When a draw is executed on stage, results remain in a **provisional state**:
   - Automatically notifies the Claims Desk in real time.
 
 ### 6.4 Real-Time Claims & Disbursement Workstation (`/claims`)
-- **Direct Route:** `http://localhost:3000/claims` (PIN: `2026`)
+- **Direct Route:** `http://localhost:3000/claims` or `https://teachers-day-raffle-system.web.app/claims` (PIN: `2026`)
+- **Preset Disbursement Desks:**
+  - `Disbursement Desk 1 (Minor Prizes)`
+  - `Disbursement Desk 2 (Grand Prizes)`
+  - `Disbursement Desk 3 (Cash & Vouchers)`
+  - `Disbursement Desk 4 (Fast-Track Express)`
+  - `Claims Station - Main Gym Stage`
 - **Live Notifications:** Alerts chime instantly when new winners are committed on stage.
 - **Search & Verification:** Look up winners by QR stub scan, surname, or DepEd ID.
 - **Claim Handling:**
   - *Direct Claim:* Validates DepEd ID or Government ID.
   - *Authorized Proxy:* Logs proxy full name, relationship, and authorization notes.
-  - *Forfeiture:* Marks prizes forfeited with mandatory audit justifications.
+  - *Forfeiture & Automated Inventory Restoral:* Marks prizes forfeited with mandatory audit justifications. Marking a claim as forfeited automatically restores `+1` back to the prize's `remainingQuantity` in both local and Supabase databases, enabling instant redraw on stage or in pre-draw.
 - **Signed Claim Slips:** Prints 2-part acknowledgment receipts for official physical handover.
 
 ### 6.5 Automated Print Queue Station (`/admin` -> Print Queue)

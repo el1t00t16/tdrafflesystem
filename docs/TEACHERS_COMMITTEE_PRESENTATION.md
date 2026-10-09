@@ -152,7 +152,7 @@ The Municipal Teachers' Day 2026 Raffle System is a custom-engineered, transpare
 Instead of clustering 10 people around one laptop, the system splits operations into synchronized, role-based workstations:
 1. **Entrance Gates:** Fast scanning of teacher badges (no queue bottlenecks).
 2. **Audio-Visual Stage:** Dedicated to high-definition visuals on the LED wall.
-3. **Pre-Draw Desk:** Pre-draws dozens of minor consolation prizes in advance so the stage program finishes on schedule.
+3. **Pre-Draw Desk:** Pre-draws dozens of Minor Prizes in advance so the stage program finishes on schedule.
 4. **Claims Desk:** Validates IDs and distributes physical prizes in an orderly queue.
 5. **Print Station:** Prints official verification stubs and releasing receipts.
 
@@ -186,18 +186,19 @@ Instead of clustering 10 people around one laptop, the system splits operations 
    │ Problem: Drawing 300 minor umbrella/cash prizes on stage      │
    │          would take 4+ hours and exhaust the audience.        │
    ├───────────────────────────────────────────────────────────────┤
-   │ Solution: The Pre-Draw Station draws minor consolation        │
-   │           prizes under official committee supervision         │
-   │           in audited batches with full printout verification. │
+   │ Solution: The Pre-Draw Station draws Minor Prizes under       │
+   │           official committee supervision in audited batches   │
+   │           with full printout verification.                    │
    └───────────────────────────────────────────────────────────────┘
 ```
 
 #### How It Works
-- Filter prizes by category (`MINOR` / `CONSOLATION`).
-- Select batch size (e.g., 20 electric fans or 50 cash envelopes).
+- Select Minor Prizes (`MINOR`) for rapid drawing.
+- Both Teaching and Non-Teaching personnel are eligible.
+- Select batch size (e.g., 20 electric fans or 50 grocery packs).
 - Run high-speed 3-second animated shuffle reel.
 - Print certified batch list immediately for posting on district bulletin boards and direct claim routing.
-- Keeps the live stage reserved for Major and Grand Prizes!
+- Keeps the live stage free for feature draws and Grand Prizes!
 
 ---
 
@@ -371,9 +372,9 @@ The committee is never locked in. If high-speed cloud infrastructure is active, 
 
 #### Event Day Execution Timeline
 - **06:30 AM – 08:00 AM:** Gate Registration & QR Scanning at Malungon Gym entrances.
-- **08:00 AM – 09:30 AM:** Pre-Draw Station processes minor consolation prizes in the committee secretariat room.
+- **08:00 AM – 09:30 AM:** Pre-Draw Station processes Minor Prizes in the committee secretariat room.
 - **09:30 AM – 11:30 AM:** Morning Program & Minor Prize batch announcements.
-- **01:00 PM – 03:30 PM:** Live Stage Raffle Draws for Major and Grand Prizes on the LED Wall.
+- **01:00 PM – 03:30 PM:** Live Stage Raffle Draws for Minor and Grand Prizes on the LED Wall.
 - **03:30 PM – 05:00 PM:** Claims Desk prize disbursements, sign-offs, and final audit report printing.
 
 ---
@@ -381,15 +382,21 @@ The committee is never locked in. If high-speed cloud infrastructure is active, 
 ### Slide 16: Frequently Asked Questions & Open Forum
 
 **Q1: Can someone win twice?**  
-*Answer:* No. By default, once a teacher wins, their profile is marked as a winner and automatically excluded from all succeeding draws. If the committee chooses to allow multiple wins for minor prizes, a simple switch in Settings can enable it.
+*Answer:* No. By default, once a participant wins, their profile is marked as a winner and automatically excluded from all succeeding draws. If the committee chooses to allow multiple wins, a simple toggle in Admin Settings can enable it.
 
 **Q2: Are Non-Teaching personnel eligible?**  
-*Answer:* The system automatically profiles both Teaching and Non-Teaching personnel. Under the default DepEd Teachers' Day rules, only Teaching personnel enter the raffle pool. Non-Teaching personnel receive badges and attendance credit, but are safely filtered out of the raffle draw.
+*Answer:* Yes, for Minor Prizes! Per the Teachers Committee policy update, Non-Teaching personnel (utility, clerks, security, nurses, bookkeepers, etc.) are included and fully eligible for all Minor Raffle Prizes. However, they remain strictly excluded from Grand Prize draws.
 
-**Q3: Can a teacher send a representative to claim their prize?**  
+**Q3: What are the official prize categories?**  
+*Answer:* The committee streamlined prize categories to two distinct tiers: **Minor Prizes** (`MINOR`) for general appliances and gift items, and **Grand Prizes** (`GRAND`) for the major stage jackpots.
+
+**Q4: What happens if a prize is forfeited?**  
+*Answer:* If a winner is absent or disqualifies, clicking "Mark as Forfeited" at the Claims Desk immediately adds +1 back to the available inventory, allowing the prize to be redrawn without delay.
+
+**Q5: Can a teacher send a representative to claim their prize?**  
 *Answer:* Yes. The Claims Station has an official **Proxy Claim Mode** that records the proxy's name, relationship, and authorization note for audit compliance.
 
-**Q4: What if an unauthorized person tries to access the admin controls?**  
+**Q6: What if an unauthorized person tries to access admin controls?**  
 *Answer:* All critical stations (Master Admin, Gate Attendance, and Claims Workstation) are locked with secure PIN authentication (default: `2026`).
 
 ---

@@ -32,9 +32,11 @@ Comprehensive documentation has been prepared specifically for the **Municipal T
 - **Multi-Station Sync (Supabase Cloud + Offline Resilience):**
   - **Gate Attendance (`/attendance`):** High-speed 2D barcode scanner gun and webcam QR check-in.
   - **Live Stage Projector (`/`):** Full-screen projector mode with audio ticks, countdown, and canvas confetti.
-  - **Pre-Draw Station (`/admin`):** Batch drawing engine for minor consolation prizes.
-  - **Real-Time Claims Desk (`/claims`):** Winner stub verification, proxy claim handling, and signed receipt generation.
+  - **Pre-Draw Station (`/admin`):** Rapid batch drawing engine for Minor Prizes.
+  - **Real-Time Claims Desk (`/claims`):** Winner stub verification, proxy claim handling, signed receipt generation, and automatic inventory restoral upon forfeiture.
   - **Print Queue Station:** Instant printing of official verification stubs and batch sheets.
+
+> **Live Deployment:** Accessible anytime at [teachers-day-raffle-system.web.app](https://teachers-day-raffle-system.web.app)
 
 ---
 

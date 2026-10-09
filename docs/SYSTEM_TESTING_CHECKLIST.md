@@ -107,7 +107,7 @@ flowchart TD
   - Verify all 5 district buckets receive proper assignments: `NORTH`, `EAST`, `WEST`, `SOUTH`, and `PRIVATE`.
   - Confirm PSDS South & East routes to `EAST`; PSDS North & West routes to `NORTH`.
   - Confirm Private Schools, Daycare (ECCD), and Local School Board (LSB) route to `PRIVATE`.
-  - Test `isTeachingPersonnel()` filter: ensure **Non-Teaching** staff are profiled for attendance/badges but strictly tagged as **INELIGIBLE** for the raffle draw.
+  - Test `isTeachingPersonnel()` filter: ensure **Non-Teaching** staff are included in Minor Raffle draws, but strictly excluded from Grand Prize draws.
 - [ ] **2.3 Duplicate Resolution Engine**
   - Open **Duplicate Resolution Modal** (`/admin`).
   - Test Exact DepEd ID Match detection.
@@ -116,9 +116,9 @@ flowchart TD
   - Test Contact Number Match.
   - Execute **One-Click Merge**: verify secondary record is discarded while historical attendance and audit logs are safely linked to the primary profile.
 - [ ] **2.4 Prize Catalog Staging**
-  - Create sample prizes across categories: `GRAND`, `MAJOR`, `MINOR`, and `CONSOLATION`.
-  - Assign unit cash values (₱) and quantities.
-  - Verify flag `isPreDraw = true` for minor consolation items.
+  - Create sample prizes across categories: `GRAND` (Grand Prize) and `MINOR` (Minor Prize).
+  - Assign reward formats (Physical Item vs Cash Value ₱) and quantities.
+  - Verify flag `isPreDraw = true` for Pre-Draw items.
 - [ ] **2.5 Attendee QR Badge Sheet Printing**
   - Open **Printable Badges** under Attendance module.
   - Filter by district and school.
