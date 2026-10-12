@@ -43,16 +43,10 @@ const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?
 
 const DISTRICTS: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
-// Helper to parse numeric peso value from prize name if unitValue is 0
+// Helper to safely get numeric peso value only for cash prizes (unitValue > 0)
 function getPrizeDisplayValue(prize: Prize | null): number {
   if (!prize) return 0;
-  if (prize.unitValue > 0) return prize.unitValue;
-  const match = prize.name.replace(/,/g, '').match(/\d+(\.\d+)?/);
-  if (match) {
-    const val = parseFloat(match[0]);
-    if (!isNaN(val) && val > 0) return val;
-  }
-  return 0;
+  return prize.unitValue > 0 ? prize.unitValue : 0;
 }
 
 interface PreDrawStationProps {
