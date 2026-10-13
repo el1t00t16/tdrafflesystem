@@ -46,6 +46,11 @@ export const PrintableBadgeSheets: React.FC<PrintableBadgeSheetsProps> = ({
 
   // QR code cache & batch generation
   const [qrCache, setQrCache] = useState<Record<string, string>>({});
+  const qrCacheRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    qrCacheRef.current = qrCache;
+  }, [qrCache]);
+
   const [isGeneratingAll, setIsGeneratingAll] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<{ current: number; total: number } | null>(null);
 
@@ -84,7 +89,7 @@ export const PrintableBadgeSheets: React.FC<PrintableBadgeSheetsProps> = ({
 
   // Generate QR codes for a list of participants
   const generateQrsForSlice = useCallback(async (list: Participant[]) => {
-    const missing = list.filter((p) => !qrCache[p.id]);
+    const missing = list.filter((p) => !qrCacheRef.current[p.id]);
     if (missing.length === 0) return;
 
     const newEntries: Record<string, string> = {};
@@ -106,9 +111,13 @@ export const PrintableBadgeSheets: React.FC<PrintableBadgeSheetsProps> = ({
     }
 
     if (Object.keys(newEntries).length > 0) {
-      setQrCache((prev) => ({ ...prev, ...newEntries }));
+      setQrCache((prev) => {
+        const updated = { ...prev, ...newEntries };
+        qrCacheRef.current = updated;
+        return updated;
+      });
     }
-  }, [qrCache]);
+  }, []);
 
   // Pre-generate QR codes for current page immediately
   useEffect(() => {

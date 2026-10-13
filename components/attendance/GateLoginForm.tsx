@@ -59,14 +59,14 @@ export const GateLoginForm: React.FC<GateLoginFormProps> = ({
       console.error(e);
     }
 
+    const activeGatePin = storedGatePin || (expectedPin || '').trim() || '2026';
+    const activeAdminPin = storedAdminPin;
     const isPinValid =
-      entered === '2026' ||
-      entered === (expectedPin || '').trim() ||
-      (storedGatePin !== '' && entered === storedGatePin) ||
-      (storedAdminPin !== '' && entered === storedAdminPin);
+      entered === activeGatePin ||
+      (activeAdminPin !== '' && entered === activeAdminPin);
 
     if (!isPinValid) {
-      setErrorMsg('Incorrect Station PIN. Default passcode is 2026.');
+      setErrorMsg('Incorrect Station PIN.');
       soundSynthesizer.playError();
       return;
     }

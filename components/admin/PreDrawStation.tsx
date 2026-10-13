@@ -1309,7 +1309,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
             {masterlistScope === 'PRE_DRAW_ONLY' ? 'OFFICIAL PRE-DRAW WINNERS MASTERLIST' : 'OFFICIAL WINNERS MASTERLIST (ALL BATCHES)'}
           </h1>
           <p className="text-xs uppercase font-mono font-bold mt-0.5 text-black">
-            Municipal Teachers' Day 2026 Celebration • Raffle Committee Records
+            Municipal Teachers&apos; Day 2026 Celebration • Raffle Committee Records
           </p>
           <p className="text-[10px] text-neutral-600 font-mono mt-1">
             Generated on: {new Date().toLocaleString()} • Total Records: {effectiveMasterlistRecords.length}

@@ -953,9 +953,21 @@ export default function Home() {
     const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
     const fullTimestamp = `${dateStr} ${timeStr}`;
 
-    const newWinnerRecords: Winner[] = temporaryDrawResult.winners.map((w, idx) => ({
-      winnerId: `WN-${String(winners.length + idx + 1).padStart(4, '0')}`,
-      participantId: w.id,
+    const maxExistingNum = winners.reduce((max, w) => {
+      const num = parseInt(String(w.winnerId || '').replace(/\D/g, ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
+
+    const newWinnerRecords: Winner[] = temporaryDrawResult.winners.map((w, idx) => {
+      let nextNum = Math.max(winners.length, maxExistingNum) + idx + 1;
+      let candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
+      while (winners.some((existing) => existing.winnerId === candidateId)) {
+        nextNum++;
+        candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
+      }
+      return {
+        winnerId: candidateId,
+        participantId: w.id,
       depedId: w.depedId,
       contactNumber: w.contactNumber,
       email: w.email,
@@ -974,7 +986,8 @@ export default function Home() {
       time: timeStr,
       claimStatus: 'UNCLAIMED',
       isPrinted: false
-    }));
+    };
+  });
 
     // Update Participants winner status = YES
     const winnerIdSet = new Set(temporaryDrawResult.winners.map((w) => w.id));
@@ -1063,9 +1076,21 @@ export default function Home() {
     const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
     const fullTimestamp = `${dateStr} ${timeStr}`;
 
-    const newWinnerRecords: Winner[] = batch.winners.map((w, idx) => ({
-      winnerId: `WN-${String(winners.length + idx + 1).padStart(4, '0')}`,
-      participantId: w.id,
+    const maxExistingNum = winners.reduce((max, w) => {
+      const num = parseInt(String(w.winnerId || '').replace(/\D/g, ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
+
+    const newWinnerRecords: Winner[] = batch.winners.map((w, idx) => {
+      let nextNum = Math.max(winners.length, maxExistingNum) + idx + 1;
+      let candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
+      while (winners.some((existing) => existing.winnerId === candidateId)) {
+        nextNum++;
+        candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
+      }
+      return {
+        winnerId: candidateId,
+        participantId: w.id,
       depedId: w.depedId,
       contactNumber: w.contactNumber,
       email: w.email,
@@ -1085,7 +1110,8 @@ export default function Home() {
       claimStatus: 'UNCLAIMED',
       drawType: 'PRE_DRAW',
       isPrinted: false
-    }));
+    };
+  });
 
     // Update Participants winner status = YES so they are excluded from future draws
     const winnerIdSet = new Set(batch.winners.map((w) => w.id));

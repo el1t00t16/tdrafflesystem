@@ -181,6 +181,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       }
       if (typeFilter !== 'ALL' && p.personnelType !== typeFilter) return false;
       if (eligibleFilter !== 'ALL' && p.eligible !== eligibleFilter) return false;
+      if (winnerFilter !== 'ALL' && p.winner !== winnerFilter) return false;
       if (showDuplicatesOnly && !duplicateParticipantIdMap.has(p.id)) return false;
       if (search.trim()) {
         const q = search.toLowerCase();

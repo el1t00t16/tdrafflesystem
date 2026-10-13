@@ -31,13 +31,11 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({
       console.error(e);
     }
 
-    const isPinValid =
-      entered === '2026' ||
-      entered === (expectedPin || '').trim() ||
-      (storedPin !== '' && entered === storedPin);
+    const activeAdminPin = storedPin || (expectedPin || '').trim() || '2026';
+    const isPinValid = entered === activeAdminPin;
 
     if (!isPinValid) {
-      setErrorMsg('Incorrect Admin Master Passcode. Default passcode is 2026.');
+      setErrorMsg('Incorrect Admin Master Passcode.');
       soundSynthesizer.playError();
       return;
     }

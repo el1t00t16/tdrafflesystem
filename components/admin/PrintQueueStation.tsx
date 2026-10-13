@@ -112,22 +112,6 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
     return Boolean(expandedBatches[batchNumber]);
   };
 
-  const handleExpandAll = () => {
-    const next: Record<string, boolean> = {};
-    filteredQueueBatches.forEach((b) => {
-      next[b.drawNumber] = true;
-    });
-    setExpandedBatches(next);
-  };
-
-  const handleCollapseAll = () => {
-    const next: Record<string, boolean> = {};
-    filteredQueueBatches.forEach((b) => {
-      next[b.drawNumber] = false;
-    });
-    setExpandedBatches(next);
-  };
-
   // Filtered batches in active queue
   const filteredQueueBatches = useMemo(() => {
     return batchGroups
@@ -152,6 +136,22 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
       })
       .filter((g): g is PrintBatchGroup => g !== null && g.pendingCount > 0);
   }, [batchGroups, searchFilter]);
+
+  const handleExpandAll = () => {
+    const next: Record<string, boolean> = {};
+    filteredQueueBatches.forEach((b) => {
+      next[b.drawNumber] = true;
+    });
+    setExpandedBatches(next);
+  };
+
+  const handleCollapseAll = () => {
+    const next: Record<string, boolean> = {};
+    filteredQueueBatches.forEach((b) => {
+      next[b.drawNumber] = false;
+    });
+    setExpandedBatches(next);
+  };
 
   // Filtered winners for Print History
   const historyWinners = useMemo(() => {
