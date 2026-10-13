@@ -952,11 +952,10 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === '__CUSTOM__') {
-                      const custom = window.prompt('Enter custom station name / location:', stationId);
-                      if (custom && custom.trim()) {
-                        setStationId(custom.trim());
-                        onStationChange?.(custom.trim());
-                      }
+                      const custom = window.prompt('Enter custom station name / location:', stationId || 'Gate 1 - Sunken Arena');
+                      const targetStation = (custom && custom.trim()) ? custom.trim() : (stationId || 'Gate 1 - Sunken Arena');
+                      setStationId(targetStation);
+                      onStationChange?.(targetStation);
                       return;
                     }
                     setStationId(val);

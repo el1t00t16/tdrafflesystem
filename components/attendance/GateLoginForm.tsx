@@ -17,8 +17,8 @@ export const GateLoginForm: React.FC<GateLoginFormProps> = ({
   onLoginSuccess,
   expectedPin = '2026'
 }) => {
-  const [stationId, setStationId] = useState<string>(PRESET_STATIONS[0]);
-  const [customStation, setCustomStation] = useState<string>('');
+  const [stationId, setStationId] = useState<string>(PRESET_STATIONS[0] || 'Gate 1 - Sunken Arena');
+  const [customStation, setCustomStation] = useState<string>('Gate 1 - Sunken Arena');
   const [isCustomStation, setIsCustomStation] = useState<boolean>(false);
   const [officerName, setOfficerName] = useState<string>('');
   const [pin, setPin] = useState<string>('');
@@ -30,7 +30,9 @@ export const GateLoginForm: React.FC<GateLoginFormProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
-    const activeStation = isCustomStation ? customStation.trim() : stationId.trim();
+    const activeStation = isCustomStation
+      ? (customStation.trim() || 'Gate 1 - Sunken Arena')
+      : (stationId.trim() || 'Gate 1 - Sunken Arena');
     if (!activeStation) {
       setErrorMsg('Please specify your station name or location.');
       soundSynthesizer.playError();
@@ -143,7 +145,7 @@ export const GateLoginForm: React.FC<GateLoginFormProps> = ({
               <input
                 type="text"
                 required
-                placeholder="e.g. Backdoor Entrance Desk"
+                placeholder="Gate 1 - Sunken Arena"
                 value={customStation}
                 onChange={(e) => setCustomStation(e.target.value)}
                 className="w-full bg-[#18181b] border border-white/15 p-2.5 text-white font-bold outline-none focus:border-[#ff6a00]"

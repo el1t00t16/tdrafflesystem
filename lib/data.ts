@@ -303,9 +303,5 @@ export const INITIAL_WINNERS: Winner[] = [];
 export const INITIAL_LOGS: RaffleLog[] = [];
 
 export const PRESET_GATE_STATIONS: string[] = [
-  'Gate 1 - Main Entrance (Gymnasium)',
-  'Gate 2 - North Entrance (Elementary Wing)',
-  'Gate 3 - South Entrance (High School Wing)',
-  'Gate 4 - VIP & Special Guests Desk',
-  'Station 5 - Fast-Track Scanner Desk'
+  'Gate 1 - Sunken Arena'
 ];
