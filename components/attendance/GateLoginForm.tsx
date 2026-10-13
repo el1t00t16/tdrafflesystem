@@ -4,19 +4,14 @@ import React, { useState } from 'react';
 import { ShieldCheck, Lock, QrCode, ArrowRight, Eye, EyeOff, AlertCircle, Building2, User } from 'lucide-react';
 import { GateSession } from '../../lib/types';
 import { soundSynthesizer } from '../../lib/sound';
+import { PRESET_GATE_STATIONS } from '../../lib/data';
 
 interface GateLoginFormProps {
   onLoginSuccess: (session: GateSession) => void;
   expectedPin?: string;
 }
 
-const PRESET_STATIONS = [
-  'Gate 1 - Main Entrance (Gymnasium)',
-  'Gate 2 - North Entrance (Elementary Wing)',
-  'Gate 3 - South Entrance (High School Wing)',
-  'Gate 4 - VIP & Special Guests Desk',
-  'Station 5 - Fast-Track Scanner Desk'
-];
+const PRESET_STATIONS = PRESET_GATE_STATIONS;
 
 export const GateLoginForm: React.FC<GateLoginFormProps> = ({
   onLoginSuccess,

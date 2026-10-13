@@ -36,6 +36,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Participant, District, AttendanceRecord } from '../../lib/types';
 import { soundSynthesizer } from '../../lib/sound';
 import { PrintableBadgeSheets } from './PrintableBadgeSheets';
+import { PRESET_GATE_STATIONS } from '../../lib/data';
 import {
   isSupabaseConfigured,
   SUPABASE_SQL_SCHEMA,
@@ -59,6 +60,8 @@ interface AttendanceScannerModuleProps {
   initialStationId?: string;
   initialOfficerName?: string;
   isStandaloneGate?: boolean;
+  onStationChange?: (newStation: string) => void;
+  onOfficerChange?: (newOfficer: string) => void;
 }
 
 export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = ({
@@ -70,13 +73,15 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   onClearStationData,
   initialStationId,
   initialOfficerName,
-  isStandaloneGate = false
+  isStandaloneGate = false,
+  onStationChange,
+  onOfficerChange
 }) => {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'camera' | 'gun' | 'manual' | 'badges' | 'logs' | 'supabase'>('camera');
 
   // Scanner Station settings
-  const [stationId, setStationId] = useState<string>(() => initialStationId || 'Station 1 - Main Entrance');
+  const [stationId, setStationId] = useState<string>(() => initialStationId || PRESET_GATE_STATIONS[0]);
   const [officerName, setOfficerName] = useState<string>(() => initialOfficerName || 'Attendance Desk');
   const [audioFeedback, setAudioFeedback] = useState<boolean>(true);
 
@@ -942,39 +947,54 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
                 <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Station:</span>
-                {isStandaloneGate ? (
-                  <span className="text-emerald-700 dark:text-[#22c55e] font-mono font-bold text-xs max-w-[200px] truncate" title={stationId}>
-                    {stationId}
-                  </span>
-                ) : (
-                  <select
-                    value={stationId}
-                    onChange={(e) => setStationId(e.target.value)}
-                    className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value="Station 1 - Main Entrance" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 1 - Main Entrance</option>
-                    <option value="Station 2 - North Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 2 - North Gate</option>
-                    <option value="Station 3 - South Gate" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 3 - South Gate</option>
-                    <option value="Station 4 - VIP / Fast Track" className="bg-white text-black dark:bg-[#18181b] dark:text-white">Station 4 - VIP / Fast Track</option>
-                  </select>
-                )}
+                <select
+                  value={stationId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '__CUSTOM__') {
+                      const custom = window.prompt('Enter custom station name / location:', stationId);
+                      if (custom && custom.trim()) {
+                        setStationId(custom.trim());
+                        onStationChange?.(custom.trim());
+                      }
+                      return;
+                    }
+                    setStationId(val);
+                    onStationChange?.(val);
+                  }}
+                  className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none cursor-pointer font-bold max-w-[220px] sm:max-w-[260px] truncate"
+                  title={stationId}
+                >
+                  {!PRESET_GATE_STATIONS.includes(stationId) && (
+                    <option value={stationId} className="bg-white text-black dark:bg-[#18181b] dark:text-white font-bold">
+                      {stationId} (Custom)
+                    </option>
+                  )}
+                  {PRESET_GATE_STATIONS.map((st) => (
+                    <option key={st} value={st} className="bg-white text-black dark:bg-[#18181b] dark:text-white">
+                      {st}
+                    </option>
+                  ))}
+                  <option value="__CUSTOM__" className="bg-white text-black dark:bg-[#18181b] dark:text-white text-neutral-500 font-semibold">
+                    + Custom Station...
+                  </option>
+                </select>
               </div>
 
               <div className="flex items-center gap-2 bg-[#f8f7f4] dark:bg-[#27272a] px-2.5 py-1.5 rounded-sm border border-[#1a1a1a]/20 dark:border-[#3f3f46] text-xs">
                 <span className="text-neutral-600 dark:text-[#a1a1aa] text-[11px] uppercase tracking-wider font-mono">Officer:</span>
-                {isStandaloneGate ? (
-                  <span className="text-[#1a1a1a] dark:text-white font-mono font-bold text-xs max-w-[140px] truncate" title={officerName}>
-                    {officerName}
-                  </span>
-                ) : (
-                  <input
-                    type="text"
-                    value={officerName}
-                    onChange={(e) => setOfficerName(e.target.value)}
-                    placeholder="Officer Name"
-                    className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none w-28"
-                  />
-                )}
+                <input
+                  type="text"
+                  value={officerName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setOfficerName(val);
+                    onOfficerChange?.(val);
+                  }}
+                  placeholder="Officer Name"
+                  className="bg-transparent text-[#1a1a1a] dark:text-white font-mono text-xs focus:outline-none w-28 sm:w-36 font-bold"
+                  title="Click to edit scanner officer / volunteer name"
+                />
               </div>
 
               <button

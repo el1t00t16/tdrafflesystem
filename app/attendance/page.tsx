@@ -251,6 +251,32 @@ export default function AttendancePage() {
     setGateSession(null);
   };
 
+  const handleStationChange = (newStation: string) => {
+    if (gateSession) {
+      const updated: GateSession = { ...gateSession, stationId: newStation };
+      setGateSession(updated);
+      try {
+        localStorage.setItem('td26_gate_session', JSON.stringify(updated));
+        sessionStorage.setItem('td26_gate_session', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleOfficerChange = (newOfficer: string) => {
+    if (gateSession) {
+      const updated: GateSession = { ...gateSession, officerName: newOfficer };
+      setGateSession(updated);
+      try {
+        localStorage.setItem('td26_gate_session', JSON.stringify(updated));
+        sessionStorage.setItem('td26_gate_session', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   // While validating stored session
   if (!sessionChecked) {
     return (
@@ -404,6 +430,8 @@ export default function AttendancePage() {
           initialStationId={gateSession.stationId}
           initialOfficerName={gateSession.officerName}
           isStandaloneGate={true}
+          onStationChange={handleStationChange}
+          onOfficerChange={handleOfficerChange}
         />
       </main>
 
