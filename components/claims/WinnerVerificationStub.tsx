@@ -15,6 +15,8 @@ interface WinnerVerificationStubProps {
   isModal?: boolean;
   isBatchChild?: boolean;
   layoutFormat?: StubLayoutFormat;
+  positionProp?: PrintPosition;
+  isGrid?: boolean;
 }
 
 export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
@@ -23,15 +25,23 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
   onMarkPrinted,
   isModal = false,
   isBatchChild = false,
-  layoutFormat = 'HALF_LANDSCAPE'
+  layoutFormat = 'HALF_LANDSCAPE',
+  positionProp,
+  isGrid = false
 }) => {
   const [activeFormat, setActiveFormat] = useState<StubLayoutFormat>(layoutFormat);
-  const [printPosition, setPrintPosition] = useState<PrintPosition>('UPPER_LEFT');
+  const [printPosition, setPrintPosition] = useState<PrintPosition>(positionProp || 'UPPER_LEFT');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
   useEffect(() => {
     setActiveFormat(layoutFormat);
   }, [layoutFormat]);
+
+  useEffect(() => {
+    if (positionProp) {
+      setPrintPosition(positionProp);
+    }
+  }, [positionProp]);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,11 +131,11 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       )}
       <div
         className={`bg-white text-black border-2 border-black flex flex-col justify-between text-[10px] leading-tight font-sans relative overflow-hidden select-none box-border ${
-          isBatchChild
+          isBatchChild && isGrid
             ? 'w-full h-full max-w-[10.5cm] max-h-[6.85cm] p-1.5'
             : 'w-[11cm] max-w-[11cm] h-[7cm] max-h-[7cm] min-h-[7cm] p-2 winner-stub-landscape-printable'
         } print:border-black print:border-solid print:m-0`}
-        style={isBatchChild ? { width: '100%', height: '100%', maxWidth: '10.5cm', maxHeight: '6.85cm' } : { width: '11cm', height: '7cm' }}
+        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '10.5cm', maxHeight: '6.85cm' } : { width: '11cm', height: '7cm' }}
       >
         {/* Top Government & Event Header */}
         <div className="border-b-2 border-black pb-1 mb-1 flex items-center justify-between gap-1.5 shrink-0 bg-white">
