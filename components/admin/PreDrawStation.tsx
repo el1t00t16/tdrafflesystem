@@ -12,6 +12,7 @@ import {
 } from '../../lib/types';
 import { isEligibleForDraw } from '../../lib/data';
 import { soundSynthesizer } from '../../lib/sound';
+import { downloadCsvFile } from '../../lib/utils';
 import {
   Sparkles,
   Users,
@@ -429,54 +430,66 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     );
   }, [activeMasterlistWinners, searchFilter]);
 
-  // Export CSV
+  // Effective list for both CSV Export and Print Sheet (respects search filter if typed)
+  const effectiveMasterlistRecords = useMemo(() => {
+    return searchFilter.trim() ? filteredHistory : activeMasterlistWinners;
+  }, [searchFilter, filteredHistory, activeMasterlistWinners]);
+
+  // Export CSV (clean Blob download with UTF-8 BOM)
   const exportPreDrawCSV = () => {
+    if (effectiveMasterlistRecords.length === 0) {
+      alert('No winner records available to export.');
+      return;
+    }
+
     const headers = [
-      'Batch #',
+      'Batch Number',
       'Winner ID',
       'Profiling ID',
-      'Name',
+      'Winner Name',
       'District',
-      'School',
+      'School / Station',
       'Position',
       'Prize Won',
-      'Unit Value',
-      'Date & Time',
+      'Unit Value (PHP)',
+      'Date',
+      'Time',
       'Claim Status'
     ];
 
-    const rows = activeMasterlistWinners.map((w) => [
-      w.drawNumber,
-      w.winnerId,
-      w.participantId || 'N/A',
-      `"${w.name}"`,
-      w.district,
-      `"${w.school}"`,
-      `"${w.position}"`,
-      `"${w.prizeName}"`,
-      w.unitValue,
-      `${w.date} ${w.time}`,
-      w.claimStatus
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = effectiveMasterlistRecords.map((w) => [
+      escapeCsv(w.drawNumber),
+      escapeCsv(w.winnerId),
+      escapeCsv(w.participantId || 'N/A'),
+      escapeCsv(w.name),
+      escapeCsv(w.district),
+      escapeCsv(w.school),
+      escapeCsv(w.position),
+      escapeCsv(w.prizeName),
+      w.unitValue || 0,
+      escapeCsv(w.date),
+      escapeCsv(w.time),
+      escapeCsv(w.claimStatus)
     ]);
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `deped_malungon_${masterlistScope === 'PRE_DRAW_ONLY' ? 'predraw' : 'all_winners'}_masterlist_${new Date().toISOString().slice(0, 10)}.csv`
+    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
+    downloadCsvFile(
+      `deped_malungon_${masterlistScope === 'PRE_DRAW_ONLY' ? 'predraw' : 'all_winners'}_masterlist_${new Date().toISOString().slice(0, 10)}.csv`,
+      csvContent
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5]">
-      {/* Station Sub-Navigation & Header */}
+    <>
+      {/* ON-SCREEN DASHBOARD UI (Hidden when printing official sheet) */}
+      <div className="space-y-6 animate-fade-in text-[#1a1a1a] dark:text-[#f4f4f5] print:hidden">
+        {/* Station Sub-Navigation & Header */}
       <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-5 shadow-sm dark:shadow-2xl relative border-t-4 border-t-indigo-600">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -1257,9 +1270,10 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           </div>
         </div>
       )}
+      </div>
 
       {/* PRINT-ONLY OFFICIAL SHEET LAYOUT (Hidden on screen, rendered on window.print()) */}
-      <div className="hidden print:block bg-white text-black p-4">
+      <div className="hidden print:block bg-white text-black p-4 w-full">
         <style dangerouslySetInnerHTML={{
           __html: `
             @media print {
@@ -1267,9 +1281,16 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 size: letter landscape;
                 margin: 0.35in;
               }
-              body {
-                background: white !important;
-                color: black !important;
+              html, body, main {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              * {
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
               tr {
                 page-break-inside: avoid !important;
@@ -1281,63 +1302,71 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           `
         }} />
         <div className="text-center border-b-2 border-black pb-3 mb-4">
-          <p className="text-xs uppercase font-serif tracking-widest">Republic of the Philippines</p>
-          <p className="text-sm font-bold uppercase font-serif">Department of Education • Region XII</p>
-          <p className="text-xs uppercase font-serif">Schools Division of Sarangani • Municipality of Malungon</p>
-          <h1 className="text-xl font-black uppercase tracking-tight mt-2">
+          <p className="text-xs uppercase font-serif tracking-widest text-black">Republic of the Philippines</p>
+          <p className="text-sm font-bold uppercase font-serif text-black">Department of Education • Region XII</p>
+          <p className="text-xs uppercase font-serif text-black">Schools Division of Sarangani • Municipality of Malungon</p>
+          <h1 className="text-xl font-black uppercase tracking-tight mt-2 text-black">
             {masterlistScope === 'PRE_DRAW_ONLY' ? 'OFFICIAL PRE-DRAW WINNERS MASTERLIST' : 'OFFICIAL WINNERS MASTERLIST (ALL BATCHES)'}
           </h1>
-          <p className="text-xs uppercase font-mono font-bold mt-0.5">
+          <p className="text-xs uppercase font-mono font-bold mt-0.5 text-black">
             Municipal Teachers' Day 2026 Celebration • Raffle Committee Records
           </p>
           <p className="text-[10px] text-neutral-600 font-mono mt-1">
-            Generated on: {new Date().toLocaleString()} • Total Records: {activeMasterlistWinners.length}
+            Generated on: {new Date().toLocaleString()} • Total Records: {effectiveMasterlistRecords.length}
+            {searchFilter.trim() ? ` • Filtered Search: "${searchFilter}"` : ''}
           </p>
         </div>
 
-        <table className="w-full text-left text-[10px] border border-black border-collapse">
+        <table className="w-full text-left text-[10px] border border-black border-collapse bg-white text-black">
           <thead>
-            <tr className="bg-neutral-200 border-b border-black font-bold uppercase font-mono">
-              <th className="p-1.5 border border-black">#</th>
-              <th className="p-1.5 border border-black">Batch #</th>
-              <th className="p-1.5 border border-black">Winner ID</th>
-              <th className="p-1.5 border border-black">Profiling ID</th>
-              <th className="p-1.5 border border-black">Winner Name</th>
-              <th className="p-1.5 border border-black">District</th>
-              <th className="p-1.5 border border-black">School / Station</th>
-              <th className="p-1.5 border border-black">Position</th>
-              <th className="p-1.5 border border-black">Prize Won</th>
-              <th className="p-1.5 border border-black min-w-[120px]">Signature / Received</th>
+            <tr className="bg-neutral-200 border-b border-black font-bold uppercase font-mono text-black">
+              <th className="p-1.5 border border-black text-black">#</th>
+              <th className="p-1.5 border border-black text-black">Batch #</th>
+              <th className="p-1.5 border border-black text-black">Winner ID</th>
+              <th className="p-1.5 border border-black text-black">Profiling ID</th>
+              <th className="p-1.5 border border-black text-black">Winner Name</th>
+              <th className="p-1.5 border border-black text-black">District</th>
+              <th className="p-1.5 border border-black text-black">School / Station</th>
+              <th className="p-1.5 border border-black text-black">Position</th>
+              <th className="p-1.5 border border-black text-black">Prize Won</th>
+              <th className="p-1.5 border border-black min-w-[120px] text-black">Signature / Received</th>
             </tr>
           </thead>
           <tbody>
-            {activeMasterlistWinners.map((w, idx) => (
-              <tr key={w.winnerId} className="border-b border-neutral-300">
-                <td className="p-1.5 border border-black font-mono">{idx + 1}</td>
-                <td className="p-1.5 border border-black font-mono font-bold">{w.drawNumber}</td>
-                <td className="p-1.5 border border-black font-mono">{w.winnerId}</td>
-                <td className="p-1.5 border border-black font-mono font-bold">{w.participantId || 'N/A'}</td>
-                <td className="p-1.5 border border-black font-bold uppercase">{w.name}</td>
-                <td className="p-1.5 border border-black uppercase">{w.district}</td>
-                <td className="p-1.5 border border-black">{w.school}</td>
-                <td className="p-1.5 border border-black">{w.position}</td>
-                <td className="p-1.5 border border-black font-bold">{w.prizeName}</td>
+            {effectiveMasterlistRecords.map((w, idx) => (
+              <tr key={w.winnerId} className="border-b border-neutral-300 text-black">
+                <td className="p-1.5 border border-black font-mono text-black">{idx + 1}</td>
+                <td className="p-1.5 border border-black font-mono font-bold text-black">{w.drawNumber}</td>
+                <td className="p-1.5 border border-black font-mono text-black">{w.winnerId}</td>
+                <td className="p-1.5 border border-black font-mono font-bold text-black">{w.participantId || 'N/A'}</td>
+                <td className="p-1.5 border border-black font-bold uppercase text-black">{w.name}</td>
+                <td className="p-1.5 border border-black uppercase text-black">{w.district}</td>
+                <td className="p-1.5 border border-black text-black">{w.school}</td>
+                <td className="p-1.5 border border-black text-black">{w.position}</td>
+                <td className="p-1.5 border border-black font-bold text-black">{w.prizeName}</td>
                 <td className="p-1.5 border border-black"></td>
               </tr>
             ))}
+            {effectiveMasterlistRecords.length === 0 && (
+              <tr>
+                <td colSpan={10} className="p-4 text-center text-xs font-mono text-neutral-500">
+                  No records found matching the current criteria.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 
         {/* Audit Certification Signatures (2 Signatures: Committee Chair & LGU Representative) */}
-        <div className="mt-10 pt-4 border-t border-black grid grid-cols-2 max-w-2xl mx-auto gap-12 text-center text-xs">
+        <div className="mt-10 pt-4 border-t border-black grid grid-cols-2 max-w-2xl mx-auto gap-12 text-center text-xs text-black">
           <div>
             <div className="border-b border-black h-10"></div>
-            <p className="font-bold uppercase mt-1">Raffle Committee Chair</p>
+            <p className="font-bold uppercase mt-1 text-black">Raffle Committee Chair</p>
             <p className="text-[10px] text-neutral-600 uppercase">Secretariat &amp; Records</p>
           </div>
           <div>
             <div className="border-b border-black h-10"></div>
-            <p className="font-bold uppercase mt-1">LGU Representative</p>
+            <p className="font-bold uppercase mt-1 text-black">LGU Representative</p>
             <p className="text-[10px] text-neutral-600 uppercase">Municipality of Malungon</p>
           </div>
         </div>
@@ -1442,6 +1471,6 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

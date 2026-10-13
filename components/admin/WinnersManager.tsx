@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Winner } from '../../lib/types';
+import { downloadCsvFile } from '../../lib/utils';
 import {
   Search,
   Trophy,
@@ -75,31 +76,33 @@ export const WinnersManager: React.FC<WinnersManagerProps> = ({ winners }) => {
       'Winner ID', 'Participant ID', 'Name', 'District', 'Personnel Type',
       'School', 'Position', 'Prize', 'Unit Value', 'Draw Type', 'Draw Number', 'Date', 'Time', 'Claim Status'
     ];
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
     const rows = filtered.map((w) => [
-      w.winnerId,
-      w.participantId,
-      `"${w.name}"`,
-      w.district,
-      w.personnelType,
-      `"${w.school}"`,
-      `"${w.position}"`,
-      `"${w.prizeName}"`,
-      w.unitValue,
-      w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE') ? 'PRE_DRAW' : 'LIVE',
-      w.drawNumber,
-      w.date,
-      w.time,
-      w.claimStatus
+      escapeCsv(w.winnerId),
+      escapeCsv(w.participantId),
+      escapeCsv(w.name),
+      escapeCsv(w.district),
+      escapeCsv(w.personnelType),
+      escapeCsv(w.school),
+      escapeCsv(w.position),
+      escapeCsv(w.prizeName),
+      w.unitValue || 0,
+      escapeCsv(w.drawType === 'PRE_DRAW' || w.drawNumber.startsWith('PRE') ? 'PRE_DRAW' : 'LIVE'),
+      escapeCsv(w.drawNumber),
+      escapeCsv(w.date),
+      escapeCsv(w.time),
+      escapeCsv(w.claimStatus)
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `malungon_teachers_day_winners_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
+    downloadCsvFile(
+      `malungon_teachers_day_winners_${new Date().toISOString().slice(0, 10)}.csv`,
+      csvContent
+    );
   };
 
   return (
