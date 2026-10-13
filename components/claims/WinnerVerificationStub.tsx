@@ -83,7 +83,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
     window.print();
   };
 
-  // 1. Half Landscape Stub (11cm in width by 7cm in height — Balanced Official UI)
+  // 1. Half Landscape Stub (10cm in width by 6cm in height — Balanced Official UI)
   const landscapeContent = (
     <>
       {!isBatchChild && (
@@ -105,12 +105,12 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 display: none !important;
               }
               .winner-stub-landscape-printable {
-                width: 11cm !important;
-                height: 7cm !important;
-                max-width: 11cm !important;
-                max-height: 7cm !important;
-                min-width: 11cm !important;
-                min-height: 7cm !important;
+                width: 10cm !important;
+                height: 6cm !important;
+                max-width: 10cm !important;
+                max-height: 6cm !important;
+                min-width: 10cm !important;
+                min-height: 6cm !important;
                 box-sizing: border-box !important;
                 background: white !important;
                 color: black !important;
@@ -119,10 +119,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 break-inside: avoid !important;
                 ${
                   printPosition === 'UPPER_LEFT'
-                    ? 'margin: 0.15in auto 0 0.15in !important; float: left !important;'
+                    ? 'margin: 0.15in 0 0 0.15in !important; float: left !important;'
                     : printPosition === 'UPPER_RIGHT'
                     ? 'margin: 0.15in 0.15in 0 auto !important; float: right !important;'
-                    : 'margin: 0.25in auto !important;'
+                    : 'margin: 0.2in auto !important;'
                 }
               }
             }
@@ -132,10 +132,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       <div
         className={`bg-white text-black border-2 border-black flex flex-col justify-between text-[10px] leading-tight font-sans relative overflow-hidden select-none box-border ${
           isBatchChild && isGrid
-            ? 'w-full h-full max-w-[10.5cm] max-h-[6.85cm] p-1.5'
-            : 'w-[11cm] max-w-[11cm] h-[7cm] max-h-[7cm] min-h-[7cm] p-2 winner-stub-landscape-printable'
+            ? 'w-full h-full max-w-[9.6cm] max-h-[5.85cm] p-1.5'
+            : 'w-[10cm] max-w-[10cm] h-[6cm] max-h-[6cm] min-h-[6cm] p-1.5 winner-stub-landscape-printable'
         } print:border-black print:border-solid print:m-0`}
-        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '10.5cm', maxHeight: '6.85cm' } : { width: '11cm', height: '7cm' }}
+        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '9.6cm', maxHeight: '5.85cm' } : { width: '10cm', height: '6cm' }}
       >
         {/* Top Government & Event Header */}
         <div className="border-b-2 border-black pb-1 mb-1 flex items-center justify-between gap-1.5 shrink-0 bg-white">
@@ -143,25 +143,25 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
             <img
               src="/LGU_LOGO1.png"
               alt="LGU Malungon Seal"
-              className="w-8 h-8 object-contain flex-shrink-0"
+              className="w-7 h-7 object-contain flex-shrink-0"
             />
             <div className="leading-tight">
-              <div className="text-[6.5px] font-mono font-bold uppercase tracking-wider text-neutral-600 leading-none">
+              <div className="text-[6px] font-mono font-bold uppercase tracking-wider text-neutral-600 leading-none">
                 Republic of the Philippines • DepEd Region XII
               </div>
-              <div className="text-[11px] font-serif font-black uppercase tracking-tight text-black leading-none pt-0.5">
+              <div className="text-[10px] font-serif font-black uppercase tracking-tight text-black leading-none pt-0.5">
                 MUNICIPALITY OF MALUNGON
               </div>
-              <div className="text-[7.5px] font-mono font-black uppercase tracking-wide text-neutral-800 leading-none pt-0.5">
+              <div className="text-[7px] font-mono font-black uppercase tracking-wide text-neutral-800 leading-none pt-0.5">
                 TEACHERS&apos; DAY CELEBRATION 2026
               </div>
             </div>
           </div>
-          <div className="text-right flex flex-col items-end shrink-0">
-            <span className="inline-block bg-black text-white text-[7px] font-mono font-black uppercase px-2 py-0.5 tracking-wider">
-              PRIZE CLAIM STUB
+          <div className="text-right flex flex-col items-end shrink-0 pr-1">
+            <span className="inline-block bg-black text-white text-[6.5px] font-mono font-black uppercase px-1.5 py-0.5 tracking-wider">
+              CLAIM STUB
             </span>
-            <span className="text-[7.5px] font-mono font-black text-red-700 print:text-black mt-0.5 tracking-tight">
+            <span className="text-[7px] font-mono font-black text-red-700 print:text-black mt-0.5 tracking-tight">
               № {winner.drawNumber} • {winner.drawType === 'PRE_DRAW' ? 'PRE-DRAW' : 'STAGE'}
             </span>
           </div>
@@ -172,36 +172,37 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           {/* Left 7 Columns: Prize & Winner Details */}
           <div className="col-span-7 flex flex-col justify-between space-y-1 pr-1 border-r-2 border-black/30 min-h-0">
             {/* 1. Prize Card */}
-            <div className="p-1.5 bg-neutral-100 border-2 border-black flex flex-col justify-between shrink-0">
+            <div className="p-1 bg-neutral-100 border border-black flex flex-col justify-between shrink-0">
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[6.5px] font-mono uppercase tracking-widest text-neutral-700 font-black">
+                <span className="text-[6px] font-mono uppercase tracking-widest text-neutral-700 font-black">
                   ★ PRIZE AWARDED ★
                 </span>
-                <span className="text-[7px] font-mono font-black text-black bg-white px-1 border border-black/40 leading-none">
+                <span className="text-[6.5px] font-mono font-black text-black bg-white px-1 border border-black/40 leading-none">
                   {winner.unitValue ? `₱${winner.unitValue.toLocaleString()}` : 'OFFICIAL PRIZE'}
                 </span>
               </div>
-              <div className="font-serif font-black text-[12.5px] uppercase text-black leading-tight tracking-tight mt-0.5 line-clamp-2">
+              <div className="font-serif font-black text-[12px] uppercase text-black leading-tight tracking-tight mt-0.5 line-clamp-1 truncate">
                 {winner.prizeName}
               </div>
-              <div className="flex items-center justify-between text-[6.5px] font-mono text-neutral-600 pt-0.5 border-t border-black/20 mt-0.5">
+              <div className="flex items-center justify-between text-[6px] font-mono text-neutral-600 pt-0.5 border-t border-black/20 mt-0.5">
                 <span>Draw: {winner.date} {winner.time}</span>
                 <span className="font-bold uppercase">{winner.drawType === 'PRE_DRAW' ? 'Advance Draw' : 'Live Draw'}</span>
               </div>
             </div>
 
             {/* 2. Official Winner Card */}
-            <div className="p-1.5 bg-white border-2 border-black flex flex-col justify-between flex-1 min-h-0">
+            <div className="p-1.5 bg-white border border-black flex flex-col justify-between flex-1 min-h-0">
               <div>
-                <span className="text-[6.5px] font-mono uppercase tracking-wider text-neutral-500 font-bold block leading-none">
+                <span className="text-[6px] font-mono uppercase tracking-wider text-neutral-500 font-bold block leading-none">
                   OFFICIAL WINNER / CLAIMANT
                 </span>
-                <div className="font-black text-[12.5px] uppercase text-black leading-snug tracking-tight truncate mt-0.5">
+                {/* Bigger & bolder winner name */}
+                <div className="font-black text-[13.5px] sm:text-[14.5px] uppercase text-black leading-tight tracking-tight break-words line-clamp-2 mt-0.5">
                   {winner.name}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 pt-0.5 text-[8px]">
+              <div className="flex items-center gap-1.5 pt-0.5 text-[7.5px]">
                 <span className="font-black font-mono text-[7px] text-white uppercase bg-black px-1.5 py-0.5 shrink-0 tracking-wide leading-none">
                   {winner.district}
                 </span>
@@ -210,11 +211,11 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 </span>
               </div>
 
-              <div className="pt-0.5 border-t border-black/15 mt-0.5 flex items-center justify-between text-[7.5px]">
-                <div className="font-bold text-neutral-800 truncate max-w-[130px]">
+              <div className="pt-0.5 border-t border-black/15 mt-0.5 flex items-center justify-between text-[7px]">
+                <div className="font-bold text-neutral-800 truncate max-w-[125px]">
                   {winner.school}
                 </div>
-                <div className="font-mono text-[7px] text-neutral-600 shrink-0">
+                <div className="font-mono text-[6.5px] text-neutral-600 shrink-0">
                   ID: {winner.depedId || winner.participantId || 'N/A'}
                 </div>
               </div>
@@ -224,8 +225,8 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           {/* Right 5 Columns: QR Code, Ticket ID & Dual Signatures */}
           <div className="col-span-5 flex flex-col justify-between space-y-1 pl-0.5 min-h-0">
             {/* 3. QR Verification Box */}
-            <div className="p-1 bg-neutral-50 border-2 border-black flex flex-col items-center justify-between text-center shrink-0">
-              <span className="text-[6px] font-mono uppercase font-black tracking-widest text-neutral-600 block leading-none mb-0.5">
+            <div className="p-1 bg-neutral-50 border border-black flex flex-col items-center justify-between text-center shrink-0">
+              <span className="text-[5.5px] font-mono uppercase font-black tracking-widest text-neutral-600 block leading-none mb-0.5">
                 QR VERIFICATION
               </span>
               <div className="p-0.5 bg-white border border-black shrink-0">
@@ -234,37 +235,37 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                   <img
                     src={qrCodeDataUrl}
                     alt={`QR code for ${winner.participantId || winner.winnerId}`}
-                    className="w-14 h-14 object-contain"
+                    className="w-12 h-12 object-contain"
                   />
                 ) : (
-                  <div className="w-14 h-14 flex items-center justify-center bg-neutral-100 text-neutral-400">
+                  <div className="w-12 h-12 flex items-center justify-center bg-neutral-100 text-neutral-400">
                     <QrIcon className="w-5 h-5 animate-pulse" />
                   </div>
                 )}
               </div>
               <div className="mt-0.5 font-mono leading-tight">
-                <span className="text-[5.5px] text-neutral-500 uppercase font-bold block leading-none">TICKET NO.</span>
-                <strong className="text-black font-black text-[9.5px] tracking-wider block leading-none mt-0.5">{winner.winnerId}</strong>
+                <span className="text-[5px] text-neutral-500 uppercase font-bold block leading-none">TICKET NO.</span>
+                <strong className="text-black font-black text-[9px] tracking-wider block leading-none mt-0.5">{winner.winnerId}</strong>
               </div>
             </div>
 
             {/* 4. Dual Signatures Box */}
-            <div className="p-1 bg-white border-2 border-black flex flex-col justify-between flex-1 min-h-0 text-center">
+            <div className="p-1 bg-white border border-black flex flex-col justify-between flex-1 min-h-0 text-center">
               <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                 <div>
-                  <div className="border-b border-black h-3.5"></div>
-                  <span className="text-[6px] font-mono uppercase font-bold text-neutral-800 block mt-0.5 leading-none">
+                  <div className="border-b border-black h-3"></div>
+                  <span className="text-[5.5px] font-mono uppercase font-bold text-neutral-800 block mt-0.5 leading-none">
                     Claimant
                   </span>
                 </div>
                 <div>
-                  <div className="border-b border-black h-3.5"></div>
-                  <span className="text-[6px] font-mono uppercase font-bold text-neutral-800 block mt-0.5 leading-none">
+                  <div className="border-b border-black h-3"></div>
+                  <span className="text-[5.5px] font-mono uppercase font-bold text-neutral-800 block mt-0.5 leading-none">
                     Officer
                   </span>
                 </div>
               </div>
-              <div className="text-[5.5px] font-mono text-neutral-500 uppercase tracking-tight border-t border-black/15 pt-0.5 leading-none mt-0.5">
+              <div className="text-[5px] font-mono text-neutral-500 uppercase tracking-tight border-t border-black/15 pt-0.5 leading-none mt-0.5">
                 Present with DepEd ID
               </div>
             </div>
@@ -272,7 +273,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         </div>
 
         {/* Security Footer Notice */}
-        <div className="pt-0.5 mt-0.5 border-t border-black/25 flex items-center justify-between text-[6px] font-mono uppercase text-neutral-600 shrink-0">
+        <div className="pt-0.5 mt-0.5 border-t border-black/25 flex items-center justify-between text-[5.5px] font-mono uppercase text-neutral-600 shrink-0 pr-1">
           <span>Sunken Arena Station</span>
           <span className="font-bold">Official Claim Voucher</span>
           <span>Non-Transferable</span>
@@ -500,7 +501,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
             <ShieldCheck className="w-5 h-5 text-indigo-400" />
             <div>
               <span className="font-mono text-xs font-bold uppercase tracking-wider block">
-                {activeFormat === 'HALF_LANDSCAPE' ? 'Half Landscape Stub (11cm × 7cm)' : '1/4 Letter (Portrait) Stub'}
+                {activeFormat === 'HALF_LANDSCAPE' ? 'Pre-Cut Stub (10cm × 6cm)' : '1/4 Letter (Portrait) Stub'}
               </span>
               <span className="font-mono text-[10px] text-neutral-400 block">
                 {activeFormat === 'HALF_LANDSCAPE' ? 'Position: ' + (printPosition === 'UPPER_LEFT' ? 'Upper-Left' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Center') : 'Legacy 1/4 Sheet Format'}
@@ -557,9 +558,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 className={`px-2 py-1 uppercase font-bold transition-all cursor-pointer ${
                   activeFormat === 'HALF_LANDSCAPE' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="11cm width by 7cm height (Half of 1/4 Letter)"
+                title="10cm width by 6cm height (Safe for pre-cut slips, no clipped edges)"
               >
-                11cm × 7cm
+                10cm × 6cm
               </button>
               <button
                 type="button"
@@ -597,14 +598,14 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         {/* Stub Display with realistic placement preview */}
         <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block overflow-x-auto">
           {/* Virtual Sheet simulation */}
-          <div className={`w-full max-w-[12.5cm] bg-white p-3 border border-neutral-300 shadow-inner flex ${
+          <div className={`w-full max-w-[12cm] bg-white p-3 border border-neutral-300 shadow-inner flex ${
             printPosition === 'UPPER_LEFT' ? 'justify-start' : printPosition === 'UPPER_RIGHT' ? 'justify-end' : 'justify-center'
           } print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}>
             {stubContent}
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-[10px] font-mono text-neutral-600 uppercase tracking-wider print:hidden">
-            <span>Size: 11cm × 7cm</span>
+            <span>Size: 10cm × 6cm</span>
             <span>•</span>
             <span className="font-bold text-indigo-900">
               Tray Feed: {printPosition === 'UPPER_LEFT' ? 'Upper-Left Corner' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right Corner (Right Guide)' : 'Centered'}
