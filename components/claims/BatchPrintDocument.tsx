@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Winner } from '../../lib/types';
-import { WinnerVerificationStub, StubLayoutFormat } from './WinnerVerificationStub';
-import { Printer, X, CheckCheck, FileText, ArrowDownAZ, Scissors, Sparkles } from 'lucide-react';
+import { WinnerVerificationStub } from './WinnerVerificationStub';
+import { Printer, X, CheckCheck, FileText, ArrowDownAZ, Scissors, Sparkles, Layers } from 'lucide-react';
+
+export type BatchPrintMode = '8_UP_LETTER' | '2_UP_QUARTER' | '1_UP_PORTRAIT';
 
 interface BatchPrintDocumentProps {
   batchNumber: string;
@@ -28,8 +30,8 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   onClose,
   onMarkBatchPrinted
 }) => {
-  // Format choice: Default to HALF_LANDSCAPE for 2x faster printing and zero jams
-  const [layoutFormat, setLayoutFormat] = useState<StubLayoutFormat>('HALF_LANDSCAPE');
+  // Format choice: Default to 8_UP_LETTER (8 stubs of 11cm x 7cm per Letter page for ultra-fast, jam-free printing)
+  const [printMode, setPrintMode] = useState<BatchPrintMode>('8_UP_LETTER');
 
   // Sort winners by District (e.g. NORTH, WEST, EAST, SOUTH, PRIVATE) and then by Winner Name
   const sortedWinners = useMemo(() => {
@@ -45,8 +47,17 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
     });
   }, [winners]);
 
-  // Group winners into pairs of 2 for Half Sheet Landscape on standard Letter page
-  const pairedWinners = useMemo(() => {
+  // Group winners into chunks of 8 for 8-Up on Letter page (11cm x 7cm stubs)
+  const chunks8Up = useMemo(() => {
+    const chunks: Winner[][] = [];
+    for (let i = 0; i < sortedWinners.length; i += 8) {
+      chunks.push(sortedWinners.slice(i, i + 8));
+    }
+    return chunks;
+  }, [sortedWinners]);
+
+  // Group winners into pairs of 2 for 2-Up on 1/4 Letter sheet (11cm x 7cm stubs)
+  const chunks2Up = useMemo(() => {
     const pairs: Winner[][] = [];
     for (let i = 0; i < sortedWinners.length; i += 2) {
       pairs.push(sortedWinners.slice(i, i + 2));
@@ -70,7 +81,9 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
     window.print();
   };
 
-  const totalPages = layoutFormat === 'HALF_LANDSCAPE'
+  const totalPages = printMode === '8_UP_LETTER'
+    ? Math.ceil(sortedWinners.length / 8)
+    : printMode === '2_UP_QUARTER'
     ? Math.ceil(sortedWinners.length / 2)
     : sortedWinners.length;
 
@@ -94,13 +107,23 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 <ArrowDownAZ className="w-3 h-3" />
                 <span>Sorted by District</span>
               </span>
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 border border-amber-500/30 uppercase font-bold flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>{layoutFormat === 'HALF_LANDSCAPE' ? 'Half Sheet Landscape (Fast 2-Up)' : '1/4 Letter Portrait'}</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-mono px-2 py-0.5 border border-emerald-500/30 uppercase font-bold flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-400" />
+                <span>
+                  {printMode === '8_UP_LETTER'
+                    ? '8-Up Letter (11cm × 7cm — Ultra Fast)'
+                    : printMode === '2_UP_QUARTER'
+                    ? '2-Up 1/4 Sheet (11cm × 7cm)'
+                    : '1/4 Letter Portrait'}
+                </span>
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 truncate max-w-md font-sans mt-0.5">
-              {prizeName} • {layoutFormat === 'HALF_LANDSCAPE' ? '2 Vouchers per Letter Sheet with Center Cut Guide' : '1 Stub per 1/4 Sheet'}
+              {prizeName} • {printMode === '8_UP_LETTER'
+                ? '8 Stubs per standard Letter Sheet (11cm × 7cm each, half of 1/4 Letter)'
+                : printMode === '2_UP_QUARTER'
+                ? '2 Stubs per 1/4 Letter Sheet (11cm × 7cm each with center cut line)'
+                : '1 Stub per 1/4 Letter Sheet'}
             </p>
           </div>
         </div>
@@ -111,28 +134,41 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           <div className="flex items-center bg-black/60 p-0.5 border border-white/20 text-xs font-mono">
             <button
               type="button"
-              onClick={() => setLayoutFormat('HALF_LANDSCAPE')}
+              onClick={() => setPrintMode('8_UP_LETTER')}
               className={`px-3 py-1.5 uppercase font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                layoutFormat === 'HALF_LANDSCAPE'
+                printMode === '8_UP_LETTER'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Prints 2 landscape half-sheet vouchers on each standard Letter page (Fastest throughput)"
+              title="Prints 8 stubs (11cm x 7cm each) on each standard Letter page (Fastest throughput, saves paper)"
             >
-              <Scissors className="w-3.5 h-3.5 text-indigo-300" />
-              <span>Half Sheet (Landscape) — 2 per Page</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+              <span>8-Up Letter (11×7cm)</span>
             </button>
             <button
               type="button"
-              onClick={() => setLayoutFormat('QUARTER_PORTRAIT')}
-              className={`px-3 py-1.5 uppercase font-bold transition-all cursor-pointer ${
-                layoutFormat === 'QUARTER_PORTRAIT'
+              onClick={() => setPrintMode('2_UP_QUARTER')}
+              className={`px-3 py-1.5 uppercase font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                printMode === '2_UP_QUARTER'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Prints 1 stub per 1/4 cut letter page"
+              title="Prints 2 stubs (11cm x 7cm each) per 1/4 Letter sheet"
             >
-              <span>1/4 Letter (Portrait)</span>
+              <Scissors className="w-3.5 h-3.5 text-neutral-300" />
+              <span>2-Up 1/4 Sheet</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrintMode('1_UP_PORTRAIT')}
+              className={`px-3 py-1.5 uppercase font-bold transition-all cursor-pointer ${
+                printMode === '1_UP_PORTRAIT'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title="Prints 1 stub per 1/4 Letter page"
+            >
+              <span>1/4 Portrait</span>
             </button>
           </div>
 
@@ -173,13 +209,13 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
       </div>
 
       {/* Sheet Previews / Printable Document Container */}
-      <div className="batch-print-wrapper w-full max-w-4xl p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0 print:block">
+      <div className="batch-print-wrapper w-full max-w-5xl p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0 print:block">
         <style dangerouslySetInnerHTML={{
           __html: `
             @media print {
               @page {
                 size: letter portrait;
-                margin: 0.2in 0.25in;
+                margin: 0.15in;
               }
               html, body {
                 background: white !important;
@@ -195,11 +231,33 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 display: block !important;
                 position: static !important;
               }
-              .batch-sheet-pair {
-                width: 8.0in !important;
-                height: 10.45in !important;
-                max-width: 8.0in !important;
-                max-height: 10.45in !important;
+              .batch-sheet-8up {
+                width: 8.1in !important;
+                height: 10.65in !important;
+                max-width: 8.1in !important;
+                max-height: 10.65in !important;
+                margin: 0 auto !important;
+                padding: 0.05in !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: repeat(4, 1fr) !important;
+                gap: 0.06in !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                box-sizing: border-box !important;
+                background: white !important;
+              }
+              .batch-sheet-8up:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+              }
+              .batch-sheet-2up {
+                width: 4.15in !important;
+                height: 5.4in !important;
+                max-width: 4.15in !important;
+                max-height: 5.4in !important;
                 margin: 0 auto !important;
                 padding: 0 !important;
                 display: flex !important;
@@ -212,7 +270,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 box-sizing: border-box !important;
                 background: white !important;
               }
-              .batch-sheet-pair:last-child {
+              .batch-sheet-2up:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
               }
@@ -241,23 +299,64 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           `
         }} />
 
-        {/* 1. HALF SHEET LANDSCAPE MODE (2 STUBS PER LETTER PAGE WITH CENTER CUT LINE) */}
-        {layoutFormat === 'HALF_LANDSCAPE' && pairedWinners.map((pair, pageIdx) => (
+        {/* 1. 8-UP LETTER MODE (8 STUBS OF 11cm x 7cm PER LETTER PAGE) */}
+        {printMode === '8_UP_LETTER' && chunks8Up.map((chunk, pageIdx) => (
           <div
-            key={`page-${pageIdx}`}
-            className="batch-sheet-pair bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-4 box-border flex flex-col justify-between print:m-0 print:p-0 print:block"
+            key={`page-8up-${pageIdx}`}
+            className="batch-sheet-8up bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-3 box-border grid grid-cols-2 gap-2 print:m-0 print:p-0 print:block"
           >
             {/* Screen Page Header Indicator */}
-            <div className="w-full pb-1.5 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
-              <span className="font-bold text-indigo-900">
-                Letter Sheet {pageIdx + 1} of {pairedWinners.length} • (2 Vouchers per Sheet)
+            <div className="col-span-2 pb-1 mb-1 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
+              <span className="font-bold text-indigo-900 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Letter Sheet {pageIdx + 1} of {chunks8Up.length} • 8 Stubs per Sheet (11cm × 7cm)</span>
               </span>
               <span className="text-neutral-500">
-                Tickets: {pair[0].winnerId} {pair[1] ? `& ${pair[1].winnerId}` : '(Single Stub)'}
+                Tickets: {chunk[0]?.winnerId} ... {chunk[chunk.length - 1]?.winnerId}
               </span>
             </div>
 
-            {/* Top Half Stub (Winner 1) */}
+            {/* Render 8 Stubs in a 2x4 Grid */}
+            {chunk.map((winner) => (
+              <div key={winner.winnerId} className="w-full flex justify-center items-center p-0.5">
+                <WinnerVerificationStub
+                  winner={winner}
+                  isModal={false}
+                  isBatchChild={true}
+                  layoutFormat="HALF_LANDSCAPE"
+                />
+              </div>
+            ))}
+
+            {/* Fill blank cells if odd number on final page */}
+            {chunk.length < 8 && Array.from({ length: 8 - chunk.length }).map((_, emptyIdx) => (
+              <div
+                key={`empty-${emptyIdx}`}
+                className="w-full min-h-[6.8cm] border border-dashed border-neutral-200 flex items-center justify-center text-neutral-400 font-mono text-[10px] uppercase print:hidden"
+              >
+                <span>Blank Space</span>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {/* 2. 2-UP 1/4 SHEET MODE (2 STUBS PER 1/4 LETTER SHEET) */}
+        {printMode === '2_UP_QUARTER' && chunks2Up.map((pair, pageIdx) => (
+          <div
+            key={`page-2up-${pageIdx}`}
+            className="batch-sheet-2up bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-3 box-border flex flex-col justify-between print:m-0 print:p-0 print:block"
+          >
+            {/* Screen Page Header Indicator */}
+            <div className="w-full pb-1 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
+              <span className="font-bold text-indigo-900">
+                1/4 Sheet {pageIdx + 1} of {chunks2Up.length} • (2 Vouchers per Sheet)
+              </span>
+              <span className="text-neutral-500">
+                Tickets: {pair[0].winnerId} {pair[1] ? `& ${pair[1].winnerId}` : '(Single)'}
+              </span>
+            </div>
+
+            {/* Top Half Stub */}
             <div className="w-full flex justify-center">
               <WinnerVerificationStub
                 winner={pair[0]}
@@ -268,19 +367,19 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             </div>
 
             {/* Center Cut Guide Divider */}
-            <div className="w-full max-w-[8.0in] mx-auto my-2 py-1 flex items-center justify-between border-b-2 border-dashed border-neutral-400 print:border-black/50 text-[9px] font-mono font-bold uppercase tracking-widest text-neutral-600 print:text-black">
+            <div className="w-full max-w-[11cm] mx-auto my-1.5 py-0.5 flex items-center justify-between border-b-2 border-dashed border-neutral-400 print:border-black/50 text-[8px] font-mono font-bold uppercase tracking-widest text-neutral-600 print:text-black">
               <span className="flex items-center gap-1">
-                <Scissors className="w-3.5 h-3.5 -scale-x-100" />
+                <Scissors className="w-3 h-3 -scale-x-100" />
                 <span>CUT HERE</span>
               </span>
-              <span>HALF SHEET DIVIDER (8.5&quot; × 5.5&quot;)</span>
+              <span>11cm × 7cm STUB DIVIDER</span>
               <span className="flex items-center gap-1">
                 <span>CUT HERE</span>
-                <Scissors className="w-3.5 h-3.5" />
+                <Scissors className="w-3 h-3" />
               </span>
             </div>
 
-            {/* Bottom Half Stub (Winner 2 if present) */}
+            {/* Bottom Half Stub */}
             {pair[1] ? (
               <div className="w-full flex justify-center">
                 <WinnerVerificationStub
@@ -291,16 +390,15 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 />
               </div>
             ) : (
-              /* If odd number of winners (e.g. Winner 5), show clean blank lower half */
-              <div className="w-full max-w-[8.0in] min-h-[4.9in] border border-dashed border-neutral-200 p-4 flex flex-col items-center justify-center text-neutral-400 font-mono text-xs uppercase text-center print:hidden">
-                <span>Blank Lower Half (Final Batch Winner Printed on Top Half)</span>
+              <div className="w-full max-w-[11cm] min-h-[6.8cm] border border-dashed border-neutral-200 p-2 flex items-center justify-center text-neutral-400 font-mono text-[10px] uppercase print:hidden">
+                <span>Blank Lower Half</span>
               </div>
             )}
           </div>
         ))}
 
-        {/* 2. 1/4 LETTER PORTRAIT MODE (1 STUB PER SHEET) */}
-        {layoutFormat === 'QUARTER_PORTRAIT' && sortedWinners.map((winner, idx) => (
+        {/* 3. 1/4 LETTER PORTRAIT MODE (1 STUB PER SHEET) */}
+        {printMode === '1_UP_PORTRAIT' && sortedWinners.map((winner, idx) => (
           <div
             key={winner.winnerId}
             className="stub-sheet-page bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 sm:p-4 box-border flex flex-col items-center justify-center print:m-0 print:p-0 print:block"

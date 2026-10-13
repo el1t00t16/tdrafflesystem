@@ -233,7 +233,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                   WINNER PRINT QUEUE &amp; STUB DISPATCH
                 </h2>
                 <span className="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[10px] font-mono font-bold px-2 py-0.5 border border-indigo-300 dark:border-indigo-800 uppercase">
-                  Half Sheet Landscape (Fast)
+                  Half Landscape (11cm × 7cm — Fast)
                 </span>
               </div>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 font-sans">
@@ -459,7 +459,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                           })
                         }
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
-                        title={`Print all ${batch.pendingCount} pending stubs for Batch ${batch.drawNumber} (Half Sheet Landscape / 1/4 Letter)`}
+                        title={`Print all ${batch.pendingCount} pending stubs for Batch ${batch.drawNumber} (11cm × 7cm Landscape / 1/4 Letter)`}
                       >
                         <Printer className="w-4 h-4" />
                         <span>Print All ({batch.pendingCount})</span>
@@ -537,7 +537,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                                   type="button"
                                   onClick={() => setActiveSinglePrint(w)}
                                   className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer"
-                                  title="Print verification stub (Half Sheet Landscape / 1/4 Letter)"
+                                  title="Print verification stub (11cm × 7cm Landscape / 1/4 Letter)"
                                 >
                                   <Printer className="w-3 h-3" />
                                   <span>Print</span>
