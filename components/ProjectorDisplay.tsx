@@ -315,7 +315,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
           {/* Center: The Name of the Prize Being Drawn - Maximized, Majestic & Centered */}
           <div className="flex-1 text-center px-2 sm:px-4 min-w-0 flex flex-col items-center justify-center">
             <div className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black uppercase tracking-tight text-white leading-none drop-shadow-lg truncate max-w-full">
-              {selectedPrize ? selectedPrize.name : 'GRAND RAFFLE DRAW'}
+              {selectedPrize ? selectedPrize.name : 'LIVE RAFFLE DRAW'}
             </div>
             <div className="font-mono text-[10px] sm:text-xs md:text-sm text-[#ff6a00] font-bold uppercase tracking-widest mt-1 sm:mt-1.5 truncate max-w-full flex items-center gap-1.5 justify-center">
               {selectedPrize?.description && (
@@ -595,9 +595,27 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </div>
             )}
 
-            <h2 className="font-display text-2xl sm:text-3xl font-black uppercase text-[#1a1a1a] tracking-tight leading-none">
-              Grand Raffle Draw
-            </h2>
+            {/* Dynamic Stage Title & Category Badge */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="font-display text-2xl sm:text-3xl font-black uppercase text-[#1a1a1a] tracking-tight leading-none">
+                {selectedPrize?.category === 'GRAND'
+                  ? 'Grand Raffle Draw'
+                  : selectedPrize?.category === 'MINOR'
+                  ? 'Minor Raffle Draw'
+                  : 'Live Raffle Draw'}
+              </h2>
+              {selectedPrize && (
+                <span
+                  className={`font-mono text-[10px] px-2.5 py-0.5 rounded-xs font-black uppercase tracking-wider border shadow-2xs ${
+                    selectedPrize.category === 'GRAND'
+                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-blue-100 text-blue-900 border-blue-300'
+                  }`}
+                >
+                  {selectedPrize.category === 'GRAND' ? '👑 Grand Prize' : '🎁 Minor Prize'}
+                </span>
+              )}
+            </div>
 
             {/* Active Prize Selection Card */}
             <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] p-3.5 rounded-lg space-y-2.5 shadow-xs">
@@ -624,9 +642,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 >
                   {prizes.map((p) => {
                     const isExhausted = p.remainingQuantity <= 0;
+                    const catTag = p.category === 'GRAND' ? '👑 [GRAND]' : '🎁 [MINOR]';
                     const label = p.unitValue > 0
-                      ? `${p.name} (₱${p.unitValue.toLocaleString()}) — ${p.remainingQuantity} Left`
-                      : `${p.name}${p.description ? ` [${p.description}]` : ''} — ${p.remainingQuantity} Left`;
+                      ? `${catTag} ${p.name} (₱${p.unitValue.toLocaleString()}) — ${p.remainingQuantity} Left`
+                      : `${catTag} ${p.name}${p.description ? ` [${p.description}]` : ''} — ${p.remainingQuantity} Left`;
                     return (
                       <option
                         key={p.id}
@@ -645,11 +664,18 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 <div className="font-display text-2xl sm:text-3xl font-black leading-tight text-[#1a1a1a] tracking-tight truncate">
                   {selectedPrize ? selectedPrize.name : 'SELECT PRIZE'}
                 </div>
-                <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5">
-                  {selectedPrize ? (
-                    `${selectedPrize.description ? `${selectedPrize.description} • ` : ''}${availableQty} AVAILABLE`
-                  ) : (
-                    'NO PRIZE SELECTED'
+                <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5 flex items-center justify-between gap-2 flex-wrap">
+                  <span>
+                    {selectedPrize ? (
+                      `${selectedPrize.description ? `${selectedPrize.description} • ` : ''}${availableQty} AVAILABLE`
+                    ) : (
+                      'NO PRIZE SELECTED'
+                    )}
+                  </span>
+                  {selectedPrize && (
+                    <span className="text-[10px] font-bold text-[#1a1a1a]/70">
+                      {selectedPrize.category === 'GRAND' ? 'Teaching Only' : 'Teaching & Non-Teaching'}
+                    </span>
                   )}
                 </div>
               </div>
@@ -869,11 +895,17 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                 <div className="shrink-0 text-center flex flex-col items-center justify-center pb-2">
                   {drawStatus === 'REVEALED' && revealedWinners.length > 0 ? (
                     <>
-                      {selectedPrize?.category === 'GRAND' && (
+                      {selectedPrize?.category === 'GRAND' ? (
                         <div className="font-mono text-xs sm:text-sm md:text-base font-black uppercase tracking-[0.25em] text-amber-500 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-600/40 px-3 py-1 rounded-full mb-1 flex items-center gap-2 shadow-xs">
                           <span>👑</span>
                           <span>GRAND PRIZE WINNER</span>
                           <span>👑</span>
+                        </div>
+                      ) : (
+                        <div className="font-mono text-xs sm:text-sm md:text-base font-black uppercase tracking-[0.25em] text-blue-600 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-600/40 px-3 py-1 rounded-full mb-1 flex items-center gap-2 shadow-xs">
+                          <span>🎁</span>
+                          <span>MINOR PRIZE WINNER</span>
+                          <span>🎁</span>
                         </div>
                       )}
                       <div className="font-mono text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-emerald-600 flex items-center gap-2 sm:gap-3 drop-shadow-xs">
