@@ -25,9 +25,10 @@ import {
   GitMerge,
   Sparkles,
   ShieldCheck,
-  Loader2
+  Loader2,
+  UserPlus
 } from 'lucide-react';
-import { isSupabaseConfigured, batchSyncParticipantsToSupabase } from '../../lib/supabase';
+import { isSupabaseConfigured, batchSyncParticipantsToSupabase, upsertSingleParticipantToSupabase } from '../../lib/supabase';
 import {
   findDuplicateParticipants,
   deduplicateBatch,
@@ -79,6 +80,35 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [isResetNonWinnersModalOpen, setIsResetNonWinnersModalOpen] = useState(false);
   const [isResettingNonWinners, setIsResettingNonWinners] = useState(false);
   const [resetNonWinnersFeedback, setResetNonWinnersFeedback] = useState<{ text: string; error?: boolean } | null>(null);
+
+  // Single Participant Add Modal state
+  const [isAddParticipantModalOpen, setIsAddParticipantModalOpen] = useState(false);
+  const [addParticipantForm, setAddParticipantForm] = useState<{
+    fullName: string;
+    depedId: string;
+    district: District;
+    school: string;
+    position: string;
+    personnelType: 'TEACHING' | 'NON-TEACHING';
+    eligible: EligibilityStatus;
+  }>({
+    fullName: '',
+    depedId: '',
+    district: 'SOUTH',
+    school: '',
+    position: 'Teacher I',
+    personnelType: 'TEACHING',
+    eligible: 'INELIGIBLE'
+  });
+
+  const knownSchools = useMemo(() => {
+    const set = new Set<string>();
+    participants.forEach((p) => {
+      if (p.school && p.school.trim()) set.add(p.school.trim());
+    });
+    return Array.from(set).sort();
+  }, [participants]);
+
   const pageSize = 25;
 
   const confirmedWinnersCount = useMemo(() => {
@@ -117,6 +147,69 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     } finally {
       setIsResettingNonWinners(false);
     }
+  };
+
+  const handleSaveNewParticipant = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = addParticipantForm.fullName.trim();
+    const cleanSchool = addParticipantForm.school.trim();
+    if (!cleanName || !cleanSchool) {
+      alert('Please enter at least the Full Name and School.');
+      return;
+    }
+
+    const cleanDepEd = addParticipantForm.depedId.trim();
+    const generatedId = cleanDepEd
+      ? `W-${cleanDepEd}`
+      : `TD26-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+
+    const nameParts = cleanName.split(' ');
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : cleanName;
+    const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : cleanName;
+
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const isPresent = addParticipantForm.eligible === 'ELIGIBLE';
+    const newParticipant: Participant = {
+      id: generatedId,
+      depedId: cleanDepEd || undefined,
+      fullName: cleanName,
+      firstName,
+      lastName,
+      middleName: '',
+      district: addParticipantForm.district,
+      originalDistrict: addParticipantForm.district,
+      school: cleanSchool,
+      position: addParticipantForm.position.trim() || 'Teacher I',
+      personnelType: addParticipantForm.personnelType,
+      contactNumber: '',
+      eligible: addParticipantForm.eligible,
+      winner: 'NO',
+      claimed: 'NO',
+      attendedAt: isPresent ? now : undefined,
+      attendedBy: isPresent ? 'Master Admin / Secretariat Desk' : undefined,
+      status: 'ACTIVE',
+      createdAt: now
+    };
+
+    if (onImportParticipants) {
+      onImportParticipants([newParticipant, ...participants]);
+    }
+
+    if (isSupabaseConfigured()) {
+      upsertSingleParticipantToSupabase(newParticipant).catch(console.error);
+    }
+
+    setIsAddParticipantModalOpen(false);
+    setAddParticipantForm({
+      fullName: '',
+      depedId: '',
+      district: 'SOUTH',
+      school: '',
+      position: 'Teacher I',
+      personnelType: 'TEACHING',
+      eligible: 'INELIGIBLE'
+    });
+    setSearch(cleanName);
   };
 
   // Load ignored duplicate keys from localStorage
@@ -386,6 +479,15 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                   ? `Duplicates (${duplicateClusters.length})`
                   : 'Duplicates (0)'}
               </span>
+            </button>
+
+            <button
+              onClick={() => setIsAddParticipantModalOpen(true)}
+              className="px-3.5 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-xs"
+              title="Manually register an unlisted or walk-in teacher"
+            >
+              <UserPlus className="w-4 h-4 text-black" />
+              <span>Add Walk-in Teacher</span>
             </button>
 
             <button
@@ -878,6 +980,165 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                 Process & Load Sheet
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Single Participant Modal */}
+      {isAddParticipantModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in font-mono text-xs">
+          <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] max-w-lg w-full shadow-2xl relative text-[#1a1a1a] overflow-hidden">
+            <div className="bg-[#1a1a1a] px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#ff6a00]" />
+                <div>
+                  <h3 className="font-display font-bold text-base uppercase tracking-tight">
+                    REGISTER WALK-IN / UNLISTED TEACHER
+                  </h3>
+                  <p className="text-[10px] text-white/60 font-mono">
+                    Master Admin Secretariat Registration Desk
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddParticipantModalOpen(false)}
+                className="text-white/60 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewParticipant} className="p-6 space-y-4">
+              <div>
+                <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={addParticipantForm.fullName}
+                  onChange={(e) => setAddParticipantForm({ ...addParticipantForm, fullName: e.target.value })}
+                  placeholder="e.g. Juan Dela Cruz"
+                  className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  autoFocus
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    DepEd ID / PRN <span className="text-[10px] text-neutral-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={addParticipantForm.depedId}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, depedId: e.target.value })}
+                    placeholder="e.g. 4029182"
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    District <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={addParticipantForm.district}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, district: e.target.value as District })}
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  >
+                    <option value="NORTH">North District</option>
+                    <option value="EAST">East District</option>
+                    <option value="WEST">West District</option>
+                    <option value="SOUTH">South District</option>
+                    <option value="PRIVATE">Private / ECCD / LSB</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    School / Station <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    list="known-admin-schools"
+                    value={addParticipantForm.school}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, school: e.target.value })}
+                    placeholder="Type or select school..."
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  />
+                  <datalist id="known-admin-schools">
+                    {knownSchools.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    Position
+                  </label>
+                  <input
+                    type="text"
+                    value={addParticipantForm.position}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, position: e.target.value })}
+                    placeholder="e.g. Teacher I"
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    Classification
+                  </label>
+                  <select
+                    value={addParticipantForm.personnelType}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, personnelType: e.target.value as any })}
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  >
+                    <option value="TEACHING">Teaching (All Draws)</option>
+                    <option value="NON-TEACHING">Non-Teaching (Minor Only)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-neutral-700 font-bold mb-1 uppercase text-[11px]">
+                    Initial Status
+                  </label>
+                  <select
+                    value={addParticipantForm.eligible}
+                    onChange={(e) => setAddParticipantForm({ ...addParticipantForm, eligible: e.target.value as any })}
+                    className="w-full bg-white border border-[#1a1a1a]/25 text-[#1a1a1a] px-3 py-2 text-xs focus:outline-none focus:border-[#ff6a00]"
+                  >
+                    <option value="INELIGIBLE">Ineligible / Pending Gate Scan</option>
+                    <option value="ELIGIBLE">Eligible (Checked In)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-white px-6 py-3.5 -mx-6 -mb-6 mt-4 border-t border-[#1a1a1a]/15 flex justify-end gap-3 font-mono text-xs font-bold uppercase">
+                <button
+                  type="button"
+                  onClick={() => setIsAddParticipantModalOpen(false)}
+                  className="px-4 py-2 border border-[#1a1a1a] hover:bg-[#f8f7f4]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#ff6a00] hover:bg-[#e05d00] text-black transition-colors font-bold flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Save Participant</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -29,7 +29,8 @@ import {
   ExternalLink,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  X
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -47,7 +48,8 @@ import {
   batchSyncParticipantsToSupabase,
   fetchParticipantsFromSupabase,
   fetchAttendanceRecordsFromSupabase,
-  subscribeToRealtimeUpdates
+  subscribeToRealtimeUpdates,
+  upsertSingleParticipantToSupabase
 } from '../../lib/supabase';
 
 interface AttendanceScannerModuleProps {
@@ -1543,8 +1545,15 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   <tbody className="divide-y divide-[#1a1a1a]/15 dark:divide-[#27272a]">
                     {manualFiltered.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-neutral-500 dark:text-[#71717a]">
-                          No participants found matching the query.
+                        <td colSpan={5} className="p-8 text-center text-neutral-500 dark:text-[#71717a]">
+                          <div className="max-w-md mx-auto flex flex-col items-center gap-1.5">
+                            <p className="text-sm font-medium text-[#1a1a1a] dark:text-white">
+                              {manualSearch ? `No teacher found matching "${manualSearch}"` : 'No participants found matching the selected filters.'}
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-[#a1a1aa] leading-relaxed">
+                              If this is an unlisted educator or substitute teacher, please direct them to the <strong>Master Admin / Secretariat Desk</strong> for official profiling and registration.
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -1610,6 +1619,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
                   </tbody>
                 </table>
               </div>
+
             </div>
           )}
 

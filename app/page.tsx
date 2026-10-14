@@ -618,7 +618,8 @@ export default function Home() {
     });
     const normalized = correctDistrict !== updated.district ? { ...updated, district: correctDistrict } : updated;
     setParticipants((prev) => {
-      const list = prev.map((p) => (p.id === normalized.id ? normalized : p));
+      const exists = prev.some((p) => p.id === normalized.id);
+      const list = exists ? prev.map((p) => (p.id === normalized.id ? normalized : p)) : [normalized, ...prev];
       try {
         localStorage.setItem('td26_profiling_participants', JSON.stringify(list));
       } catch (e) {

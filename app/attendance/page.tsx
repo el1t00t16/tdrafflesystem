@@ -192,7 +192,8 @@ export default function AttendancePage() {
 
   const handleUpdateParticipant = (updated: Participant) => {
     setParticipants((prev) => {
-      const next = prev.map((p) => (p.id === updated.id ? updated : p));
+      const exists = prev.some((p) => p.id === updated.id);
+      const next = exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [updated, ...prev];
       try {
         localStorage.setItem('td26_profiling_participants', JSON.stringify(next));
       } catch (e) {
