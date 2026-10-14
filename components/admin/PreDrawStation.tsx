@@ -31,7 +31,8 @@ import {
   Search,
   UserCheck,
   X,
-  Loader2
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -537,6 +538,16 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 {preDrawWinners.length}
               </span>
             </button>
+            <a
+              href="/pre-draw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all border border-indigo-600 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-xs cursor-pointer"
+              title="Open full-screen Pre-Draw Winners Showcase on LED Wall (/pre-draw)"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>LED Wall Showcase</span>
+            </a>
           </div>
         </div>
 

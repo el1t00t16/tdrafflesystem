@@ -5,8 +5,8 @@ import { Lock, ExternalLink, Sun, Moon, Download } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 
 interface HeaderProps {
-  currentView: 'display' | 'admin' | 'claim' | 'attendance';
-  onViewChange: (view: 'display' | 'admin' | 'claim' | 'attendance') => void;
+  currentView: 'display' | 'admin' | 'claim' | 'attendance' | 'predraw';
+  onViewChange: (view: 'display' | 'admin' | 'claim' | 'attendance' | 'predraw') => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   isFullscreen: boolean;
@@ -14,6 +14,7 @@ interface HeaderProps {
   unclaimedCount?: number;
   totalWinnersCount?: number;
   presentCount?: number;
+  preDrawCount?: number;
   onLock?: () => void;
   eventName?: string;
 }
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   unclaimedCount = 0,
   totalWinnersCount = 0,
   presentCount = 0,
+  preDrawCount = 0,
   onLock,
   eventName
 }) => {
@@ -159,6 +161,33 @@ export const Header: React.FC<HeaderProps> = ({
               rel="noopener noreferrer"
               title="Open Standalone Prize Claim Workstation in new window (/claims)"
               className="p-1 hover:text-[#ff6a00] text-neutral-400 transition-colors ml-0.5"
+            >
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="flex items-center">
+            <button
+              id="nav-btn-predraw"
+              onClick={() => onViewChange('predraw')}
+              title={preDrawCount !== undefined ? `Open Pre-Draw LED Wall Showcase (${preDrawCount} Winners)` : 'Pre-Draw Winner Showcase'}
+              className={`nav-item flex items-center gap-1.5 ${currentView === 'predraw' ? 'active' : ''}`}
+            >
+              <span>Pre-Draw Viewer</span>
+              {isMounted && preDrawCount !== undefined && preDrawCount > 0 && (
+                <span
+                  suppressHydrationWarning
+                  className="font-mono text-[9px] bg-indigo-600 text-white px-1.5 py-0.2 rounded-xs font-bold"
+                >
+                  {preDrawCount}
+                </span>
+              )}
+            </button>
+            <a
+              href="/pre-draw"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Standalone Pre-Draw LED Wall Viewer in new window (/pre-draw)"
+              className="p-1 hover:text-indigo-400 text-neutral-400 transition-colors ml-0.5"
             >
               <ExternalLink className="w-3 h-3" />
             </a>

@@ -10,6 +10,7 @@ interface ProjectorDisplayProps {
   selectedPrizeId?: string;
   preDrawWinners?: Winner[];
   onSelectPrize?: (prizeId: string) => void;
+  onOpenPreDrawViewer?: () => void;
   isDrawing: boolean;
   shufflingNames: Record<District, { name: string; school: string }>;
   revealedWinners: Participant[];
@@ -51,6 +52,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   selectedPrizeId,
   preDrawWinners = [],
   onSelectPrize,
+  onOpenPreDrawViewer,
   isDrawing,
   shufflingNames,
   candidatePoolByDistrict,
@@ -1214,6 +1216,19 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   {tickerSpeed === 'slow' ? 'RELAXED' : tickerSpeed === 'fast' ? 'BRISK' : 'NORMAL'}
                 </span>
               </button>
+
+              {/* Full LED Wall Showcase Launcher */}
+              {onOpenPreDrawViewer && (
+                <button
+                  type="button"
+                  onClick={onOpenPreDrawViewer}
+                  className="flex items-center gap-1 font-mono text-[10px] sm:text-xs font-bold uppercase px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400 transition-colors cursor-pointer shadow-xs"
+                  title="Flash full-screen Pre-Draw Winners Showcase on LED Wall"
+                >
+                  <Maximize2 className="w-3 h-3" />
+                  <span className="hidden sm:inline">LED SHOWCASE</span>
+                </button>
+              )}
             </div>
 
             {/* Scrolling Viewport */}

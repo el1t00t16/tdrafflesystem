@@ -20,6 +20,7 @@ import { PrizeClaimModule } from '../components/PrizeClaimModule';
 import { AttendanceScannerModule } from '../components/attendance/AttendanceScannerModule';
 import { AdminLoginScreen } from '../components/admin/AdminLoginScreen';
 import { DrawPreviewModal, DrawReviewModal } from '../components/DrawModals';
+import { PreDrawWinnerViewer } from '../components/pre-draw/PreDrawWinnerViewer';
 import { soundSynthesizer } from '../lib/sound';
 import { triggerConfetti } from '../lib/confetti';
 import {
@@ -57,7 +58,7 @@ import {
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
 export default function Home() {
-  const [currentView, setCurrentView] = useState<'display' | 'admin' | 'claim' | 'attendance'>('display');
+  const [currentView, setCurrentView] = useState<'display' | 'admin' | 'claim' | 'attendance' | 'predraw'>('display');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -551,6 +552,8 @@ export default function Home() {
         setCurrentView('attendance');
       } else if (page === 'admin') {
         setCurrentView('admin');
+      } else if (page === 'predraw' || page === 'pre-draw') {
+        setCurrentView('predraw');
       } else if (page === 'projector' || page === 'display') {
         setCurrentView('display');
       }
@@ -561,7 +564,7 @@ export default function Home() {
     return () => window.removeEventListener('popstate', syncFromUrl);
   }, []);
 
-  const handleViewChange = (view: 'display' | 'admin' | 'claim' | 'attendance') => {
+  const handleViewChange = (view: 'display' | 'admin' | 'claim' | 'attendance' | 'predraw') => {
     soundSynthesizer.playClick();
     if (view !== 'display') {
       setIsFullStage(false);
@@ -1989,6 +1992,7 @@ export default function Home() {
           unclaimedCount={unclaimedCount}
           totalWinnersCount={winners.length}
           presentCount={presentCount}
+          preDrawCount={preDrawWinners.length}
           onLock={handleLockAdmin}
           eventName={settings.eventName}
         />
@@ -2006,6 +2010,7 @@ export default function Home() {
               soundSynthesizer.playClick();
               handleSelectPrize(id);
             }}
+            onOpenPreDrawViewer={() => handleViewChange('predraw')}
             isDrawing={isDrawing}
             shufflingNames={shufflingNames}
             candidatePoolByDistrict={candidatePoolByDistrict}
@@ -2030,6 +2035,18 @@ export default function Home() {
             onToggleSound={handleToggleSound}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
+            eventName={settings.eventName}
+          />
+        )}
+
+        {currentView === 'predraw' && (
+          <PreDrawWinnerViewer
+            winners={winners}
+            onBack={() => handleViewChange('display')}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
+            soundEnabled={soundEnabled}
+            onToggleSound={handleToggleSound}
             eventName={settings.eventName}
           />
         )}
