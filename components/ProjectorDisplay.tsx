@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { District, DistributionMode, Participant, Prize, Winner } from '../lib/types';
-import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown } from 'lucide-react';
+import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown, Play, Pause, Gauge } from 'lucide-react';
 
 interface ProjectorDisplayProps {
   selectedPrize: Prize | null;
@@ -83,6 +83,53 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Pre-Draw Marquee Speed & Controls
+  const [tickerSpeed, setTickerSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
+  const [isTickerPaused, setIsTickerPaused] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('td26_ticker_speed');
+      if (saved === 'slow' || saved === 'normal' || saved === 'fast') {
+        setTickerSpeed(saved);
+      }
+    }
+  }, []);
+
+  const handleCycleSpeed = () => {
+    setTickerSpeed((prev) => {
+      const next = prev === 'normal' ? 'slow' : prev === 'slow' ? 'fast' : 'normal';
+      try {
+        localStorage.setItem('td26_ticker_speed', next);
+      } catch {}
+      return next;
+    });
+  };
+
+  // Dynamic marquee duration based on winner count to guarantee constant, comfortable reading pace
+  const marqueeDuration = useMemo(() => {
+    const count = preDrawWinners.length;
+    if (count === 0) return 60;
+    const secondsPerItem = tickerSpeed === 'slow' ? 8.5 : tickerSpeed === 'fast' ? 3.2 : 5.5;
+    const minDuration = tickerSpeed === 'slow' ? 50 : tickerSpeed === 'fast' ? 25 : 40;
+    return Math.max(minDuration, Math.round(count * secondsPerItem));
+  }, [preDrawWinners.length, tickerSpeed]);
+
+  // Seamless marquee loop duplication
+  const marqueeList = useMemo(() => {
+    if (preDrawWinners.length === 0) return [];
+    let repeatCount = 1;
+    if (preDrawWinners.length === 1) repeatCount = 8;
+    else if (preDrawWinners.length === 2) repeatCount = 4;
+    else if (preDrawWinners.length < 5) repeatCount = 2;
+
+    const base: Winner[] = [];
+    for (let i = 0; i < repeatCount; i++) {
+      base.push(...preDrawWinners);
+    }
+    return [...base, ...base];
+  }, [preDrawWinners]);
 
   const fullStageActive = isFullStage !== undefined ? isFullStage : internalFullStage;
 
@@ -1131,21 +1178,68 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
         {/* Bottom Scrolling Ticker for Pre-Draw Winners */}
         {preDrawWinners.length > 0 && !isDrawing && (
-          <div className="bg-[#1a1a1a] dark:bg-black border-t-2 border-[#1a1a1a] dark:border-white/15 text-white py-1.5 sm:py-2 px-3 overflow-hidden select-none shrink-0 z-20 flex items-center shadow-lg">
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-600 text-white font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider shrink-0 z-10 shadow-xs">
-              <span className="animate-pulse">✨</span>
-              <span>PRE-DRAW WINNERS ({preDrawWinners.length}):</span>
+          <div className="bg-[#141414] dark:bg-black border-t-2 border-[#1a1a1a] dark:border-white/15 text-white py-2 px-3 overflow-hidden select-none shrink-0 z-20 flex items-center shadow-lg gap-2 sm:gap-3">
+            {/* Header Badge & Operator Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 z-10">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-xs">
+                <span className="animate-pulse">✨</span>
+                <span>PRE-DRAW ({preDrawWinners.length})</span>
+              </div>
+
+              {/* Pause / Resume Button */}
+              <button
+                type="button"
+                onClick={() => setIsTickerPaused((prev) => !prev)}
+                className={`flex items-center gap-1 font-mono text-[10px] sm:text-xs font-bold uppercase px-2 py-1 border transition-colors cursor-pointer ${
+                  isTickerPaused
+                    ? 'bg-amber-500 text-black border-amber-400 hover:bg-amber-400 font-black'
+                    : 'bg-white/10 text-neutral-200 border-white/20 hover:bg-white/20'
+                }`}
+                title={isTickerPaused ? 'Click to Resume Ticker Scroll' : 'Click to Pause Ticker (or hover mouse over names)'}
+              >
+                {isTickerPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
+                <span className="hidden sm:inline">{isTickerPaused ? 'RESUME' : 'PAUSE'}</span>
+              </button>
+
+              {/* Speed Mode Button */}
+              <button
+                type="button"
+                onClick={handleCycleSpeed}
+                className="flex items-center gap-1 font-mono text-[10px] sm:text-xs font-bold uppercase px-2 py-1 bg-white/10 text-neutral-200 border border-white/20 hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
+                title="Click to toggle ticker scrolling speed (Normal / Relaxed / Brisk)"
+              >
+                <Gauge className="w-3 h-3 text-indigo-400" />
+                <span className="hidden md:inline text-neutral-400">SPEED:</span>
+                <span className="text-amber-400 font-mono font-black">
+                  {tickerSpeed === 'slow' ? 'RELAXED' : tickerSpeed === 'fast' ? 'BRISK' : 'NORMAL'}
+                </span>
+              </button>
             </div>
 
-            <div className="overflow-hidden relative flex-1 ml-3">
-              <div className="animate-marquee whitespace-nowrap flex items-center gap-8 text-xs font-bold tracking-wide">
-                {/* Duplicate array so marquee wraps seamlessly */}
-                {[...preDrawWinners, ...preDrawWinners].map((w, idx) => (
+            {/* Scrolling Viewport */}
+            <div className="overflow-hidden relative flex-1 ml-1" title="Hover mouse over names to temporarily pause ticker">
+              <div
+                className="animate-marquee whitespace-nowrap flex items-center gap-8 text-xs sm:text-sm font-bold tracking-wide"
+                style={
+                  {
+                    '--marquee-duration': `${marqueeDuration}s`,
+                    '--marquee-play-state': isTickerPaused ? 'paused' : 'running',
+                    animationDuration: `${marqueeDuration}s`,
+                    animationPlayState: isTickerPaused ? 'paused' : 'running'
+                  } as React.CSSProperties
+                }
+              >
+                {marqueeList.map((w, idx) => (
                   <div key={`${w.winnerId}-${idx}`} className="inline-flex items-center gap-2 shrink-0">
-                    <span className="text-white font-black uppercase">{w.name}</span>
-                    <span className="text-neutral-400 font-normal">({w.school})</span>
-                    <span className="text-[#FF6A00] font-black uppercase">— {w.prizeName}</span>
-                    <span className="text-neutral-600 font-mono text-[11px]">•</span>
+                    <span className="text-white font-black uppercase text-xs sm:text-sm tracking-wide">{w.name}</span>
+                    <span className="text-neutral-400 font-normal text-[11px] sm:text-xs">({w.school})</span>
+                    <span className="text-[#FF6A00] font-black uppercase text-xs sm:text-sm">— {w.prizeName}</span>
+                    {w.district && (
+                      <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 bg-white/10 text-neutral-300 uppercase tracking-wider">
+                        {w.district}
+                      </span>
+                    )}
+                    <span className="text-neutral-600 font-mono text-[11px] ml-2">•</span>
                   </div>
                 ))}
               </div>

@@ -207,12 +207,13 @@
   .animate-marquee {
     display: flex;
     width: max-content;
-    animation: marquee 40s linear infinite;
+    animation: marquee var(--marquee-duration, 60s) linear infinite;
+    animation-play-state: var(--marquee-play-state, running);
     will-change: transform;
   }
 
   .animate-marquee:hover {
-    animation-play-state: paused;
+    animation-play-state: paused !important;
   }
 }
 
