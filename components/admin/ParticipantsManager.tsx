@@ -28,7 +28,7 @@ import {
   Loader2,
   UserPlus
 } from 'lucide-react';
-import { isSupabaseConfigured, batchSyncParticipantsToSupabase, upsertSingleParticipantToSupabase } from '../../lib/supabase';
+import { isSupabaseConfigured, batchSyncParticipantsToSupabase, upsertSingleParticipantToSupabase, pushAttendanceToSupabase } from '../../lib/supabase';
 import {
   findDuplicateParticipants,
   deduplicateBatch,
@@ -40,6 +40,7 @@ interface ParticipantsManagerProps {
   participants: Participant[];
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
+  onAddParticipant?: (newParticipant: Participant) => void;
   onClearAllParticipants?: () => void;
   onDeleteParticipant?: (id: string) => Promise<void> | void;
   onBatchDeleteParticipants?: (ids: string[]) => Promise<void> | void;
@@ -51,6 +52,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   participants,
   onToggleEligibility,
   onImportParticipants,
+  onAddParticipant,
   onClearAllParticipants,
   onDeleteParticipant,
   onBatchDeleteParticipants,
@@ -191,12 +193,43 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       createdAt: now
     };
 
-    if (onImportParticipants) {
+    if (onAddParticipant) {
+      onAddParticipant(newParticipant);
+    } else if (onImportParticipants) {
       onImportParticipants([newParticipant, ...participants]);
     }
 
     if (isSupabaseConfigured()) {
-      upsertSingleParticipantToSupabase(newParticipant).catch(console.error);
+      upsertSingleParticipantToSupabase(newParticipant)
+        .then((ok) => {
+          if (ok) {
+            setCloudMsg({ text: `Walk-in teacher "${cleanName}" (${newParticipant.id}) saved and synced to Supabase Cloud!` });
+            setTimeout(() => setCloudMsg(null), 6000);
+          }
+        })
+        .catch((err) => {
+          console.error('Supabase participant upsert error:', err);
+          setCloudMsg({ text: `Saved locally, but Supabase sync notice: ${err?.message || err}`, error: true });
+        });
+
+      if (isPresent) {
+        pushAttendanceToSupabase({
+          id: `ATT-WALKIN-${Date.now()}`,
+          participantId: generatedId,
+          depedId: cleanDepEd || undefined,
+          name: cleanName,
+          district: addParticipantForm.district,
+          school: cleanSchool,
+          position: addParticipantForm.position.trim() || 'Teacher I',
+          scannedAt: now,
+          stationId: 'SECRETARIAT-DESK',
+          scannerOfficer: 'Secretariat Admin',
+          method: 'MANUAL_ENTRY'
+        }).catch(console.error);
+      }
+    } else {
+      setCloudMsg({ text: `Walk-in teacher "${cleanName}" saved to local cache (Offline Mode).` });
+      setTimeout(() => setCloudMsg(null), 5000);
     }
 
     setIsAddParticipantModalOpen(false);

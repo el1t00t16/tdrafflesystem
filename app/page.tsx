@@ -2092,6 +2092,7 @@ export default function Home() {
             onResetNonWinnersEligibility={handleResetNonWinnersEligibility}
             onToggleEligibility={handleToggleEligibility}
             onImportParticipants={handleImportParticipants}
+            onAddParticipant={handleUpdateParticipant}
             onClearAllParticipants={handleClearAllParticipants}
             onDeleteParticipant={handleDeleteParticipant}
             onBatchDeleteParticipants={handleBatchDeleteParticipants}

@@ -41,6 +41,7 @@ interface AdminDashboardProps {
   onResetNonWinnersEligibility?: () => Promise<{ success: boolean; count: number; winnersKept: number; error?: string }>;
   onToggleEligibility: (id: string) => void;
   onImportParticipants?: (newParticipants: Participant[]) => void;
+  onAddParticipant?: (newParticipant: Participant) => void;
   onClearAllParticipants?: () => void;
   onDeleteParticipant?: (id: string) => Promise<void> | void;
   onBatchDeleteParticipants?: (ids: string[]) => Promise<void> | void;
@@ -90,6 +91,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onResetNonWinnersEligibility,
   onToggleEligibility,
   onImportParticipants,
+  onAddParticipant,
   onClearAllParticipants,
   onDeleteParticipant,
   onBatchDeleteParticipants,
@@ -238,6 +240,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           participants={participants}
           onToggleEligibility={onToggleEligibility}
           onImportParticipants={onImportParticipants}
+          onAddParticipant={onAddParticipant}
           onClearAllParticipants={onClearAllParticipants}
           onDeleteParticipant={onDeleteParticipant}
           onBatchDeleteParticipants={onBatchDeleteParticipants}
