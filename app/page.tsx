@@ -139,13 +139,13 @@ export default function Home() {
     return [];
   });
   const [shufflingNames, setShufflingNames] = useState<
-    Record<District, { name: string; school: string }>
+    Record<District, { name: string; school: string; topName?: string; bottomName?: string }>
   >({
-    NORTH: { name: 'Awaiting draw...', school: 'North District School' },
-    SOUTH: { name: 'Awaiting draw...', school: 'South District School' },
-    EAST: { name: 'Awaiting draw...', school: 'East District School' },
-    WEST: { name: 'Awaiting draw...', school: 'West District School' },
-    PRIVATE: { name: 'Awaiting draw...', school: 'Private School' }
+    NORTH: { name: 'Awaiting draw...', school: 'North District School', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    SOUTH: { name: 'Awaiting draw...', school: 'South District School', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    EAST: { name: 'Awaiting draw...', school: 'East District School', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    WEST: { name: 'Awaiting draw...', school: 'West District School', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    PRIVATE: { name: 'Awaiting draw...', school: 'Private School', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' }
   });
 
   // Winner Selection Criteria State
@@ -887,6 +887,15 @@ export default function Home() {
     const startTime = Date.now();
     let isDeceleratingSound = false;
 
+    // Rolling reel index offsets per district for a continuous mechanical tumbler motion
+    const reelOffsets: Record<District, number> = {
+      NORTH: Math.floor(Math.random() * 50),
+      EAST: Math.floor(Math.random() * 50),
+      WEST: Math.floor(Math.random() * 50),
+      SOUTH: Math.floor(Math.random() * 50),
+      PRIVATE: Math.floor(Math.random() * 50)
+    };
+
     // Ease-out Deceleration Reel: starts at blitz speed (45ms), then smoothly slows down in the final ~35%
     const stepReel = () => {
       const now = Date.now();
@@ -907,13 +916,46 @@ export default function Home() {
         return;
       }
 
-      // Roll names on all 5 districts
-      const nextNames: Record<District, { name: string; school: string }> = { ...shufflingNames };
+      // Roll 3 names (top, center, bottom) on all 5 districts like a mechanical slot tumbler
+      const nextNames: Record<
+        District,
+        { name: string; school: string; topName?: string; bottomName?: string }
+      > = { ...shufflingNames };
+
       DISTRICT_LIST.forEach((d) => {
         const pool = participantsByDistrict[d];
         if (pool && pool.length > 0) {
-          const rand = pool[Math.floor(Math.random() * pool.length)];
-          nextNames[d] = { name: rand.fullName, school: rand.school };
+          if (pool.length === 1) {
+            const p = pool[0];
+            nextNames[d] = {
+              name: p.fullName,
+              school: p.school,
+              topName: p.fullName,
+              bottomName: p.fullName
+            };
+          } else if (pool.length === 2) {
+            const idx = Math.floor(Math.random() * 2);
+            nextNames[d] = {
+              name: pool[idx].fullName,
+              school: pool[idx].school,
+              topName: pool[1 - idx].fullName,
+              bottomName: pool[1 - idx].fullName
+            };
+          } else {
+            // Advance reel offset smoothly by 1-3 candidates for continuous tumbler reel motion
+            const stride = pool.length > 8 ? Math.floor(Math.random() * 3) + 1 : 1;
+            reelOffsets[d] = (reelOffsets[d] + stride) % pool.length;
+            const curIdx = reelOffsets[d];
+            const prevIdx = (curIdx - 1 + pool.length) % pool.length;
+            const nextIdx = (curIdx + 1) % pool.length;
+
+            nextNames[d] = {
+              name: pool[curIdx].fullName,
+              school: pool[curIdx].school,
+              topName: pool[prevIdx].fullName,
+              bottomName: pool[nextIdx].fullName
+            };
+          }
         }
       });
       setShufflingNames(nextNames);

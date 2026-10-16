@@ -12,7 +12,7 @@ interface ProjectorDisplayProps {
   onSelectPrize?: (prizeId: string) => void;
   onOpenPreDrawViewer?: () => void;
   isDrawing: boolean;
-  shufflingNames: Record<District, { name: string; school: string }>;
+  shufflingNames: Record<District, { name: string; school: string; topName?: string; bottomName?: string }>;
   revealedWinners: Participant[];
   countdown: number | null;
   onOpenDrawPreview: () => void;
@@ -1165,17 +1165,42 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                     {/* Pane Content */}
                     <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden py-0.5">
                       {isCardDrawing ? (
-                        <div className="flex-1 flex flex-col justify-center items-center py-1 w-full overflow-hidden min-h-0">
-                          <div className="flex-1 flex items-center justify-center w-full px-2 min-h-0">
+                        <div className="flex-1 flex flex-col justify-between items-center py-0.5 w-full overflow-hidden min-h-0">
+                          {/* 3-Line Rolling Mechanical Reel Tumbler */}
+                          <div className="flex-1 flex flex-col justify-center items-center w-full px-1 min-h-0 overflow-hidden relative">
+                            {/* Cylindrical Reel Top & Bottom Fading Gradients */}
+                            <div className="absolute inset-x-0 top-0 h-3 sm:h-4 bg-gradient-to-b from-orange-50/95 to-transparent pointer-events-none z-10" />
+                            <div className="absolute inset-x-0 bottom-0 h-3 sm:h-4 bg-gradient-to-t from-orange-50/95 to-transparent pointer-events-none z-10" />
+
                             <div
                               key={shufflingNames[id]?.name}
-                              className="font-winner font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs animate-reel-slide"
+                              className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
                             >
-                              {shufflingNames[id]?.name || 'DepEd Participant'}
+                              {/* Line 1: Top / Incoming Candidate */}
+                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-xs sm:text-sm md:text-base lg:text-lg text-neutral-400 opacity-45 select-none transform scale-95">
+                                {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
+                              </div>
+
+                              {/* Line 2: Center / Active Candidate (Prominent Highlighted Focal Point) */}
+                              <div className="w-full text-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
+                                <div className="font-winner font-black text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs truncate">
+                                  {shufflingNames[id]?.name || 'DepEd Participant'}
+                                </div>
+                                {shufflingNames[id]?.school && shufflingNames[id]?.name !== 'Awaiting draw...' && (
+                                  <div className="font-mono text-[9px] sm:text-[10px] md:text-xs text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
+                                    {shufflingNames[id]?.school}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Line 3: Bottom / Outgoing Candidate */}
+                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-xs sm:text-sm md:text-base lg:text-lg text-neutral-400 opacity-45 select-none transform scale-95">
+                                {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="font-mono text-[9px] sm:text-[11px] lg:text-xs text-[#ff6a00] font-bold uppercase tracking-widest pt-1 shrink-0 animate-pulse">
+                          <div className="font-mono text-[9px] sm:text-[11px] lg:text-xs text-[#ff6a00] font-bold uppercase tracking-widest pt-0.5 shrink-0 animate-pulse">
                             [ SHUFFLING ALL {candidatePoolByDistrict?.[id]?.length || 0} CANDIDATES... ]
                           </div>
                         </div>
@@ -1199,6 +1224,11 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                               >
                                 {w.fullName}
                               </div>
+                              {w.school && (
+                                <div className="font-mono text-[10px] sm:text-xs md:text-sm text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
+                                  {w.school}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

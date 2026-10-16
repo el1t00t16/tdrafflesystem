@@ -111,12 +111,14 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   // 5 Cards Shuffle States
   const [isShuffling, setIsShuffling] = useState(false);
   const [hasDrawnRound, setHasDrawnRound] = useState(false);
-  const [shufflingNames, setShufflingNames] = useState<Record<District, { name: string; school: string }>>({
-    NORTH: { name: 'Awaiting pre-draw...', school: '' },
-    EAST: { name: 'Awaiting pre-draw...', school: '' },
-    WEST: { name: 'Awaiting pre-draw...', school: '' },
-    SOUTH: { name: 'Awaiting pre-draw...', school: '' },
-    PRIVATE: { name: 'Awaiting pre-draw...', school: '' }
+  const [shufflingNames, setShufflingNames] = useState<
+    Record<District, { name: string; school: string; topName?: string; bottomName?: string }>
+  >({
+    NORTH: { name: 'Awaiting pre-draw...', school: '', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    EAST: { name: 'Awaiting pre-draw...', school: '', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    WEST: { name: 'Awaiting pre-draw...', school: '', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    SOUTH: { name: 'Awaiting pre-draw...', school: '', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' },
+    PRIVATE: { name: 'Awaiting pre-draw...', school: '', topName: 'Eligible Candidates', bottomName: 'Ready to Draw' }
   });
   const [revealedWinnersByDistrict, setRevealedWinnersByDistrict] = useState<Record<District, Participant[]>>({
     NORTH: [],
@@ -334,6 +336,15 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
     setShuffleProgress(0);
 
+    // Rolling reel index offsets per district for a continuous mechanical tumbler motion
+    const reelOffsets: Record<District, number> = {
+      NORTH: Math.floor(Math.random() * 50),
+      EAST: Math.floor(Math.random() * 50),
+      WEST: Math.floor(Math.random() * 50),
+      SOUTH: Math.floor(Math.random() * 50),
+      PRIVATE: Math.floor(Math.random() * 50)
+    };
+
     const stepReel = () => {
       const now = Date.now();
       const elapsed = now - startTime;
@@ -358,13 +369,45 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
         return;
       }
 
-      // Roll names on all 5 district cards
-      const nextNames: Record<District, { name: string; school: string }> = { ...shufflingNames };
+      // Roll 3 names (top, center, bottom) on all 5 district cards
+      const nextNames: Record<
+        District,
+        { name: string; school: string; topName?: string; bottomName?: string }
+      > = { ...shufflingNames };
+
       DISTRICTS.forEach((d) => {
         const pool = participantsByDistrict[d];
         if (pool && pool.length > 0) {
-          const rand = pool[Math.floor(Math.random() * pool.length)];
-          nextNames[d] = { name: rand.fullName, school: rand.school };
+          if (pool.length === 1) {
+            const p = pool[0];
+            nextNames[d] = {
+              name: p.fullName,
+              school: p.school,
+              topName: p.fullName,
+              bottomName: p.fullName
+            };
+          } else if (pool.length === 2) {
+            const idx = Math.floor(Math.random() * 2);
+            nextNames[d] = {
+              name: pool[idx].fullName,
+              school: pool[idx].school,
+              topName: pool[1 - idx].fullName,
+              bottomName: pool[1 - idx].fullName
+            };
+          } else {
+            const stride = pool.length > 8 ? Math.floor(Math.random() * 3) + 1 : 1;
+            reelOffsets[d] = (reelOffsets[d] + stride) % pool.length;
+            const curIdx = reelOffsets[d];
+            const prevIdx = (curIdx - 1 + pool.length) % pool.length;
+            const nextIdx = (curIdx + 1) % pool.length;
+
+            nextNames[d] = {
+              name: pool[curIdx].fullName,
+              school: pool[curIdx].school,
+              topName: pool[prevIdx].fullName,
+              bottomName: pool[nextIdx].fullName
+            };
+          }
         }
       });
       setShufflingNames(nextNames);
@@ -686,13 +729,38 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     </div>
 
                     {/* Card Body */}
-                    <div className="flex-1 flex flex-col justify-center items-center py-2 text-center min-h-[70px]">
+                    <div className="flex-1 flex flex-col justify-center items-center py-1 text-center min-h-[75px] overflow-hidden">
                       {isShuffling ? (
-                        <div className="w-full space-y-1 overflow-hidden">
-                          <div className="font-winner font-black text-lg sm:text-xl md:text-2xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight animate-reel-slide">
-                            {shufflingNames[id]?.name || 'DepEd Participant'}
+                        <div className="w-full flex-1 flex flex-col justify-between items-center overflow-hidden min-h-0">
+                          {/* 3-Line Rolling Mechanical Reel Tumbler */}
+                          <div
+                            key={shufflingNames[id]?.name}
+                            className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
+                          >
+                            {/* Top / Incoming Candidate */}
+                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 opacity-45 select-none scale-95">
+                              {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
+                            </div>
+
+                            {/* Center / Active Candidate (Highlighted Focal Line) */}
+                            <div className="w-full text-center px-1.5 py-0.5 rounded-md bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
+                              <div className="font-winner font-black text-sm sm:text-base md:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
+                                {shufflingNames[id]?.name || 'DepEd Participant'}
+                              </div>
+                              {shufflingNames[id]?.school && shufflingNames[id]?.name !== 'Awaiting pre-draw...' && (
+                                <div className="text-[9px] sm:text-[10px] font-mono text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
+                                  {shufflingNames[id]?.school}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Bottom / Outgoing Candidate */}
+                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 opacity-45 select-none scale-95">
+                              {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
+                            </div>
                           </div>
-                          <div className="font-mono text-[10px] text-[#ff6a00] font-bold uppercase tracking-widest animate-pulse">
+
+                          <div className="font-mono text-[9px] sm:text-[10px] text-[#ff6a00] font-bold uppercase tracking-widest animate-pulse pt-0.5 shrink-0">
                             [ SHUFFLING {districtEligibleCounts[id] || 0} CANDIDATES... ]
                           </div>
                         </div>
