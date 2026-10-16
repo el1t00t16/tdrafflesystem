@@ -1167,34 +1167,29 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       {isCardDrawing ? (
                         <div className="flex-1 flex flex-col justify-between items-center py-0.5 w-full overflow-hidden min-h-0">
                           {/* 3-Line Rolling Mechanical Reel Tumbler */}
-                          <div className="flex-1 flex flex-col justify-center items-center w-full px-1 min-h-0 overflow-hidden relative">
-                            {/* Cylindrical Reel Top & Bottom Fading Gradients */}
-                            <div className="absolute inset-x-0 top-0 h-3 sm:h-4 bg-gradient-to-b from-orange-50/95 to-transparent pointer-events-none z-10" />
-                            <div className="absolute inset-x-0 bottom-0 h-3 sm:h-4 bg-gradient-to-t from-orange-50/95 to-transparent pointer-events-none z-10" />
+                          <div className="flex-1 flex flex-col justify-center items-center w-full px-1 sm:px-2 min-h-0 overflow-hidden relative">
+                            {/* Subtle Cylindrical Reel Top & Bottom Fading Shadows */}
+                            <div className="absolute inset-x-0 top-0 h-2 sm:h-3 bg-gradient-to-b from-orange-50/70 to-transparent pointer-events-none z-10" />
+                            <div className="absolute inset-x-0 bottom-0 h-2 sm:h-3 bg-gradient-to-t from-orange-50/70 to-transparent pointer-events-none z-10" />
 
                             <div
                               key={shufflingNames[id]?.name}
                               className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
                             >
-                              {/* Line 1: Top / Incoming Candidate */}
-                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-xs sm:text-sm md:text-base lg:text-lg text-neutral-400 opacity-45 select-none transform scale-95">
+                              {/* Line 1: Top / Incoming Candidate (Enlarged & Prominent) */}
+                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-neutral-400 opacity-60 uppercase tracking-tight select-none">
                                 {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
                               </div>
 
-                              {/* Line 2: Center / Active Candidate (Prominent Highlighted Focal Point) */}
-                              <div className="w-full text-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
-                                <div className="font-winner font-black text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-xs truncate">
+                              {/* Line 2: Center / Active Candidate (Maximized Font Size, Name Only, No School) */}
+                              <div className="w-full text-center px-2 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-xs">
+                                <div className="font-winner font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.6rem] text-[#111827] uppercase tracking-tight text-center leading-tight drop-shadow-sm truncate">
                                   {shufflingNames[id]?.name || 'DepEd Participant'}
                                 </div>
-                                {shufflingNames[id]?.school && shufflingNames[id]?.name !== 'Awaiting draw...' && (
-                                  <div className="font-mono text-[9px] sm:text-[10px] md:text-xs text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
-                                    {shufflingNames[id]?.school}
-                                  </div>
-                                )}
                               </div>
 
-                              {/* Line 3: Bottom / Outgoing Candidate */}
-                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-xs sm:text-sm md:text-base lg:text-lg text-neutral-400 opacity-45 select-none transform scale-95">
+                              {/* Line 3: Bottom / Outgoing Candidate (Enlarged & Prominent) */}
+                              <div className="w-full text-center px-1 sm:px-2 truncate font-winner font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-neutral-400 opacity-60 uppercase tracking-tight select-none">
                                 {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
                               </div>
                             </div>

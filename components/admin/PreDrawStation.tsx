@@ -738,24 +738,19 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                             className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
                           >
                             {/* Top / Incoming Candidate */}
-                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 opacity-45 select-none scale-95">
+                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
                               {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
                             </div>
 
-                            {/* Center / Active Candidate (Highlighted Focal Line) */}
-                            <div className="w-full text-center px-1.5 py-0.5 rounded-md bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
-                              <div className="font-winner font-black text-sm sm:text-base md:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
+                            {/* Center / Active Candidate (Highlighted Focal Line, Name Only, No School) */}
+                            <div className="w-full text-center px-1.5 py-0.5 sm:py-1 rounded-md bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
+                              <div className="font-winner font-black text-sm sm:text-base md:text-lg lg:text-xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
                                 {shufflingNames[id]?.name || 'DepEd Participant'}
                               </div>
-                              {shufflingNames[id]?.school && shufflingNames[id]?.name !== 'Awaiting pre-draw...' && (
-                                <div className="text-[9px] sm:text-[10px] font-mono text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
-                                  {shufflingNames[id]?.school}
-                                </div>
-                              )}
                             </div>
 
                             {/* Bottom / Outgoing Candidate */}
-                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 opacity-45 select-none scale-95">
+                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
                               {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
                             </div>
                           </div>
