@@ -285,10 +285,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     totalWinnersToDraw > availableQty;
 
   return (
-    <div className={`flex-1 flex flex-col relative ${fullStageActive ? 'h-screen overflow-hidden' : ''}`}>
+    <div className={`flex-1 flex flex-col relative min-h-0 ${fullStageActive ? 'h-screen overflow-hidden' : ''}`}>
       {/* Cinematic Stage Top Bar when in Full Stage Mode */}
       {fullStageActive && (
-        <div className="bg-[#1a1a1a] text-[#f8f7f4] px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 border-b-2 border-[#1a1a1a] shadow-md animate-fade-in select-none relative min-h-[76px] sm:min-h-[90px] shrink-0">
+        <div className="bg-[#1a1a1a] text-[#f8f7f4] px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 border-b-2 border-[#1a1a1a] shadow-md animate-fade-in select-none relative min-h-[68px] sm:min-h-[78px] shrink-0">
           {/* Left: Status Badge Container (Balanced width matching right side) */}
           <div className="w-32 sm:w-48 lg:w-56 flex items-center justify-start shrink-0">
             <span
@@ -532,9 +532,9 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
       {/* Main Layout Grid (Full-width 100% stage, zero horizontal margins) */}
       <div
-        className={`w-full flex-1 bg-[#f8f7f4] flex flex-col ${
+        className={`w-full flex-1 min-h-0 bg-[#f8f7f4] flex flex-col ${
           fullStageActive
-            ? 'h-[calc(100vh-76px)] sm:h-[calc(100vh-90px)] overflow-hidden'
+            ? 'overflow-hidden'
             : 'min-h-[calc(100vh-140px)] lg:grid lg:grid-cols-[1.1fr_2fr]'
         }`}
       >
@@ -878,7 +878,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
         )}
 
         {/* Main Stage: Single Winner Hero Spotlight OR 2 + 2 + 1 Multi-District Layout */}
-        <main className="main-stage flex-1 p-3 sm:p-6 lg:p-8 bg-[#f8f7f4] flex flex-col justify-center items-center overflow-y-auto">
+        <main className="main-stage flex-1 min-h-0 p-2 sm:p-4 lg:p-5 bg-[#f8f7f4] flex flex-col justify-center items-center overflow-y-auto">
           {isSingleWinnerHero ? (
             /* Single Winner Hero Spotlight Card - Balanced, Proportional & Majestic */
             <div className="w-full max-w-4xl lg:max-w-5xl 2xl:max-w-6xl mx-auto flex flex-col justify-center animate-fade-in my-auto">
@@ -1019,7 +1019,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
             </div>
           ) : drawStatus === 'REVEALED' && carouselMode === 'carousel' ? (
             /* Auto-Rotating Carousel - One District at a Time (LED Optimized) */
-            <div className="w-full max-w-[97vw] 2xl:max-w-[1850px] mx-auto flex flex-col items-center justify-center animate-fade-in">
+            <div className="w-full max-w-[97vw] 2xl:max-w-[1850px] mx-auto flex flex-col items-center justify-center animate-fade-in my-auto">
               {(() => {
                 const currentDistrict = DISTRICT_CONFIG[carouselIndex];
                 const winners = winnersByDistrict[currentDistrict.id];
@@ -1029,38 +1029,54 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   <>
                     <div
                       key={carouselIndex}
-                      className="w-full bg-white border-3 sm:border-4 border-emerald-600 rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse flex flex-col justify-between min-h-[350px] sm:min-h-[420px] lg:min-h-[500px] xl:min-h-[560px] max-h-[78vh] overflow-hidden"
+                      className="w-full bg-white border-3 sm:border-4 border-emerald-600 rounded-2xl sm:rounded-3xl p-3 sm:p-5 lg:p-6 xl:p-7 shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse flex flex-col justify-between min-h-[250px] sm:min-h-[300px] lg:min-h-[340px] xl:min-h-[380px] max-h-[64vh] sm:max-h-[66vh] overflow-hidden"
                     >
-                      {/* District Header */}
-                      <div className="shrink-0 text-center pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex flex-col items-center">
-                        <div className="font-mono text-xs sm:text-sm text-emerald-600 font-bold uppercase tracking-[0.3em] mb-1">
-                          🏆 District Winners
+                      {/* District Header - Balanced Horizontal Bar (Left: Tag, Center: District Title, Right: Winners Count) */}
+                      <div className="shrink-0 pb-2 sm:pb-2.5 mb-1.5 sm:mb-2 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2">
+                        {/* Left: District Winners Label */}
+                        <div className="w-1/3 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
+                          <span className="text-sm sm:text-base shrink-0">🏆</span>
+                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 uppercase tracking-[0.2em] truncate">
+                            District Winners
+                          </span>
                         </div>
-                        <h3 className="font-mono text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.25em] text-[#ff6a00]">
-                          {currentDistrict.title}
-                        </h3>
-                        {hasWinners && (
-                          <div className="font-mono text-sm sm:text-base font-bold text-[#ff6a00]/70 bg-[#ff6a00]/10 px-4 py-1 rounded-full mt-2">
-                            {winners.length} Winner{winners.length > 1 ? 's' : ''}
-                          </div>
-                        )}
+
+                        {/* Center: District Title (Strictly Centered) */}
+                        <div className="w-1/3 text-center flex justify-center">
+                          <h3 className="font-mono text-lg sm:text-2xl lg:text-3xl font-black uppercase tracking-[0.25em] text-[#ff6a00] leading-none whitespace-nowrap">
+                            {currentDistrict.title}
+                          </h3>
+                        </div>
+
+                        {/* Right: Winner Count Badge */}
+                        <div className="w-1/3 flex items-center justify-end">
+                          {hasWinners ? (
+                            <div className="font-mono text-xs sm:text-sm font-black text-[#ff6a00] bg-[#ff6a00]/10 border border-[#ff6a00]/30 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full shadow-2xs whitespace-nowrap">
+                              {winners.length} {winners.length === 1 ? 'Winner' : 'Winners'}
+                            </div>
+                          ) : (
+                            <div className="font-mono text-[11px] sm:text-xs font-bold text-neutral-400 bg-neutral-100 px-2 sm:px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                              0 Winners
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Winner Names - Maximum Size for LED Readability */}
-                      <div className="flex-1 flex flex-col justify-center items-center py-4 overflow-hidden">
+                      <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 overflow-hidden min-h-0">
                         {hasWinners ? (
-                          <div className={`flex flex-col justify-center items-center w-full ${winners.length > 2 ? 'space-y-2 sm:space-y-3' : 'space-y-3 sm:space-y-5'}`}>
+                          <div className={`flex flex-col justify-center items-center w-full ${winners.length > 2 ? 'space-y-1 sm:space-y-2' : 'space-y-2 sm:space-y-3.5'}`}>
                             {winners.map((w, idx) => (
                               <div key={idx} className="text-center w-full animate-fade-in">
                                 <div
-                                  className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-[1.1] drop-shadow-sm ${
+                                  className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-[1.12] drop-shadow-sm ${
                                     winners.length === 1
-                                      ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl'
+                                      ? 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl'
                                       : winners.length <= 3
-                                      ? 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl'
-                                      : winners.length <= 5
                                       ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
-                                      : 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                                      : winners.length <= 5
+                                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.6rem]'
+                                      : 'text-lg sm:text-xl md:text-2xl lg:text-3xl'
                                   }`}
                                 >
                                   {w.fullName}
@@ -1069,34 +1085,34 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <div className="font-mono text-lg sm:text-2xl text-[#1a1a1a]/30 text-center font-semibold tracking-wider uppercase">
+                          <div className="font-mono text-base sm:text-xl text-[#1a1a1a]/30 text-center font-semibold tracking-wider uppercase">
                             No winners in this district
                           </div>
                         )}
                       </div>
 
                       {/* Footer */}
-                      <div className="shrink-0 text-center pt-3 flex flex-col items-center">
-                        <div className="w-32 sm:w-52 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-2 rounded-full" />
-                        <span className="font-mono text-[11px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
+                      <div className="shrink-0 text-center pt-1.5 sm:pt-2 flex flex-col items-center">
+                        <div className="w-24 sm:w-40 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-1 rounded-full" />
+                        <span className="font-mono text-[10px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
                           MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
                         </span>
                       </div>
                     </div>
 
                     {/* Carousel Navigation Dots */}
-                    <div className="flex items-center justify-center gap-2.5 mt-5">
+                    <div className="flex items-center justify-center gap-2 sm:gap-2.5 mt-2 sm:mt-2.5">
                       {DISTRICT_CONFIG.map((d, idx) => (
                         <button
                           key={d.id}
                           type="button"
                           onClick={() => setCarouselIndex(idx)}
-                          className={`transition-all duration-300 rounded-full ${
+                          className={`transition-all duration-300 rounded-full cursor-pointer ${
                             idx === carouselIndex
-                              ? 'w-8 h-3 bg-[#ff6a00] shadow-md'
+                              ? 'w-7 sm:w-8 h-2.5 sm:h-3 bg-[#ff6a00] shadow-md'
                               : winnersByDistrict[d.id].length > 0
-                              ? 'w-3 h-3 bg-emerald-400 hover:bg-emerald-500 hover:scale-110'
-                              : 'w-3 h-3 bg-neutral-300 hover:bg-neutral-400 hover:scale-110'
+                              ? 'w-2.5 sm:w-3 h-2.5 sm:h-3 bg-emerald-400 hover:bg-emerald-500 hover:scale-110'
+                              : 'w-2.5 sm:w-3 h-2.5 sm:h-3 bg-neutral-300 hover:bg-neutral-400 hover:scale-110'
                           }`}
                           title={`${d.title}${winnersByDistrict[d.id].length > 0 ? ` (${winnersByDistrict[d.id].length} winner${winnersByDistrict[d.id].length > 1 ? 's' : ''})` : ''}`}
                           aria-label={`Go to ${d.title}`}
@@ -1105,7 +1121,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                     </div>
 
                     {/* Keyboard hint */}
-                    <div className="font-mono text-[10px] text-neutral-400 mt-2 tracking-wider uppercase">
+                    <div className="font-mono text-[9px] sm:text-[10px] text-neutral-400 mt-0.5 tracking-wider uppercase">
                       ← → Arrow keys to navigate • Auto-cycling every 5s
                     </div>
                   </>
