@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { Lock, ExternalLink, Sun, Moon, Download } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
 
@@ -33,22 +33,27 @@ export const Header: React.FC<HeaderProps> = ({
   onLock,
   eventName
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
       const mode = localStorage.getItem('td26_theme_mode');
-      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
-      setIsDarkMode(isDark);
+      return mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
+  });
 
-      if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
-        setIsInstalled(true);
-      }
-    } catch (e) {}
+  useEffect(() => {
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();

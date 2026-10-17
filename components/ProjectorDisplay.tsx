@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { District, DistributionMode, Participant, Prize, Winner } from '../lib/types';
 import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown, Play, Pause, Gauge } from 'lucide-react';
 
@@ -87,17 +87,17 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   const menuRef = React.useRef<HTMLDivElement>(null);
 
   // Pre-Draw Marquee Speed & Controls
-  const [tickerSpeed, setTickerSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
-  const [isTickerPaused, setIsTickerPaused] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
+  const [tickerSpeed, setTickerSpeed] = useState<'slow' | 'normal' | 'fast'>(() => {
+    if (typeof window === 'undefined') return 'normal';
+    try {
       const saved = localStorage.getItem('td26_ticker_speed');
       if (saved === 'slow' || saved === 'normal' || saved === 'fast') {
-        setTickerSpeed(saved);
+        return saved;
       }
-    }
-  }, []);
+    } catch {}
+    return 'normal';
+  });
+  const [isTickerPaused, setIsTickerPaused] = useState(false);
 
   const handleCycleSpeed = () => {
     setTickerSpeed((prev) => {
@@ -135,21 +135,24 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
   const fullStageActive = isFullStage !== undefined ? isFullStage : internalFullStage;
 
-  const setFullStage = (active: boolean) => {
+  const setFullStage = useCallback((active: boolean) => {
     if (onToggleFullStage) {
       onToggleFullStage(active);
     }
     setInternalFullStage(active);
-  };
+  }, [onToggleFullStage]);
 
   // Automatically collapse controls and hide header when a draw starts
-  useEffect(() => {
+  const [prevIsDrawing, setPrevIsDrawing] = useState(isDrawing);
+  if (isDrawing !== prevIsDrawing) {
+    setPrevIsDrawing(isDrawing);
     if (isDrawing) {
-      setFullStage(true);
+      setInternalFullStage(true);
       setIsMenuOpen(false);
       setIsHovered(false);
+      setCarouselIndex(0);
     }
-  }, [isDrawing]);
+  }
 
   // Click outside to dismiss stage menu
   useEffect(() => {
@@ -185,24 +188,26 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullStageActive, drawStatus, carouselMode, isMenuOpen]);
+  }, [fullStageActive, drawStatus, carouselMode, isMenuOpen, setFullStage]);
 
   // Group revealed winners by district
-  const winnersByDistrict: Record<District, Participant[]> = {
-    NORTH: [],
-    EAST: [],
-    WEST: [],
-    SOUTH: [],
-    PRIVATE: []
-  };
-
-  if (drawStatus === 'REVEALED') {
-    revealedWinners.forEach((w) => {
-      if (winnersByDistrict[w.district]) {
-        winnersByDistrict[w.district].push(w);
-      }
-    });
-  }
+  const winnersByDistrict: Record<District, Participant[]> = useMemo(() => {
+    const map: Record<District, Participant[]> = {
+      NORTH: [],
+      EAST: [],
+      WEST: [],
+      SOUTH: [],
+      PRIVATE: []
+    };
+    if (drawStatus === 'REVEALED') {
+      revealedWinners.forEach((w) => {
+        if (map[w.district]) {
+          map[w.district].push(w);
+        }
+      });
+    }
+    return map;
+  }, [drawStatus, revealedWinners]);
 
   const totalWinnersToDraw =
     distributionMode === 'EQUAL_PER_DISTRICT'
@@ -219,6 +224,18 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     (drawStatus !== 'REVEALED' && (totalWinnersToDraw === 1 || selectedPrize?.category === 'GRAND')) ||
     (distributionMode === 'COMBINED_POOL' && totalWinnersToDraw === 1);
 
+  // Focus carousel on first winning district when winners are revealed
+  const [prevRevealedWinners, setPrevRevealedWinners] = useState(revealedWinners);
+  if (revealedWinners !== prevRevealedWinners) {
+    setPrevRevealedWinners(revealedWinners);
+    if (drawStatus === 'REVEALED' && !isSingleWinnerHero) {
+      const firstActive = DISTRICT_CONFIG.findIndex((d) => (winnersByDistrict[d.id] || []).length > 0);
+      if (firstActive >= 0) {
+        setCarouselIndex(firstActive);
+      }
+    }
+  }
+
   // Auto-rotate carousel when winners are revealed, BUT ONLY for multi-district draws with >= 2 active districts!
   useEffect(() => {
     if (drawStatus !== 'REVEALED' || carouselMode !== 'carousel' || isSingleWinnerHero) return;
@@ -232,12 +249,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
       .map((item) => item.idx);
 
     // If 1 or 0 districts have winners, NEVER rotate through empty districts!
-    if (activeDistrictIndices.length <= 1) {
-      if (activeDistrictIndices.length === 1) {
-        setCarouselIndex(activeDistrictIndices[0]);
-      }
-      return;
-    }
+    if (activeDistrictIndices.length <= 1) return;
 
     const timer = setInterval(() => {
       setCarouselIndex((prev) => {
@@ -249,19 +261,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [drawStatus, carouselMode, isSingleWinnerHero, revealedWinners]);
-
-  // Reset carousel index when a new draw starts or focus on first winning district
-  useEffect(() => {
-    if (isDrawing) {
-      setCarouselIndex(0);
-    } else if (drawStatus === 'REVEALED' && !isSingleWinnerHero) {
-      const firstActive = DISTRICT_CONFIG.findIndex((d) => (winnersByDistrict[d.id] || []).length > 0);
-      if (firstActive >= 0) {
-        setCarouselIndex(firstActive);
-      }
-    }
-  }, [isDrawing, drawStatus, isSingleWinnerHero, revealedWinners]);
+  }, [drawStatus, carouselMode, isSingleWinnerHero, winnersByDistrict]);
 
   const singleWinnerShufflingName =
     targetDistrict && targetDistrict !== 'ALL'

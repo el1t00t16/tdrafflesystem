@@ -156,10 +156,13 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   }, [filteredWinners, currentPage, pageSize]);
 
   // Reset page when filter changes
-  useEffect(() => {
+  const [prevFilterKey, setPrevFilterKey] = useState(() => `${selectedDistrict}|${searchQuery}|${pageSize}`);
+  const currentFilterKey = `${selectedDistrict}|${searchQuery}|${pageSize}`;
+  if (currentFilterKey !== prevFilterKey) {
+    setPrevFilterKey(currentFilterKey);
     setCurrentPage(1);
     setSlideProgress(0);
-  }, [selectedDistrict, searchQuery, pageSize]);
+  }
 
   // Slideshow advance function
   const handleNextSlide = useCallback(() => {
@@ -197,11 +200,16 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   }, [currentPage, selectedDistrict, soundEnabled]);
 
   // Slideshow Timer Effect
-  useEffect(() => {
+  const [prevIsSlideshowActive, setPrevIsSlideshowActive] = useState(isSlideshowActive);
+  if (isSlideshowActive !== prevIsSlideshowActive) {
+    setPrevIsSlideshowActive(isSlideshowActive);
     if (!isSlideshowActive) {
       setSlideProgress(0);
-      return;
     }
+  }
+
+  useEffect(() => {
+    if (!isSlideshowActive) return;
 
     const updateIntervalMs = 100;
     const stepIncrement = (updateIntervalMs / (slideIntervalSeconds * 1000)) * 100;

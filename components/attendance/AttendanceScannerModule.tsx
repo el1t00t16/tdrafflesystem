@@ -87,13 +87,17 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   const [officerName, setOfficerName] = useState<string>(() => initialOfficerName || 'Attendance Desk');
   const [audioFeedback, setAudioFeedback] = useState<boolean>(true);
 
-  useEffect(() => {
+  const [prevInitialStationId, setPrevInitialStationId] = useState(initialStationId);
+  if (initialStationId !== prevInitialStationId) {
+    setPrevInitialStationId(initialStationId);
     if (initialStationId) setStationId(initialStationId);
-  }, [initialStationId]);
+  }
 
-  useEffect(() => {
+  const [prevInitialOfficerName, setPrevInitialOfficerName] = useState(initialOfficerName);
+  if (initialOfficerName !== prevInitialOfficerName) {
+    setPrevInitialOfficerName(initialOfficerName);
     if (initialOfficerName) setOfficerName(initialOfficerName);
-  }, [initialOfficerName]);
+  }
 
   // Verification Display states
   const [lastScannedResult, setLastScannedResult] = useState<{
@@ -113,14 +117,23 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
   const isStartingRef = useRef<boolean>(false);
   const scannerContainerId = 'html5qr-attendance-reader';
 
+  // Adjust state during render when camera turns active
+  const [prevCameraActive, setPrevCameraActive] = useState(cameraActive);
+  if (cameraActive !== prevCameraActive) {
+    setPrevCameraActive(cameraActive);
+    if (cameraActive) {
+      setShowDashboardInFocus(false);
+      setCameraError(null);
+    }
+  }
+
   // Camera scan debounce refs to prevent rapid duplicate loops
   const lastCameraScanCodeRef = useRef<string>('');
   const lastCameraScanTimeRef = useRef<number>(0);
 
-  // Automatically scroll to camera and collapse dashboard when camera activates
+  // Automatically scroll to camera when camera activates
   useEffect(() => {
     if (cameraActive) {
-      setShowDashboardInFocus(false);
       try {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e) {}
@@ -442,7 +455,7 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         message: 'Attendance confirmed! Teacher is now ELIGIBLE for the raffle draw.'
       });
     },
-    [resolveScannedCode, audioFeedback, officerName, stationId, onUpdateParticipant, onAddAttendanceRecord]
+    [resolveScannedCode, audioFeedback, officerName, stationId, onUpdateParticipant, onAddAttendanceRecord, participants.length]
   );
 
   // Keep latest handleProcessScan in ref so camera scanner never restarts on external state changes
@@ -463,7 +476,6 @@ export const AttendanceScannerModule: React.FC<AttendanceScannerModuleProps> = (
         container.innerHTML = '';
       }
 
-      setCameraError(null);
       localScanner = new Html5Qrcode(scannerContainerId);
       scannerInstanceRef.current = localScanner;
       isStartingRef.current = true;

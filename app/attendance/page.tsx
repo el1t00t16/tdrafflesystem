@@ -15,22 +15,67 @@ import {
 } from '../../lib/supabase';
 
 export default function AttendancePage() {
-  const [participants, setParticipants] = useState<Participant[]>(INITIAL_PARTICIPANTS);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [gateSession, setGateSession] = useState<GateSession | null>(null);
-  const [sessionChecked, setSessionChecked] = useState(false);
-  const [isCloudConfigured, setIsCloudConfigured] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>(() => {
+    if (typeof window === 'undefined') return INITIAL_PARTICIPANTS;
+    try {
+      const cached = localStorage.getItem('td26_profiling_participants');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PARTICIPANTS;
+  });
+
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cachedAttendance = localStorage.getItem('td26_attendance_records');
+      if (cachedAttendance) {
+        const parsed = JSON.parse(cachedAttendance);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [gateSession, setGateSession] = useState<GateSession | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('td26_gate_session') || sessionStorage.getItem('td26_gate_session');
+      if (stored) {
+        const parsed: GateSession = JSON.parse(stored);
+        if (parsed && parsed.isLoggedIn) return parsed;
+      }
+    } catch {}
+    return null;
+  });
+
+  const [sessionChecked] = useState(true);
+  const [isCloudConfigured, setIsCloudConfigured] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qUrl = urlParams.get('surl');
+      const qKey = urlParams.get('skey');
+      if (qUrl && qKey) {
+        setSupabaseCredentials(decodeURIComponent(qUrl), decodeURIComponent(qKey));
+        return true;
+      }
+    } catch {}
+    return isSupabaseConfigured();
+  });
   const [isHydrating, setIsHydrating] = useState(false);
   const [lastSyncStatus, setLastSyncStatus] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
       const mode = localStorage.getItem('td26_theme_mode');
-      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
-      setIsDarkMode(isDark);
-    } catch (e) {}
-  }, []);
+      return mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
 
   const toggleDarkMode = () => {
     const nextDark = !isDarkMode;
@@ -48,7 +93,7 @@ export default function AttendancePage() {
     } catch (e) {}
   };
 
-  // Check saved session on mount + handle quick-setup credentials passed via URL (?surl=...&skey=...)
+  // Strip sensitive credentials from address bar without reloading
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -56,30 +101,12 @@ export default function AttendancePage() {
         const qUrl = urlParams.get('surl');
         const qKey = urlParams.get('skey');
         if (qUrl && qKey) {
-          setSupabaseCredentials(decodeURIComponent(qUrl), decodeURIComponent(qKey));
-          // Strip sensitive credentials from address bar without reloading
           const cleanPath = window.location.pathname;
           window.history.replaceState({}, '', cleanPath);
         }
       }
     } catch (e) {
       console.error('Error parsing cloud quick-setup params:', e);
-    }
-
-    setIsCloudConfigured(isSupabaseConfigured());
-
-    try {
-      const stored = localStorage.getItem('td26_gate_session') || sessionStorage.getItem('td26_gate_session');
-      if (stored) {
-        const parsed: GateSession = JSON.parse(stored);
-        if (parsed && parsed.isLoggedIn) {
-          setGateSession(parsed);
-        }
-      }
-    } catch (e) {
-      console.error('Error loading gate session:', e);
-    } finally {
-      setSessionChecked(true);
     }
   }, []);
 
@@ -160,33 +187,12 @@ export default function AttendancePage() {
       console.error(e);
     }
 
-    try {
-      const cached = localStorage.getItem('td26_profiling_participants');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setParticipants(parsed);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load participants cache:', e);
-    }
-
-    try {
-      const cachedAttendance = localStorage.getItem('td26_attendance_records');
-      if (cachedAttendance) {
-        const parsed = JSON.parse(cachedAttendance);
-        if (Array.isArray(parsed)) {
-          setAttendanceRecords(parsed);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load attendance cache:', e);
-    }
-
     // Live cloud hydration if configured
     if (isSupabaseConfigured()) {
-      triggerCloudHydration();
+      const timer = setTimeout(() => {
+        triggerCloudHydration();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 

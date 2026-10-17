@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { PreDrawWinnerViewer } from '../../components/pre-draw/PreDrawWinnerViewer';
 import { Winner } from '../../lib/types';
 import { 
@@ -10,23 +11,25 @@ import {
 } from '../../lib/supabase';
 
 export default function PreDrawStandalonePage() {
-  const [winners, setWinners] = useState<Winner[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  // Load winners from localStorage and hydrate from Supabase
-  useEffect(() => {
+  const router = useRouter();
+  const [winners, setWinners] = useState<Winner[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const local = localStorage.getItem('td26_winners');
       if (local) {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed)) {
-          setWinners(parsed);
-        }
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.warn('Error reading local winners:', e);
     }
+    return [];
+  });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Hydrate from Supabase Cloud and subscribe to live changes
+  useEffect(() => {
 
     // Hydrate from Supabase Cloud
     if (isSupabaseConfigured()) {
@@ -102,7 +105,7 @@ export default function PreDrawStandalonePage() {
     <PreDrawWinnerViewer
       winners={winners}
       onBack={() => {
-        window.location.href = '/';
+        router.push('/');
       }}
       isFullscreen={isFullscreen}
       onToggleFullscreen={handleToggleFullscreen}

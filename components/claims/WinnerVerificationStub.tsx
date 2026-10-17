@@ -33,15 +33,19 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
   const [printPosition, setPrintPosition] = useState<PrintPosition>(positionProp || 'UPPER_LEFT');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
-  useEffect(() => {
+  const [prevLayoutFormat, setPrevLayoutFormat] = useState(layoutFormat);
+  if (layoutFormat !== prevLayoutFormat) {
+    setPrevLayoutFormat(layoutFormat);
     setActiveFormat(layoutFormat);
-  }, [layoutFormat]);
+  }
 
-  useEffect(() => {
+  const [prevPositionProp, setPrevPositionProp] = useState(positionProp);
+  if (positionProp !== prevPositionProp) {
+    setPrevPositionProp(positionProp);
     if (positionProp) {
       setPrintPosition(positionProp);
     }
-  }, [positionProp]);
+  }
 
   useEffect(() => {
     let isMounted = true;

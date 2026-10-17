@@ -46,21 +46,20 @@ export const DuplicateResolutionModal: React.FC<DuplicateResolutionModalProps> =
 }) => {
   const [filterType, setFilterType] = useState<'ALL' | DuplicateMatchType>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [ignoredKeys, setIgnoredKeys] = useState<Set<string>>(new Set());
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<{ text: string; error?: boolean } | null>(null);
-
-  // Load ignored keys from localStorage
-  useEffect(() => {
+  const [ignoredKeys, setIgnoredKeys] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
     try {
       const saved = localStorage.getItem('td26_ignored_duplicate_keys');
       if (saved) {
-        setIgnoredKeys(new Set(JSON.parse(saved)));
+        return new Set(JSON.parse(saved));
       }
     } catch (e) {
       console.error(e);
     }
-  }, []);
+    return new Set();
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ text: string; error?: boolean } | null>(null);
 
   const saveIgnoredKeys = (next: Set<string>) => {
     setIgnoredKeys(next);

@@ -25,22 +25,62 @@ import {
 import { soundSynthesizer } from '../../lib/sound';
 
 export default function ClaimsPage() {
-  const [winners, setWinners] = useState<Winner[]>([]);
-  const [claimSession, setClaimSession] = useState<ClaimStationSession | null>(null);
-  const [sessionChecked, setSessionChecked] = useState(false);
-  const [isCloudConfigured, setIsCloudConfigured] = useState(false);
+  const [winners, setWinners] = useState<Winner[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cached = localStorage.getItem('td26_winners');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return mergeWinnersWithPrintStatus(parsed);
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  const [claimSession, setClaimSession] = useState<ClaimStationSession | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored =
+        localStorage.getItem('td26_claim_session') ||
+        sessionStorage.getItem('td26_claim_session');
+      if (stored) {
+        const parsed: ClaimStationSession = JSON.parse(stored);
+        if (parsed && parsed.isLoggedIn) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [sessionChecked] = useState(true);
+  const [isCloudConfigured, setIsCloudConfigured] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qUrl = urlParams.get('surl');
+      const qKey = urlParams.get('skey');
+      if (qUrl && qKey) {
+        setSupabaseCredentials(decodeURIComponent(qUrl), decodeURIComponent(qKey));
+        return true;
+      }
+    } catch {}
+    return isSupabaseConfigured();
+  });
   const [isHydrating, setIsHydrating] = useState(false);
   const [lastSyncStatus, setLastSyncStatus] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [activeStationTab, setActiveStationTab] = useState<'claims' | 'print-queue'>('claims');
-
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
       const mode = localStorage.getItem('td26_theme_mode');
-      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
-      setIsDarkMode(isDark);
-    } catch (e) {}
-  }, []);
+      return mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+  const [activeStationTab, setActiveStationTab] = useState<'claims' | 'print-queue'>('claims');
 
   const toggleDarkMode = () => {
     const nextDark = !isDarkMode;
@@ -58,7 +98,7 @@ export default function ClaimsPage() {
     } catch (e) {}
   };
 
-  // Parse quick-setup credentials from URL if provided (?surl=...&skey=...)
+  // Clean sensitive URL parameters from browser address bar
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -66,33 +106,12 @@ export default function ClaimsPage() {
         const qUrl = urlParams.get('surl');
         const qKey = urlParams.get('skey');
         if (qUrl && qKey) {
-          setSupabaseCredentials(decodeURIComponent(qUrl), decodeURIComponent(qKey));
-          // Clean sensitive URL parameters from browser address bar
           const cleanPath = window.location.pathname;
           window.history.replaceState({}, '', cleanPath);
         }
       }
     } catch (e) {
-      console.error('Error parsing cloud params:', e);
-    }
-
-    setIsCloudConfigured(isSupabaseConfigured());
-
-    // Check stored session
-    try {
-      const stored =
-        localStorage.getItem('td26_claim_session') ||
-        sessionStorage.getItem('td26_claim_session');
-      if (stored) {
-        const parsed: ClaimStationSession = JSON.parse(stored);
-        if (parsed && parsed.isLoggedIn) {
-          setClaimSession(parsed);
-        }
-      }
-    } catch (e) {
-      console.error('Error loading claims session:', e);
-    } finally {
-      setSessionChecked(true);
+      console.error('Error cleaning cloud params:', e);
     }
   }, []);
 
@@ -123,22 +142,13 @@ export default function ClaimsPage() {
     }
   }, []);
 
-  // Initial local storage load + initial cloud hydration
+  // Initial cloud hydration
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem('td26_winners');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setWinners(mergeWinnersWithPrintStatus(parsed));
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load winners cache:', e);
-    }
-
     if (isSupabaseConfigured()) {
-      triggerCloudHydration();
+      const timer = setTimeout(() => {
+        triggerCloudHydration();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [triggerCloudHydration]);
 
@@ -287,12 +297,13 @@ export default function ClaimsPage() {
       }
 
       // 2. Consume / Deduct 1 unit from local prize inventory if cached on this device
+      let didSyncPrizes = false;
       if (targetWinner?.prizeId || targetWinner?.prizeName) {
         try {
           const cachedPrizes = localStorage.getItem('td26_prizes');
           if (cachedPrizes) {
             const parsed = JSON.parse(cachedPrizes);
-            if (Array.isArray(parsed)) {
+            if (Array.isArray(parsed) && parsed.length > 0) {
               const updated = parsed.map((p: any) => {
                 if (
                   (targetWinner.prizeId && p.id === targetWinner.prizeId) ||
@@ -311,6 +322,7 @@ export default function ClaimsPage() {
               });
               localStorage.setItem('td26_prizes', JSON.stringify(updated));
               syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on claims reactivate:', err));
+              didSyncPrizes = true;
             }
           }
         } catch (e) {
@@ -331,9 +343,20 @@ export default function ClaimsPage() {
         winnerNames: targetWinner?.name ? [targetWinner.name] : [],
         status: 'CONFIRMED',
         admin: `${claimSession?.officerName || 'Claims Desk'} (${claimSession?.stationId || 'FORFEIT-DESK'})`,
-        distributionMode: 'MANUAL_REACTIVATE' as any
+        distributionMode: 'MANUAL_REACTIVATE' as any,
+        drawType: 'LIVE'
       };
       pushLogToSupabase(reactivateLog).catch((err) => console.warn('Supabase reactivate log error:', err));
+
+      await updateClaimInSupabase(winnerId, {
+        claimStatus: 'UNCLAIMED',
+        participantId: targetWinner?.participantId,
+        prizeId: targetWinner?.prizeId,
+        prizeName: targetWinner?.prizeName,
+        wasForfeited,
+        autoAdjustInventory: !didSyncPrizes
+      }).catch((err) => console.warn('Supabase unclaim update failed:', err));
+      return;
     }
 
     await updateClaimInSupabase(winnerId, {
@@ -341,7 +364,7 @@ export default function ClaimsPage() {
       participantId: targetWinner?.participantId,
       prizeId: targetWinner?.prizeId,
       prizeName: targetWinner?.prizeName,
-      wasForfeited
+      wasForfeited: false
     }).catch((err) => console.warn('Supabase unclaim update failed:', err));
   };
 
@@ -389,12 +412,13 @@ export default function ClaimsPage() {
     }
 
     // Restore local prize quantity if cached in localStorage on this device (+1 remaining, -1 drawn)
+    let didSyncPrizes = false;
     if (targetWinner?.prizeId || targetWinner?.prizeName) {
       try {
         const cachedPrizes = localStorage.getItem('td26_prizes');
         if (cachedPrizes) {
           const parsed = JSON.parse(cachedPrizes);
-          if (Array.isArray(parsed)) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             const updated = parsed.map((p: any) => {
               if (
                 (targetWinner.prizeId && p.id === targetWinner.prizeId) ||
@@ -413,6 +437,7 @@ export default function ClaimsPage() {
             });
             localStorage.setItem('td26_prizes', JSON.stringify(updated));
             syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on claims forfeit:', err));
+            didSyncPrizes = true;
           }
         }
       } catch (e) {
@@ -433,7 +458,8 @@ export default function ClaimsPage() {
       winnerNames: targetWinner?.name ? [targetWinner.name] : [],
       status: 'FORFEITED',
       admin: `${claimSession?.officerName || 'Claims Desk'} (${claimSession?.stationId || 'FORFEIT-DESK'})`,
-      distributionMode: 'MANUAL_FORFEIT' as any
+      distributionMode: 'MANUAL_FORFEIT' as any,
+      drawType: 'LIVE'
     };
     pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase forfeit log error:', err));
 
@@ -443,7 +469,8 @@ export default function ClaimsPage() {
       forfeitReason: reason || 'Unclaimed by deadline / Absent on stage',
       participantId: targetWinner?.participantId,
       prizeId: targetWinner?.prizeId,
-      prizeName: targetWinner?.prizeName
+      prizeName: targetWinner?.prizeName,
+      autoAdjustInventory: !didSyncPrizes
     }).catch((err) => console.warn('Supabase forfeit update failed:', err));
   };
 

@@ -5,7 +5,7 @@ const STORAGE_KEY = 'td26_printed_winners_map';
 export interface PrintedWinnerRecord {
   isPrinted: boolean;
   printedAt: string;
-  printedBy: string;
+  printedBy?: string;
 }
 
 export type PrintedWinnersMap = Record<string, PrintedWinnerRecord>;
@@ -91,7 +91,9 @@ export function markWinnerAsUnprintedInStorage(winnerId: string): void {
  */
 export function mergeWinnersWithPrintStatus(winners: Winner[]): Winner[] {
   const map = getStoredPrintedWinnersMap();
-  return winners.map((w) => {
+  let hasNewEntries = false;
+
+  const result = winners.map((w) => {
     const record = map[w.winnerId];
     if (record && record.isPrinted) {
       return {
@@ -103,7 +105,12 @@ export function mergeWinnersWithPrintStatus(winners: Winner[]): Winner[] {
     }
     // If the winner object already had isPrinted (e.g. from local state) but wasn't in map yet, sync it
     if (w.isPrinted) {
-      markWinnerAsPrintedInStorage(w.winnerId, w.printedBy);
+      map[w.winnerId] = {
+        isPrinted: true,
+        printedAt: w.printedAt || new Date().toISOString(),
+        printedBy: w.printedBy
+      };
+      hasNewEntries = true;
       return w;
     }
     return {
@@ -111,4 +118,14 @@ export function mergeWinnersWithPrintStatus(winners: Winner[]): Winner[] {
       isPrinted: false
     };
   });
+
+  if (hasNewEntries && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    } catch (e) {
+      console.error('Error saving printed batch to localStorage:', e);
+    }
+  }
+
+  return result;
 }

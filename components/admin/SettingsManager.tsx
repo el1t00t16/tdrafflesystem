@@ -48,15 +48,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   totalWinners,
   participants = []
 }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
       const mode = localStorage.getItem('td26_theme_mode');
-      const isDark = mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
-      setIsDarkMode(isDark);
-    } catch (e) {}
-  }, []);
+      return mode === 'dark' || document.documentElement.getAttribute('data-theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
 
   const toggleDarkMode = (dark: boolean) => {
     setIsDarkMode(dark);

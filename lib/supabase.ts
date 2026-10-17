@@ -253,8 +253,12 @@ create table if not exists public.raffle_logs (
   admin text not null default 'Event Admin',
   distribution_mode text not null default 'EQUAL_PER_DISTRICT',
   winners_per_district integer,
+  draw_type text default 'LIVE_STAGE',
   created_at timestamp with time zone default now()
 );
+
+-- Ensure draw_type column exists if raffle_logs was previously created
+alter table public.raffle_logs add column if not exists draw_type text default 'LIVE_STAGE';
 
 -- Enable Row Level Security (RLS) & Public Anon read/write policies for local station devices
 alter table public.participants enable row level security;
@@ -603,6 +607,7 @@ export async function updateClaimInSupabase(
     prizeId?: string;
     prizeName?: string;
     wasForfeited?: boolean;
+    autoAdjustInventory?: boolean;
   }
 ): Promise<boolean> {
   const client = getSupabase();
@@ -702,21 +707,23 @@ export async function updateClaimInSupabase(
       }
     }
 
-    // 4. Inventory adjustments:
-    // A. If prize is forfeited, return 1 unit back to inventory in Supabase (+1 remaining, -1 drawn)
-    if (claimData.claimStatus === 'FORFEITED') {
-      if (przId || przName) {
-        await returnPrizeUnitInSupabase(przId || '', przName).catch((e) =>
-          console.warn('Supabase return prize unit notice:', e)
-        );
-      }
-    }
-    // B. If prize is re-activated back to unclaimed or claimed, consume 1 unit from inventory in Supabase (-1 remaining, +1 drawn)
-    else if (isReactivatingForfeited) {
-      if (przId || przName) {
-        await consumePrizeUnitInSupabase(przId || '', przName).catch((e) =>
-          console.warn('Supabase consume prize unit notice:', e)
-        );
+    // 4. Optional Direct Inventory Adjustment
+    // NOTE: Callers such as app/page.tsx and app/claims/page.tsx manage local & remote prize state
+    // and sync with syncPrizesToSupabase to ensure atomic single source of truth.
+    // autoAdjustInventory is only run if explicitly requested by standalone callers without local prize state.
+    if (claimData.autoAdjustInventory) {
+      if (claimData.claimStatus === 'FORFEITED') {
+        if (przId || przName) {
+          await returnPrizeUnitInSupabase(przId || '', przName).catch((e) =>
+            console.warn('Supabase return prize unit notice:', e)
+          );
+        }
+      } else if (isReactivatingForfeited) {
+        if (przId || przName) {
+          await consumePrizeUnitInSupabase(przId || '', przName).catch((e) =>
+            console.warn('Supabase consume prize unit notice:', e)
+          );
+        }
       }
     }
 
@@ -1255,7 +1262,8 @@ export async function pushLogToSupabase(log: RaffleLog): Promise<boolean> {
       status: log.status,
       admin: log.admin,
       distribution_mode: log.distributionMode,
-      winners_per_district: log.winnersPerDistrict || null
+      winners_per_district: log.winnersPerDistrict || null,
+      draw_type: log.drawType || 'LIVE_STAGE'
     });
     if (error) throw error;
     return true;

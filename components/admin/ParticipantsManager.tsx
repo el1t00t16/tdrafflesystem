@@ -66,7 +66,16 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [winnerFilter, setWinnerFilter] = useState<string>('ALL');
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-  const [ignoredKeys, setIgnoredKeys] = useState<Set<string>>(new Set());
+  const [ignoredKeys, setIgnoredKeys] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const saved = localStorage.getItem('td26_ignored_duplicate_keys');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch (e) {
+      console.error(e);
+    }
+    return new Set();
+  });
   const [page, setPage] = useState(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [pastedTsv, setPastedTsv] = useState('');
@@ -244,18 +253,6 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     });
     setSearch(cleanName);
   };
-
-  // Load ignored duplicate keys from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('td26_ignored_duplicate_keys');
-      if (saved) {
-        setIgnoredKeys(new Set(JSON.parse(saved)));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [isDuplicateModalOpen]);
 
   // Compute duplicate clusters live
   const duplicateClusters = useMemo(() => {
@@ -1335,7 +1332,13 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
       {/* Teacher Duplication Resolution Center Modal */}
       <DuplicateResolutionModal
         isOpen={isDuplicateModalOpen}
-        onClose={() => setIsDuplicateModalOpen(false)}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          try {
+            const saved = localStorage.getItem('td26_ignored_duplicate_keys');
+            if (saved) setIgnoredKeys(new Set(JSON.parse(saved)));
+          } catch {}
+        }}
         participants={participants}
         onDeleteParticipant={onDeleteParticipant || (() => {})}
         onBatchDeleteParticipants={onBatchDeleteParticipants || (() => {})}

@@ -102,6 +102,15 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const [prevCameraActive, setPrevCameraActive] = useState(isCameraActive);
+  if (isCameraActive !== prevCameraActive) {
+    setPrevCameraActive(isCameraActive);
+    if (isCameraActive) {
+      setCameraError(null);
+    }
+  }
+
   const [scanFeedback, setScanFeedback] = useState<{
     status: 'MATCH' | 'NOT_FOUND';
     message: string;
@@ -131,9 +140,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   // Success Claim Notification
   const [lastClaimedWinner, setLastClaimedWinner] = useState<Winner | null>(null);
 
-  // Real-time listener for live draws from Stage Operator
+  // Real-time listener for live draws from Stage Operator (only when running standalone)
   useEffect(() => {
-    if (!isCloudConfigured) return;
+    if (!isCloudConfigured || !isStandalone) return;
 
     const unsubscribe = subscribeToRealtimeUpdates({
       onWinnerChange: (updatedWinner) => {
@@ -156,7 +165,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isCloudConfigured, winners]);
+  }, [isCloudConfigured, isStandalone, winners]);
 
   // Keep scanner focused on initial load
   useEffect(() => {
@@ -289,7 +298,6 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
         container.innerHTML = '';
       }
 
-      setCameraError(null);
       localScanner = new Html5Qrcode(scannerContainerId);
       scannerInstanceRef.current = localScanner;
       isStartingRef.current = true;

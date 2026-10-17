@@ -75,11 +75,9 @@ export const PrintableBadgeSheets: React.FC<PrintableBadgeSheetsProps> = ({
   const totalSheets = Math.max(1, Math.ceil(filteredParticipants.length / ITEMS_PER_SHEET));
 
   // Keep currentPage within bounds when filter changes
-  useEffect(() => {
-    if (currentPage > totalSheets) {
-      setCurrentPage(1);
-    }
-  }, [totalSheets, currentPage]);
+  if (currentPage > totalSheets) {
+    setCurrentPage(1);
+  }
 
   // Attendees on current sheet
   const currentSheetParticipants = useMemo(() => {

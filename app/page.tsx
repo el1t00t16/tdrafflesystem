@@ -57,15 +57,78 @@ import {
 
 const DISTRICT_LIST: District[] = ['NORTH', 'EAST', 'WEST', 'SOUTH', 'PRIVATE'];
 
+// Helper to normalize participant districts based on criteria (PSDS -> East/North, LSB/ECCD/Private -> PRIVATE)
+const normalizeParticipantList = (list: Participant[]): Participant[] =>
+  list.map((p) => {
+    const correctDistrict = determineParticipantDistrict({
+      rawDistrict: p.originalDistrict || p.district,
+      rawType: p.typeOfPersonnel || p.personnelType,
+      position: p.position,
+      school: p.school
+    });
+    return correctDistrict !== p.district ? { ...p, district: correctDistrict } : p;
+  });
+
+// Helper to normalize prize tiers into the 2 supported categories: GRAND and MINOR
+const normalizePrizeList = (list: Prize[]): Prize[] =>
+  list.map((p) => ({
+    ...p,
+    category: p.category === 'GRAND' ? ('GRAND' as const) : ('MINOR' as const)
+  }));
+
 export default function Home() {
   const [currentView, setCurrentView] = useState<'display' | 'admin' | 'claim' | 'attendance' | 'predraw'>('display');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Application State
-  const [participants, setParticipants] = useState<Participant[]>(INITIAL_PARTICIPANTS);
-  const [prizes, setPrizes] = useState<Prize[]>(INITIAL_PRIZES);
-  const [winners, setWinners] = useState<Winner[]>(INITIAL_WINNERS);
+  const [participants, setParticipants] = useState<Participant[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedParticipants = localStorage.getItem('td26_profiling_participants');
+        if (cachedParticipants) {
+          const parsed = JSON.parse(cachedParticipants);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return normalizeParticipantList(parsed);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_PARTICIPANTS;
+  });
+
+  const [prizes, setPrizes] = useState<Prize[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedPrizes = localStorage.getItem('td26_prizes');
+        if (cachedPrizes) {
+          const parsed = JSON.parse(cachedPrizes);
+          if (Array.isArray(parsed)) return normalizePrizeList(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_PRIZES;
+  });
+
+  const [winners, setWinners] = useState<Winner[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedWinners = localStorage.getItem('td26_winners');
+        if (cachedWinners) {
+          const parsed = JSON.parse(cachedWinners);
+          if (Array.isArray(parsed)) return mergeWinnersWithPrintStatus(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_WINNERS;
+  });
+
   const [logs, setLogs] = useState<RaffleLog[]>(INITIAL_LOGS);
   const [settings, setSettings] = useState<SystemSettings>(() => {
     if (typeof window !== 'undefined') {
@@ -90,7 +153,27 @@ export default function Home() {
     }
     return INITIAL_SETTINGS;
   });
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedAttendance = localStorage.getItem('td26_attendance_records');
+        if (cachedAttendance) {
+          const parsed = JSON.parse(cachedAttendance);
+          if (Array.isArray(parsed)) {
+            const uniqueMap = new Map<string, AttendanceRecord>();
+            parsed.forEach((r) => {
+              const key = r.id || r.participantId;
+              if (!uniqueMap.has(key)) uniqueMap.set(key, r);
+            });
+            return Array.from(uniqueMap.values());
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
 
   // Active Prize Selection
   const [selectedPrizeId, setSelectedPrizeId] = useState<string>(() => {
@@ -155,8 +238,18 @@ export default function Home() {
   const [targetDistrict, setTargetDistrict] = useState<District | 'ALL'>('ALL');
 
   // Admin Master Security State
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
-  const [adminAuthChecked, setAdminAuthChecked] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const storedAuth =
+        localStorage.getItem('td26_admin_authenticated') ||
+        sessionStorage.getItem('td26_admin_authenticated');
+      return storedAuth === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [adminAuthChecked] = useState<boolean>(true);
 
   // Modals
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -189,22 +282,6 @@ export default function Home() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [temporaryDrawResult]);
-
-  // Check saved admin master session on mount
-  useEffect(() => {
-    try {
-      const storedAuth =
-        localStorage.getItem('td26_admin_authenticated') ||
-        sessionStorage.getItem('td26_admin_authenticated');
-      if (storedAuth === 'true') {
-        setIsAdminAuthenticated(true);
-      }
-    } catch (e) {
-      console.error('Error checking admin master session:', e);
-    } finally {
-      setAdminAuthChecked(true);
-    }
-  }, []);
 
   const handleLockAdmin = () => {
     try {
@@ -258,87 +335,7 @@ export default function Home() {
       console.error(e);
     }
 
-    // 1. Immediate local cache hydration (offline-first)
-    try {
-      const cachedSettings = localStorage.getItem('td26_settings');
-      if (cachedSettings) {
-        const parsed = JSON.parse(cachedSettings);
-        if (parsed) setSettings(parsed);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    try {
-      const cachedWinners = localStorage.getItem('td26_winners');
-      if (cachedWinners) {
-        const parsed = JSON.parse(cachedWinners);
-        if (Array.isArray(parsed)) setWinners(mergeWinnersWithPrintStatus(parsed));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // Helper to normalize participant districts based on criteria (PSDS -> East/North, LSB/ECCD/Private -> PRIVATE)
-    const normalizeParticipantList = (list: Participant[]): Participant[] =>
-      list.map((p) => {
-        const correctDistrict = determineParticipantDistrict({
-          rawDistrict: p.originalDistrict || p.district,
-          rawType: p.typeOfPersonnel || p.personnelType,
-          position: p.position,
-          school: p.school
-        });
-        return correctDistrict !== p.district ? { ...p, district: correctDistrict } : p;
-      });
-
-    // Helper to normalize prize tiers into the 2 supported categories: GRAND and MINOR
-    const normalizePrizeList = (list: Prize[]): Prize[] =>
-      list.map((p) => ({
-        ...p,
-        category: p.category === 'GRAND' ? ('GRAND' as const) : ('MINOR' as const)
-      }));
-
-    try {
-      const cachedParticipants = localStorage.getItem('td26_profiling_participants');
-      if (cachedParticipants) {
-        const parsed = JSON.parse(cachedParticipants);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setParticipants(normalizeParticipantList(parsed));
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    try {
-      const cachedAttendance = localStorage.getItem('td26_attendance_records');
-      if (cachedAttendance) {
-        const parsed = JSON.parse(cachedAttendance);
-        if (Array.isArray(parsed)) {
-          const uniqueMap = new Map<string, AttendanceRecord>();
-          parsed.forEach((r) => {
-            const key = r.id || r.participantId;
-            if (!uniqueMap.has(key)) uniqueMap.set(key, r);
-          });
-          const deduplicated = Array.from(uniqueMap.values());
-          setAttendanceRecords(deduplicated);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    try {
-      const cachedPrizes = localStorage.getItem('td26_prizes');
-      if (cachedPrizes) {
-        const parsed = JSON.parse(cachedPrizes);
-        if (Array.isArray(parsed)) setPrizes(normalizePrizeList(parsed));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // 2. Cloud Data Hydration (if Supabase is configured)
+    // 1. Cloud Data Hydration (if Supabase is configured)
     if (isSupabaseConfigured()) {
       Promise.all([
         fetchParticipantsFromSupabase(),
@@ -669,16 +666,14 @@ export default function Home() {
   }, [prizes, selectedPrizeId]);
 
   // Auto-select active prize when prizes list changes
-  useEffect(() => {
-    if (prizes.length > 0) {
-      if (!selectedPrizeId || !prizes.some((p) => p.id === selectedPrizeId)) {
-        const available = prizes.find((p) => p.remainingQuantity > 0);
-        setSelectedPrizeId(available ? available.id : prizes[0].id);
-      }
-    } else if (selectedPrizeId) {
-      setSelectedPrizeId('');
+  if (prizes.length > 0) {
+    if (!selectedPrizeId || !prizes.some((p) => p.id === selectedPrizeId)) {
+      const available = prizes.find((p) => p.remainingQuantity > 0);
+      setSelectedPrizeId(available ? available.id : prizes[0].id);
     }
-  }, [prizes, selectedPrizeId]);
+  } else if (selectedPrizeId) {
+    setSelectedPrizeId('');
+  }
 
   // Eligible pool calculations:
   // - GRAND prizes: strictly Teaching Personnel only (Non-Teaching excluded)
@@ -1004,13 +999,17 @@ export default function Home() {
       return isNaN(num) ? max : Math.max(max, num);
     }, 0);
 
-    const newWinnerRecords: Winner[] = temporaryDrawResult.winners.map((w, idx) => {
-      let nextNum = Math.max(winners.length, maxExistingNum) + idx + 1;
+    const allocatedWinnerIds = new Set(winners.map((w) => w.winnerId));
+    let nextNum = Math.max(winners.length, maxExistingNum);
+
+    const newWinnerRecords: Winner[] = temporaryDrawResult.winners.map((w) => {
+      nextNum++;
       let candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
-      while (winners.some((existing) => existing.winnerId === candidateId)) {
+      while (allocatedWinnerIds.has(candidateId)) {
         nextNum++;
         candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
       }
+      allocatedWinnerIds.add(candidateId);
       return {
         winnerId: candidateId,
         participantId: w.id,
@@ -1127,13 +1126,17 @@ export default function Home() {
       return isNaN(num) ? max : Math.max(max, num);
     }, 0);
 
-    const newWinnerRecords: Winner[] = batch.winners.map((w, idx) => {
-      let nextNum = Math.max(winners.length, maxExistingNum) + idx + 1;
+    const allocatedWinnerIds = new Set(winners.map((w) => w.winnerId));
+    let nextNum = Math.max(winners.length, maxExistingNum);
+
+    const newWinnerRecords: Winner[] = batch.winners.map((w) => {
+      nextNum++;
       let candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
-      while (winners.some((existing) => existing.winnerId === candidateId)) {
+      while (allocatedWinnerIds.has(candidateId)) {
         nextNum++;
         candidateId = `WN-${String(nextNum).padStart(4, '0')}`;
       }
+      allocatedWinnerIds.add(candidateId);
       return {
         winnerId: candidateId,
         participantId: w.id,

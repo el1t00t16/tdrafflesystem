@@ -44,6 +44,7 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
   const maxPerDistrictByPrize = Math.floor(availableQty / 5);
   // Also limited by minimum eligible in any district
   const minDistrictEligible = Math.min(...DISTRICTS.map((d) => districtEligibleCounts[d] || 0));
+  const emptyDistricts = DISTRICTS.filter((d) => (districtEligibleCounts[d] || 0) === 0);
   const maxPerDistrict = Math.min(maxPerDistrictByPrize, minDistrictEligible);
 
   // Total winners for the planned round
@@ -251,6 +252,15 @@ export const RaffleController: React.FC<RaffleControllerProps> = ({
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
                   <span>
                     Remaining prize quantity is less than 5. Equal per district mode requires at least 5 prize units (1 per district). Please switch to <strong>Combined Pool</strong> or select another prize.
+                  </span>
+                </div>
+              )}
+
+              {!canEqualDistribute && availableQty >= 5 && emptyDistricts.length > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-600/40 p-3 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                  <span>
+                    Equal per district requires at least 1 attendee in all 5 districts. Currently, <strong>{emptyDistricts.join(', ')}</strong> {emptyDistricts.length === 1 ? 'has' : 'have'} 0 eligible attendees checked in. Please check in attendees at the gate or switch to <strong>Combined Pool</strong>.
                   </span>
                 </div>
               )}
