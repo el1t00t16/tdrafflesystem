@@ -33,7 +33,7 @@ export default function PreDrawStandalonePage() {
     return [];
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
 
   // Hydrate from Supabase Cloud and subscribe to live changes
   useEffect(() => {
