@@ -120,6 +120,7 @@ export default function PreDrawStandalonePage() {
   return (
     <PreDrawWinnerViewer
       winners={winners}
+      initialDrawSource="PRE_DRAW"
       onBack={() => {
         router.push('/');
       }}

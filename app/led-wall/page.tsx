@@ -117,6 +117,7 @@ export default function LedWallStandalonePage() {
   return (
     <PreDrawWinnerViewer
       winners={winners}
+      initialDrawSource="ALL"
       onBack={() => {
         router.push('/');
       }}

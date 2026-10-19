@@ -9,6 +9,7 @@ interface ProjectorDisplayProps {
   prizes?: Prize[];
   selectedPrizeId?: string;
   preDrawWinners?: Winner[];
+  allWinners?: Winner[];
   onSelectPrize?: (prizeId: string) => void;
   onOpenPreDrawViewer?: () => void;
   isDrawing: boolean;
@@ -51,6 +52,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   prizes,
   selectedPrizeId,
   preDrawWinners = [],
+  allWinners = [],
   onSelectPrize,
   onOpenPreDrawViewer,
   isDrawing,
@@ -109,29 +111,60 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
     });
   };
 
+  // Marquee Ticker Source Filter: 'ALL' | 'LIVE' | 'PRE_DRAW'
+  const [tickerSource, setTickerSource] = useState<'ALL' | 'LIVE' | 'PRE_DRAW'>('ALL');
+
+  const liveWinners = useMemo(() => {
+    return (allWinners || []).filter((w) => {
+      const dt = String(w.drawType || '').toUpperCase();
+      const dn = String(w.drawNumber || '').toUpperCase();
+      return dt === 'LIVE' || (dt !== 'PRE_DRAW' && !dn.startsWith('PRE'));
+    });
+  }, [allWinners]);
+
+  const resolvedPreDrawWinners = useMemo(() => {
+    if (preDrawWinners && preDrawWinners.length > 0) return preDrawWinners;
+    return (allWinners || []).filter((w) => {
+      const dt = String(w.drawType || '').toUpperCase();
+      const dn = String(w.drawNumber || '').toUpperCase();
+      return dt === 'PRE_DRAW' || dn.startsWith('PRE');
+    });
+  }, [preDrawWinners, allWinners]);
+
+  const combinedWinners = useMemo(() => {
+    if (allWinners && allWinners.length > 0) return allWinners;
+    return preDrawWinners;
+  }, [allWinners, preDrawWinners]);
+
+  const activeTickerWinners = useMemo(() => {
+    if (tickerSource === 'LIVE') return liveWinners;
+    if (tickerSource === 'PRE_DRAW') return resolvedPreDrawWinners;
+    return combinedWinners;
+  }, [tickerSource, liveWinners, resolvedPreDrawWinners, combinedWinners]);
+
   // Dynamic marquee duration based on winner count to guarantee constant, comfortable reading pace
   const marqueeDuration = useMemo(() => {
-    const count = preDrawWinners.length;
+    const count = activeTickerWinners.length;
     if (count === 0) return 60;
     const secondsPerItem = tickerSpeed === 'slow' ? 8.5 : tickerSpeed === 'fast' ? 3.2 : 5.5;
     const minDuration = tickerSpeed === 'slow' ? 50 : tickerSpeed === 'fast' ? 25 : 40;
     return Math.max(minDuration, Math.round(count * secondsPerItem));
-  }, [preDrawWinners.length, tickerSpeed]);
+  }, [activeTickerWinners.length, tickerSpeed]);
 
   // Seamless marquee loop duplication
   const marqueeList = useMemo(() => {
-    if (preDrawWinners.length === 0) return [];
+    if (activeTickerWinners.length === 0) return [];
     let repeatCount = 1;
-    if (preDrawWinners.length === 1) repeatCount = 8;
-    else if (preDrawWinners.length === 2) repeatCount = 4;
-    else if (preDrawWinners.length < 5) repeatCount = 2;
+    if (activeTickerWinners.length === 1) repeatCount = 8;
+    else if (activeTickerWinners.length === 2) repeatCount = 4;
+    else if (activeTickerWinners.length < 5) repeatCount = 2;
 
     const base: Winner[] = [];
     for (let i = 0; i < repeatCount; i++) {
-      base.push(...preDrawWinners);
+      base.push(...activeTickerWinners);
     }
     return [...base, ...base];
-  }, [preDrawWinners]);
+  }, [activeTickerWinners]);
 
   const fullStageActive = isFullStage !== undefined ? isFullStage : internalFullStage;
 
@@ -1255,15 +1288,34 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
           )}
         </main>
 
-        {/* Bottom Scrolling Ticker for Pre-Draw Winners */}
-        {preDrawWinners.length > 0 && !isDrawing && (
+        {/* Bottom Scrolling Ticker for Previous Winners */}
+        {activeTickerWinners.length > 0 && !isDrawing && (
           <div className="bg-[#141414] dark:bg-black border-t-2 border-[#1a1a1a] dark:border-white/15 text-white py-2 px-3 overflow-hidden select-none shrink-0 z-20 flex items-center shadow-lg gap-2 sm:gap-3">
             {/* Header Badge & Operator Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 z-10">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-xs">
-                <span className="animate-pulse">✨</span>
-                <span>PRE-DRAW ({preDrawWinners.length})</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setTickerSource((prev) => (prev === 'ALL' ? 'LIVE' : prev === 'LIVE' ? 'PRE_DRAW' : 'ALL'));
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-white font-mono text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-xs cursor-pointer rounded-xs transition-colors ${
+                  tickerSource === 'LIVE'
+                    ? 'bg-amber-600 hover:bg-amber-500'
+                    : tickerSource === 'PRE_DRAW'
+                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                    : 'bg-indigo-600 hover:bg-indigo-500'
+                }`}
+                title="Click to toggle Marquee between ALL / LIVE STAGE / PRE-DRAW"
+              >
+                <span className="animate-pulse">{tickerSource === 'LIVE' ? '🏆' : tickerSource === 'PRE_DRAW' ? '⚡' : '✨'}</span>
+                <span>
+                  {tickerSource === 'LIVE'
+                    ? `LIVE STAGE (${liveWinners.length})`
+                    : tickerSource === 'PRE_DRAW'
+                    ? `PRE-DRAW (${resolvedPreDrawWinners.length})`
+                    : `ALL WINNERS (${combinedWinners.length})`}
+                </span>
+              </button>
 
               {/* Pause / Resume Button */}
               <button
@@ -1300,7 +1352,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   type="button"
                   onClick={onOpenPreDrawViewer}
                   className="flex items-center gap-1 font-mono text-[10px] sm:text-xs font-bold uppercase px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400 transition-colors cursor-pointer shadow-xs"
-                  title="Flash full-screen Pre-Draw Winners Showcase on LED Wall"
+                  title="Flash full-screen Previous Winners Showcase on LED Wall"
                 >
                   <Maximize2 className="w-3 h-3" />
                   <span className="hidden sm:inline">LED SHOWCASE</span>
@@ -1321,19 +1373,29 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   } as React.CSSProperties
                 }
               >
-                {marqueeList.map((w, idx) => (
-                  <div key={`${w.winnerId}-${idx}`} className="inline-flex items-center gap-2 shrink-0">
-                    <span className="text-white font-black uppercase text-xs sm:text-sm tracking-wide">{w.name}</span>
-                    <span className="text-neutral-400 font-normal text-[11px] sm:text-xs">({w.school})</span>
-                    <span className="text-[#FF6A00] font-black uppercase text-xs sm:text-sm">— {w.prizeName}</span>
-                    {w.district && (
-                      <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 bg-white/10 text-neutral-300 uppercase tracking-wider">
-                        {w.district}
-                      </span>
-                    )}
-                    <span className="text-neutral-600 font-mono text-[11px] ml-2">•</span>
-                  </div>
-                ))}
+                {marqueeList.map((w, idx) => {
+                  const isLive = w.drawType === 'LIVE' || (!String(w.drawType || '').startsWith('PRE') && !String(w.drawNumber || '').startsWith('PRE'));
+                  return (
+                    <div key={`${w.winnerId}-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                      <span className="text-white font-black uppercase text-xs sm:text-sm tracking-wide">{w.name}</span>
+                      <span className="text-neutral-400 font-normal text-[11px] sm:text-xs">({w.school})</span>
+                      <span className="text-[#FF6A00] font-black uppercase text-xs sm:text-sm">— {w.prizeName}</span>
+                      {w.district && (
+                        <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 bg-white/10 text-neutral-300 uppercase tracking-wider">
+                          {w.district}
+                        </span>
+                      )}
+                      {tickerSource === 'ALL' && (
+                        <span className={`text-[8px] font-mono px-1 py-0.2 uppercase font-black tracking-wider ${
+                          isLive ? 'bg-amber-500/30 text-amber-300' : 'bg-emerald-500/30 text-emerald-300'
+                        }`}>
+                          {isLive ? 'LIVE' : 'PRE-DRAW'}
+                        </span>
+                      )}
+                      <span className="text-neutral-600 font-mono text-[11px] ml-2">•</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -36,6 +36,7 @@ interface PreDrawWinnerViewerProps {
   soundEnabled?: boolean;
   onToggleSound?: () => void;
   eventName?: string;
+  initialDrawSource?: 'ALL' | 'LIVE' | 'PRE_DRAW';
 }
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; color: string; border: string; bg: string; badgeBg: string; isPrivate?: boolean }[] = [
@@ -94,16 +95,60 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   onToggleFullscreen,
   soundEnabled = false,
   onToggleSound,
-  eventName = "MUNICIPAL TEACHERS' DAY 2026"
+  eventName = "MUNICIPAL TEACHERS' DAY 2026",
+  initialDrawSource = 'ALL'
 }) => {
-  // Filter only pre-draw winners
-  const preDrawWinners = useMemo(() => {
-    return winners.filter((w) => w.drawType === 'PRE_DRAW' || String(w.drawNumber || '').toUpperCase().startsWith('PRE'));
-  }, [winners]);
+  // Draw Source Filter: 'ALL' | 'LIVE' | 'PRE_DRAW'
+  const [drawSource, setDrawSource] = useState<'ALL' | 'LIVE' | 'PRE_DRAW'>(initialDrawSource);
+  const [selectedPrizeFilter, setSelectedPrizeFilter] = useState<string>('ALL');
+
+  // Classification Helpers
+  const isLiveWinner = useCallback((w: Winner) => {
+    const dt = String(w.drawType || '').toUpperCase();
+    const dn = String(w.drawNumber || '').toUpperCase();
+    return dt === 'LIVE' || (dt !== 'PRE_DRAW' && !dn.startsWith('PRE'));
+  }, []);
+
+  const isPreDrawWinner = useCallback((w: Winner) => {
+    const dt = String(w.drawType || '').toUpperCase();
+    const dn = String(w.drawNumber || '').toUpperCase();
+    return dt === 'PRE_DRAW' || dn.startsWith('PRE');
+  }, []);
+
+  // Summary counts
+  const liveWinnersCount = useMemo(() => winners.filter(isLiveWinner).length, [winners, isLiveWinner]);
+  const preDrawWinnersCount = useMemo(() => winners.filter(isPreDrawWinner).length, [winners, isPreDrawWinner]);
+  const totalWinnersCount = winners.length;
+
+  // Filter pool based on active draw source
+  const sourceFilteredWinners = useMemo(() => {
+    if (drawSource === 'LIVE') return winners.filter(isLiveWinner);
+    if (drawSource === 'PRE_DRAW') return winners.filter(isPreDrawWinner);
+    return winners;
+  }, [winners, drawSource, isLiveWinner, isPreDrawWinner]);
+
+  // Available prizes inside the active source
+  const availablePrizes = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; count: number }>();
+    sourceFilteredWinners.forEach((w) => {
+      const key = w.prizeId || w.prizeName;
+      if (!map.has(key)) {
+        map.set(key, { id: key, name: w.prizeName, count: 0 });
+      }
+      map.get(key)!.count += 1;
+    });
+    return Array.from(map.values());
+  }, [sourceFilteredWinners]);
+
+  // Final active pool after prize filtering
+  const activeWinners = useMemo(() => {
+    if (selectedPrizeFilter === 'ALL') return sourceFilteredWinners;
+    return sourceFilteredWinners.filter((w) => (w.prizeId || w.prizeName) === selectedPrizeFilter);
+  }, [sourceFilteredWinners, selectedPrizeFilter]);
 
   // Viewer Display Modes:
   // 'stageCard': Full Projector Card (Screenshot #2 style, auto-cycling North -> East -> West -> South -> Private)
-  // 'spotlight': 1 Winner per Card, cycling every 5s across all pre-draw winners
+  // 'spotlight': 1 Winner per Card, cycling every 5s across active winners
   // 'grid': Multi-winner overview grid
   const [viewerMode, setViewerMode] = useState<'stageCard' | 'spotlight' | 'grid'>('stageCard');
 
@@ -125,6 +170,13 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(12);
 
+  // Reset pagination & spotlight when source or prize filter changes
+  useEffect(() => {
+    setSpotlightIndex(0);
+    setSlideProgress(0);
+    setCurrentPage(1);
+  }, [drawSource, selectedPrizeFilter]);
+
   // Group winners by district
   const winnersByDistrict = useMemo(() => {
     const map: Record<District, Winner[]> = {
@@ -134,7 +186,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       SOUTH: [],
       PRIVATE: []
     };
-    preDrawWinners.forEach((w) => {
+    activeWinners.forEach((w) => {
       const d = (w.district || 'SOUTH') as District;
       if (map[d]) {
         map[d].push(w);
@@ -143,11 +195,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       }
     });
     return map;
-  }, [preDrawWinners]);
+  }, [activeWinners]);
 
   // Filtered list based on District and Search Query (for grid mode)
   const filteredWinners = useMemo(() => {
-    let list = selectedDistrict === 'ALL' ? preDrawWinners : winnersByDistrict[selectedDistrict] || [];
+    let list = selectedDistrict === 'ALL' ? activeWinners : winnersByDistrict[selectedDistrict] || [];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter((w) => 
@@ -159,7 +211,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       );
     }
     return list;
-  }, [selectedDistrict, preDrawWinners, winnersByDistrict, searchQuery]);
+  }, [selectedDistrict, activeWinners, winnersByDistrict, searchQuery]);
 
   // Pagination for grid mode
   const totalPages = useMemo(() => {
@@ -192,18 +244,18 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   }, [soundEnabled]);
 
   const handleNextSpotlight = useCallback(() => {
-    if (preDrawWinners.length === 0) return;
+    if (activeWinners.length === 0) return;
     if (soundEnabled) soundSynthesizer.playClick();
-    setSpotlightIndex((prev) => (prev + 1) % preDrawWinners.length);
+    setSpotlightIndex((prev) => (prev + 1) % activeWinners.length);
     setSlideProgress(0);
-  }, [preDrawWinners.length, soundEnabled]);
+  }, [activeWinners.length, soundEnabled]);
 
   const handlePrevSpotlight = useCallback(() => {
-    if (preDrawWinners.length === 0) return;
+    if (activeWinners.length === 0) return;
     if (soundEnabled) soundSynthesizer.playClick();
-    setSpotlightIndex((prev) => (prev - 1 + preDrawWinners.length) % preDrawWinners.length);
+    setSpotlightIndex((prev) => (prev - 1 + activeWinners.length) % activeWinners.length);
     setSlideProgress(0);
-  }, [preDrawWinners.length, soundEnabled]);
+  }, [activeWinners.length, soundEnabled]);
 
   const handleNextSlide = useCallback(() => {
     if (viewerMode === 'stageCard') {
@@ -292,6 +344,10 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       } else if (e.key === '5') {
         setCarouselDistrictIndex(4);
         setSelectedDistrict('PRIVATE');
+      } else if (e.key.toLowerCase() === 't') {
+        // Toggle Draw Source: ALL -> LIVE -> PRE_DRAW -> ALL
+        setDrawSource((prev) => (prev === 'ALL' ? 'LIVE' : prev === 'LIVE' ? 'PRE_DRAW' : 'ALL'));
+        setSelectedPrizeFilter('ALL');
       } else if (e.key.toLowerCase() === 'h') {
         setIsControlsVisible((prev) => !prev);
       } else if (e.key.toLowerCase() === 'f' && onToggleFullscreen) {
@@ -310,7 +366,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   const currentDistrictWinners = winnersByDistrict[currentDistrictConfig.id] || [];
 
   // Active winner for Spotlight View
-  const currentSpotlightWinner = preDrawWinners.length > 0 ? preDrawWinners[spotlightIndex % preDrawWinners.length] : null;
+  const currentSpotlightWinner = activeWinners.length > 0 ? activeWinners[spotlightIndex % activeWinners.length] : null;
 
   return (
     <div className="min-h-screen bg-[#0d0d0e] text-[#f8f7f4] flex flex-col select-none relative overflow-x-hidden font-sans">
@@ -349,10 +405,89 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                   {eventName}
                 </h1>
                 <p className="text-[10px] sm:text-xs text-neutral-400 font-mono">
-                  LED Wall Standalone Showcase • {preDrawWinners.length} Previous Winners
+                  LED Wall Showcase • <span className="text-[#ff6a00] font-bold">{activeWinners.length}</span> Shown ({totalWinnersCount} Total Previous Winners)
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Draw Source Switcher Pills */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setDrawSource('ALL');
+                  setSelectedPrizeFilter('ALL');
+                  setSlideProgress(0);
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  drawSource === 'ALL'
+                    ? 'bg-indigo-600 text-white shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show all previous winners (Live Stage + Pre-Draw) [Key: T]"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>All ({totalWinnersCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDrawSource('LIVE');
+                  setSelectedPrizeFilter('ALL');
+                  setSlideProgress(0);
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  drawSource === 'LIVE'
+                    ? 'bg-amber-500 text-black shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show only Main Live Stage Raffle winners [Key: T]"
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                <span>Live Stage ({liveWinnersCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDrawSource('PRE_DRAW');
+                  setSelectedPrizeFilter('ALL');
+                  setSlideProgress(0);
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  drawSource === 'PRE_DRAW'
+                    ? 'bg-emerald-600 text-white shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show only Pre-Draw batch winners [Key: T]"
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Pre-Draw ({preDrawWinnersCount})</span>
+              </button>
+            </div>
+
+            {/* Optional Specific Prize Filter */}
+            {availablePrizes.length > 1 && (
+              <select
+                value={selectedPrizeFilter}
+                onChange={(e) => {
+                  setSelectedPrizeFilter(e.target.value);
+                  setSlideProgress(0);
+                }}
+                className="bg-neutral-900 border border-white/20 text-neutral-200 text-xs font-mono font-bold uppercase px-2.5 py-1 rounded-md cursor-pointer hover:border-[#ff6a00] transition-colors"
+                title="Filter by specific prize"
+              >
+                <option value="ALL">All Prizes ({sourceFilteredWinners.length})</option>
+                {availablePrizes.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.count})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Mode Switcher: Stage Card vs 1-by-1 Spotlight vs Grid */}
@@ -423,7 +558,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               title="Toggle Auto-Cycle (Spacebar)"
             >
               {isSlideshowActive ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-              <span>{isSlideshowActive ? 'CYCLING (5S)' : 'PAUSED'}</span>
+              <span>{isSlideshowActive ? `CYCLING (${slideIntervalSeconds}S)` : 'PAUSED'}</span>
             </button>
 
             {/* Interval Selector */}
@@ -491,8 +626,8 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         </button>
       )}
 
-      {/* Empty State when no pre-draw winners exist yet */}
-      {preDrawWinners.length === 0 ? (
+      {/* Empty State when no winners exist in active filter */}
+      {activeWinners.length === 0 ? (
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto my-auto animate-fade-in">
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-indigo-600/20 border-2 border-indigo-500/50 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(99,102,241,0.3)]">
             <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-amber-400 animate-pulse" />
@@ -501,10 +636,18 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             OFFICIAL LED WALL BROADCAST
           </span>
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight leading-tight">
-            STANDBY FOR PRE-DRAW WINNERS
+            {drawSource === 'LIVE'
+              ? 'STANDBY FOR LIVE STAGE RAFFLE WINNERS'
+              : drawSource === 'PRE_DRAW'
+              ? 'STANDBY FOR PRE-DRAW WINNERS'
+              : 'STANDBY FOR RAFFLE WINNERS'}
           </h2>
           <p className="text-neutral-400 font-mono text-sm sm:text-base max-w-xl mt-3 leading-relaxed">
-            Pre-draw winners will automatically appear and cycle here on the LED Wall in real-time as batches are confirmed by the raffle committee.
+            {drawSource === 'LIVE'
+              ? 'Live stage raffle winners will automatically appear and cycle here on the LED Wall in real-time as rounds are drawn.'
+              : drawSource === 'PRE_DRAW'
+              ? 'Pre-draw winners will automatically appear and cycle here on the LED Wall in real-time as batches are confirmed by the raffle committee.'
+              : 'Previous winners will automatically appear and cycle here on the LED Wall in real-time.'}
           </p>
           <div className="mt-8 px-6 py-2.5 bg-neutral-900 border border-white/10 rounded-full font-mono text-xs text-neutral-300 uppercase tracking-widest flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
@@ -521,23 +664,41 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <div className="bg-[#111827] rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shrink-0 shadow-xl">
               {/* Left: Status Badge */}
               <div className="flex items-center gap-2 w-full sm:w-1/4 justify-start">
-                <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs flex items-center gap-2">
-                  <Trophy className="w-3.5 h-3.5 text-amber-300" />
-                  <span>PRE-DRAW WINNERS</span>
-                </span>
+                {drawSource === 'LIVE' ? (
+                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs flex items-center gap-2">
+                    <Trophy className="w-3.5 h-3.5 text-amber-300" />
+                    <span>LIVE STAGE RAFFLE</span>
+                  </span>
+                ) : drawSource === 'PRE_DRAW' ? (
+                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>PRE-DRAW BATCH</span>
+                  </span>
+                ) : (
+                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-xs flex items-center gap-2">
+                    <Award className="w-3.5 h-3.5 text-indigo-300" />
+                    <span>OFFICIAL WINNERS</span>
+                  </span>
+                )}
               </div>
 
               {/* Center: Large Prize & Allocation Subtext */}
               <div className="text-center w-full sm:w-2/4">
-                <div className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase">
-                  {currentDistrictWinners.length > 0 && currentDistrictWinners[0].unitValue > 0
+                <div className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase truncate">
+                  {selectedPrizeFilter !== 'ALL'
+                    ? selectedPrizeFilter
+                    : currentDistrictWinners.length > 0 && currentDistrictWinners[0].unitValue > 0
                     ? `₱ ${currentDistrictWinners[0].unitValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
                     : currentDistrictWinners.length > 0
                     ? currentDistrictWinners[0].prizeName
-                    : 'OFFICIAL PRE-DRAW'}
+                    : drawSource === 'LIVE'
+                    ? 'LIVE STAGE RAFFLE'
+                    : drawSource === 'PRE_DRAW'
+                    ? 'OFFICIAL PRE-DRAW'
+                    : 'RAFFLE WINNERS'}
                 </div>
                 <div className="font-mono text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-[#ff6a00] mt-1">
-                  LGU MALUNGON • 5-DISTRICT ROTATION ({isSlideshowActive ? '5S PER CARD' : 'PAUSED'})
+                  LGU MALUNGON • 5-DISTRICT ROTATION ({isSlideshowActive ? `${slideIntervalSeconds}S PER CARD` : 'PAUSED'})
                 </div>
               </div>
 
@@ -600,8 +761,17 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                         <div className="text-xs sm:text-base md:text-lg font-mono text-neutral-300 mt-1 sm:mt-2">
                           <span className="text-amber-300 font-bold">{w.school}</span>
                           {w.position ? ` • ${w.position}` : ''} • <span className="font-bold text-indigo-400">{w.winnerId || w.depedId}</span>
+                          {drawSource === 'ALL' && (
+                            <span className={`ml-2 text-[10px] px-2 py-0.5 rounded font-black tracking-wider uppercase ${
+                              isLiveWinner(w)
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            }`}>
+                              {isLiveWinner(w) ? 'LIVE STAGE' : 'PRE-DRAW'}
+                            </span>
+                          )}
                         </div>
-                        {currentDistrictWinners.length > 1 && (
+                        {(currentDistrictWinners.length > 1 || selectedPrizeFilter === 'ALL') && (
                           <div className="text-[11px] sm:text-xs font-mono text-[#ff6a00] font-black uppercase mt-0.5">
                             PRIZE: {w.prizeName} {w.unitValue > 0 ? `(₱${w.unitValue.toLocaleString()})` : ''}
                           </div>
@@ -615,7 +785,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                       No winners recorded yet for {currentDistrictConfig.title}
                     </div>
                     <div className="text-xs text-neutral-500">
-                      Auto-advancing to next district in 5s...
+                      Auto-advancing to next district in {slideIntervalSeconds}s...
                     </div>
                   </div>
                 )}
@@ -687,7 +857,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               </div>
 
               <div className="text-[11px] text-neutral-400 tracking-wider uppercase">
-                ‹ › ARROW KEYS TO NAVIGATE • {isSlideshowActive ? 'AUTO CYCLING EVERY 5 SECONDS' : 'ROTATION PAUSED'}
+                ‹ › ARROW KEYS TO NAVIGATE • [T] TOGGLE SOURCE • {isSlideshowActive ? `AUTO CYCLING EVERY ${slideIntervalSeconds} SECONDS` : 'ROTATION PAUSED'}
               </div>
             </div>
           </main>
@@ -701,15 +871,22 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>WINNER {spotlightIndex + 1} OF {preDrawWinners.length}</span>
+                  <span>WINNER {spotlightIndex + 1} OF {activeWinners.length}</span>
                 </span>
                 <span className="font-mono text-xs uppercase px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded font-bold">
                   {currentSpotlightWinner.district} DISTRICT
                 </span>
+                <span className={`font-mono text-xs uppercase px-3 py-1 rounded font-black tracking-wider ${
+                  isLiveWinner(currentSpotlightWinner)
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                }`}>
+                  {isLiveWinner(currentSpotlightWinner) ? '🏆 LIVE STAGE' : '⚡ PRE-DRAW'}
+                </span>
               </div>
 
               <div className="font-mono text-xs text-neutral-400 hidden sm:block">
-                BATCH #{currentSpotlightWinner.drawNumber || 'PRE-DRAW'}
+                DRAW REF #{currentSpotlightWinner.drawNumber || 'TD-2026'}
               </div>
             </div>
 
@@ -717,9 +894,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <div className="my-4 flex-1 bg-gradient-to-b from-[#14151a] to-[#0c0d10] border-4 border-[#ff6a00] rounded-3xl p-8 sm:p-12 lg:p-16 shadow-[0_0_80px_rgba(255,106,0,0.25)] flex flex-col justify-between text-center min-h-[500px] sm:min-h-[580px]">
               {/* Badge */}
               <div className="shrink-0 flex items-center justify-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#ff6a00] text-black font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md">
+                <div className={`inline-flex items-center gap-2 px-4 py-1.5 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
+                  isLiveWinner(currentSpotlightWinner) ? 'bg-amber-400 text-black' : 'bg-[#ff6a00] text-black'
+                }`}>
                   <Trophy className="w-4 h-4 fill-current" />
-                  <span>PRE-DRAW RAFFLE WINNER</span>
+                  <span>{isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE WINNER' : 'PRE-DRAW RAFFLE WINNER'}</span>
                 </div>
               </div>
 
@@ -741,7 +920,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               {/* Awarded Prize Box */}
               <div className="shrink-0 max-w-2xl w-full mx-auto p-4 sm:p-6 bg-black/60 border-2 border-amber-500/60 rounded-2xl shadow-lg">
                 <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-neutral-400 block mb-1">
-                  OFFICIAL PRE-DRAW AWARD
+                  {isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE AWARD' : 'OFFICIAL PRE-DRAW AWARD'}
                 </span>
                 <span className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase text-[#ff6a00] block tracking-wide">
                   {currentSpotlightWinner.prizeName}
@@ -765,7 +944,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 <span>Prev</span>
               </button>
               <span className="text-neutral-400 uppercase tracking-wider">
-                CARD {spotlightIndex + 1} OF {preDrawWinners.length} • AUTO-CYCLING EVERY 5S
+                CARD {spotlightIndex + 1} OF {activeWinners.length} • AUTO-CYCLING EVERY {slideIntervalSeconds}S
               </span>
               <button
                 type="button"
@@ -789,7 +968,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                   OFFICIAL ANNOUNCEMENT
                 </span>
                 <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white mt-1.5">
-                  ALL PRE-DRAW WINNERS ({filteredWinners.length})
+                  {drawSource === 'LIVE'
+                    ? `LIVE STAGE RAFFLE WINNERS (${filteredWinners.length})`
+                    : drawSource === 'PRE_DRAW'
+                    ? `PRE-DRAW BATCH WINNERS (${filteredWinners.length})`
+                    : `ALL RAFFLE WINNERS (${filteredWinners.length})`}
                 </h2>
               </div>
               <div className="text-right font-mono text-xs text-neutral-400">
@@ -801,6 +984,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 content-start">
               {paginatedWinners.map((winner, idx) => {
                 const dConfig = DISTRICT_CONFIG.find((d) => d.id === winner.district);
+                const isLive = isLiveWinner(winner);
                 return (
                   <div
                     key={`${winner.winnerId}-${idx}`}
@@ -810,11 +994,18 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                       <span className="font-mono text-xs font-black text-neutral-400">
                         #{(currentPage - 1) * (pageSize || 0) + idx + 1}
                       </span>
-                      {dConfig && (
-                        <span className={`text-[10px] font-mono px-2 py-0.5 border ${dConfig.badgeBg} font-black uppercase tracking-wider`}>
-                          {dConfig.number} {dConfig.id}
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase ${
+                          isLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        }`}>
+                          {isLive ? 'LIVE' : 'PRE-DRAW'}
                         </span>
-                      )}
+                        {dConfig && (
+                          <span className={`text-[10px] font-mono px-2 py-0.5 border ${dConfig.badgeBg} font-black uppercase tracking-wider`}>
+                            {dConfig.number} {dConfig.id}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <h4 className="text-base sm:text-lg font-black uppercase text-white leading-tight">

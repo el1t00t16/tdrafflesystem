@@ -2057,6 +2057,7 @@ export default function Home() {
             prizes={prizes}
             selectedPrizeId={selectedPrizeId}
             preDrawWinners={preDrawWinners}
+            allWinners={winners}
             onSelectPrize={(id) => {
               soundSynthesizer.playClick();
               handleSelectPrize(id);
@@ -2093,6 +2094,7 @@ export default function Home() {
         {currentView === 'predraw' && (
           <PreDrawWinnerViewer
             winners={winners}
+            initialDrawSource="ALL"
             onBack={() => handleViewChange('display')}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
