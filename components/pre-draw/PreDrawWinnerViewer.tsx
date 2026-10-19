@@ -36,6 +36,7 @@ interface PreDrawWinnerViewerProps {
   onToggleSound?: () => void;
   eventName?: string;
   initialDrawSource?: 'ALL' | 'LIVE' | 'PRE_DRAW';
+  initialClaimFilter?: 'UNCLAIMED' | 'ALL' | 'CLAIMED';
 }
 
 export interface WinnerBatchGroup {
@@ -108,10 +109,13 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   soundEnabled = false,
   onToggleSound,
   eventName = "MUNICIPAL TEACHERS' DAY 2026",
-  initialDrawSource = 'ALL'
+  initialDrawSource = 'ALL',
+  initialClaimFilter = 'UNCLAIMED'
 }) => {
   // Draw Source Filter: 'ALL' | 'LIVE' | 'PRE_DRAW'
   const [drawSource, setDrawSource] = useState<'ALL' | 'LIVE' | 'PRE_DRAW'>(initialDrawSource);
+  // Claim Status Filter: 'UNCLAIMED' (default - excludes claimed winners) | 'ALL' | 'CLAIMED'
+  const [claimFilter, setClaimFilter] = useState<'UNCLAIMED' | 'ALL' | 'CLAIMED'>(initialClaimFilter);
   const [selectedPrizeFilter, setSelectedPrizeFilter] = useState<string>('ALL');
 
   // Classification Helpers
@@ -127,19 +131,53 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
     return dt === 'PRE_DRAW' || dn.startsWith('PRE');
   }, []);
 
-  // Summary counts
+  const isClaimedWinner = useCallback((w: Winner) => {
+    const cs = String(w.claimStatus || '').toUpperCase();
+    const legacyClaimed = String((w as unknown as { claimed?: string }).claimed || '').toUpperCase();
+    return cs === 'CLAIMED' || legacyClaimed === 'YES' || Boolean(w.claimedAt);
+  }, []);
+
+  const isForfeitedWinner = useCallback((w: Winner) => {
+    const cs = String(w.claimStatus || '').toUpperCase();
+    return cs === 'FORFEITED';
+  }, []);
+
+  // Summary counts across all winners
   const liveWinnersCount = useMemo(() => winners.filter(isLiveWinner).length, [winners, isLiveWinner]);
   const preDrawWinnersCount = useMemo(() => winners.filter(isPreDrawWinner).length, [winners, isPreDrawWinner]);
   const totalWinnersCount = winners.length;
 
-  // Filter pool based on active draw source
-  const sourceFilteredWinners = useMemo(() => {
+  // Active Draw Source Pool (before claim status filtering)
+  const currentSourcePool = useMemo(() => {
     if (drawSource === 'LIVE') return winners.filter(isLiveWinner);
     if (drawSource === 'PRE_DRAW') return winners.filter(isPreDrawWinner);
     return winners;
   }, [winners, drawSource, isLiveWinner, isPreDrawWinner]);
 
-  // Available prizes inside the active source
+  // Telemetry counts for the current draw source
+  const sourceUnclaimedCount = useMemo(
+    () => currentSourcePool.filter((w) => !isClaimedWinner(w) && !isForfeitedWinner(w)).length,
+    [currentSourcePool, isClaimedWinner, isForfeitedWinner]
+  );
+  const sourceClaimedCount = useMemo(
+    () => currentSourcePool.filter(isClaimedWinner).length,
+    [currentSourcePool, isClaimedWinner]
+  );
+  const sourceTotalCount = currentSourcePool.length;
+
+  // Filter pool based on active draw source AND claim status filter
+  const sourceFilteredWinners = useMemo(() => {
+    if (claimFilter === 'UNCLAIMED') {
+      return currentSourcePool.filter((w) => !isClaimedWinner(w) && !isForfeitedWinner(w));
+    } else if (claimFilter === 'CLAIMED') {
+      return currentSourcePool.filter(isClaimedWinner);
+    } else {
+      // 'ALL' shows all non-forfeited winners
+      return currentSourcePool.filter((w) => !isForfeitedWinner(w));
+    }
+  }, [currentSourcePool, claimFilter, isClaimedWinner, isForfeitedWinner]);
+
+  // Available prizes inside the active source & claim filter
   const availablePrizes = useMemo(() => {
     const map = new Map<string, { id: string; name: string; count: number }>();
     sourceFilteredWinners.forEach((w) => {
@@ -199,12 +237,19 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(12);
 
-  // Reset pagination & spotlight when source or prize filter changes
+  // Reset pagination & spotlight when source, prize, or claim filter changes
   useEffect(() => {
     setSpotlightIndex(0);
     setSlideProgress(0);
     setCurrentPage(1);
-  }, [drawSource, selectedPrizeFilter]);
+  }, [drawSource, selectedPrizeFilter, claimFilter]);
+
+  // Keep spotlightIndex safely bounded if winners change dynamically (e.g. real-time claim from Claims Desk)
+  useEffect(() => {
+    if (activeWinners.length > 0 && spotlightIndex >= activeWinners.length) {
+      setSpotlightIndex(0);
+    }
+  }, [activeWinners.length, spotlightIndex]);
 
   // Group winners by district
   const winnersByDistrict = useMemo(() => {
@@ -354,6 +399,10 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         // Toggle Draw Source: ALL -> LIVE -> PRE_DRAW -> ALL
         setDrawSource((prev) => (prev === 'ALL' ? 'LIVE' : prev === 'LIVE' ? 'PRE_DRAW' : 'ALL'));
         setSelectedPrizeFilter('ALL');
+      } else if (e.key.toLowerCase() === 'c') {
+        // Toggle Claim Filter: UNCLAIMED -> CLAIMED -> ALL -> UNCLAIMED
+        setClaimFilter((prev) => (prev === 'UNCLAIMED' ? 'CLAIMED' : prev === 'CLAIMED' ? 'ALL' : 'UNCLAIMED'));
+        setSelectedPrizeFilter('ALL');
       } else if (e.key.toLowerCase() === 'h') {
         setIsControlsVisible((prev) => !prev);
       } else if (e.key.toLowerCase() === 'f' && onToggleFullscreen) {
@@ -438,15 +487,20 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 <h1 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
                   {eventName}
                 </h1>
-                <p className="text-[10px] sm:text-xs text-neutral-400 font-mono">
-                  LED Wall Showcase • <span className="text-[#ff6a00] font-bold">{activeWinners.length}</span> Shown ({totalWinnersCount} Total Previous Winners)
+                <p className="text-[10px] sm:text-xs text-neutral-400 font-mono flex items-center gap-1.5 flex-wrap">
+                  <span>LED Wall Showcase •</span>
+                  <span className="text-amber-400 font-bold">{sourceUnclaimedCount} Unclaimed</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-bold">{sourceClaimedCount} Claimed</span>
+                  <span className="text-neutral-500">({sourceTotalCount} Total)</span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Draw Source Switcher Pills */}
-          <div className="flex items-center gap-2">
+          {/* Draw Source & Claim Filter Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Draw Source Switcher Pills */}
             <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
               <button
                 type="button"
@@ -500,6 +554,65 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               >
                 <Award className="w-3.5 h-3.5" />
                 <span>Pre-Draw ({preDrawWinnersCount})</span>
+              </button>
+            </div>
+
+            {/* Claim Status Filter: Unclaimed (Default) vs Claimed vs All */}
+            <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerTransition(() => {
+                    setClaimFilter('UNCLAIMED');
+                    setSlideProgress(0);
+                  });
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  claimFilter === 'UNCLAIMED'
+                    ? 'bg-amber-500 text-black shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show only UNCLAIMED winners (Default - Cards disappear once prize is claimed) [Key: C]"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Unclaimed ({sourceUnclaimedCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerTransition(() => {
+                    setClaimFilter('CLAIMED');
+                    setSlideProgress(0);
+                  });
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  claimFilter === 'CLAIMED'
+                    ? 'bg-emerald-600 text-white shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show only CLAIMED winners [Key: C]"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Claimed ({sourceClaimedCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerTransition(() => {
+                    setClaimFilter('ALL');
+                    setSlideProgress(0);
+                  });
+                }}
+                className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                  claimFilter === 'ALL'
+                    ? 'bg-white/20 text-white shadow-xs font-black'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Show ALL winners (both claimed and unclaimed) [Key: C]"
+              >
+                <span>All ({sourceTotalCount})</span>
               </button>
             </div>
 
@@ -651,36 +764,71 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       {/* Empty State when no winners exist in active filter */}
       {activeWinners.length === 0 ? (
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto my-auto animate-fade-in">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-indigo-600/20 border-2 border-indigo-500/50 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(99,102,241,0.3)]">
-            <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-amber-400 animate-pulse" />
-          </div>
-          <span className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#ff6a00] mb-2">
-            OFFICIAL LED WALL BROADCAST
-          </span>
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight leading-tight">
-            {drawSource === 'LIVE'
-              ? 'STANDBY FOR LIVE STAGE RAFFLE WINNERS'
-              : drawSource === 'PRE_DRAW'
-              ? 'STANDBY FOR PRE-DRAW WINNERS'
-              : 'STANDBY FOR RAFFLE WINNERS'}
-          </h2>
-          <p className="text-neutral-400 font-mono text-sm sm:text-base max-w-xl mt-3 leading-relaxed">
-            {drawSource === 'LIVE'
-              ? 'Live stage raffle winners will automatically appear and cycle here on the LED Wall in real-time as rounds are drawn.'
-              : drawSource === 'PRE_DRAW'
-              ? 'Pre-draw winners will automatically appear and cycle here on the LED Wall in real-time as batches are confirmed by the raffle committee.'
-              : 'Previous winners will automatically appear and cycle here on the LED Wall in real-time.'}
-          </p>
-          <div className="mt-8 px-6 py-2.5 bg-neutral-900 border border-white/10 rounded-full font-mono text-xs text-neutral-300 uppercase tracking-widest flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <span>LISTENING FOR LIVE SUPABASE REALTIME SYNC</span>
-          </div>
+          {claimFilter === 'UNCLAIMED' && currentSourcePool.length > 0 ? (
+            <>
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-600/20 border-2 border-emerald-500/50 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+                <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400" />
+              </div>
+              <span className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-emerald-400 mb-2">
+                100% PRIZES CLAIMED
+              </span>
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight leading-tight">
+                ALL {drawSource === 'LIVE' ? 'LIVE STAGE' : drawSource === 'PRE_DRAW' ? 'PRE-DRAW' : 'RAFFLE'} PRIZES CLAIMED!
+              </h2>
+              <p className="text-neutral-400 font-mono text-sm sm:text-base max-w-xl mt-3 leading-relaxed">
+                All {sourceClaimedCount} winners have successfully verified and claimed their awards at the Claims Desk.
+              </p>
+              <div className="mt-8 flex items-center gap-3 flex-wrap justify-center">
+                <button
+                  type="button"
+                  onClick={() => setClaimFilter('CLAIMED')}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-lg"
+                >
+                  View Claimed Winners ({sourceClaimedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClaimFilter('ALL')}
+                  className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-neutral-300 font-mono text-xs font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                >
+                  View All Winners ({sourceTotalCount})
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-indigo-600/20 border-2 border-indigo-500/50 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(99,102,241,0.3)]">
+                <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-amber-400 animate-pulse" />
+              </div>
+              <span className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-[#ff6a00] mb-2">
+                OFFICIAL LED WALL BROADCAST
+              </span>
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight leading-tight">
+                {drawSource === 'LIVE'
+                  ? 'STANDBY FOR LIVE STAGE RAFFLE WINNERS'
+                  : drawSource === 'PRE_DRAW'
+                  ? 'STANDBY FOR PRE-DRAW WINNERS'
+                  : 'STANDBY FOR RAFFLE WINNERS'}
+              </h2>
+              <p className="text-neutral-400 font-mono text-sm sm:text-base max-w-xl mt-3 leading-relaxed">
+                {drawSource === 'LIVE'
+                  ? 'Live stage raffle winners will automatically appear and cycle here on the LED Wall in real-time as rounds are drawn.'
+                  : drawSource === 'PRE_DRAW'
+                  ? 'Pre-draw winners will automatically appear and cycle here on the LED Wall in real-time as batches are confirmed by the raffle committee.'
+                  : 'Previous winners will automatically appear and cycle here on the LED Wall in real-time.'}
+              </p>
+              <div className="mt-8 px-6 py-2.5 bg-neutral-900 border border-white/10 rounded-full font-mono text-xs text-neutral-300 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <span>LISTENING FOR LIVE SUPABASE REALTIME SYNC</span>
+              </div>
+            </>
+          )}
         </main>
       ) : viewerMode === 'spotlight' && currentSpotlightWinner ? (
           <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-5 max-w-[1550px] w-full mx-auto animate-fade-in min-h-0 overflow-hidden">
             {/* Top Meta Bar */}
             <div className="bg-[#111827] rounded-xl px-4 py-2 border border-white/10 flex items-center justify-between text-white shadow-xl shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>WINNER {spotlightIndex + 1} OF {activeWinners.length}</span>
@@ -695,6 +843,17 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 }`}>
                   {isLiveWinner(currentSpotlightWinner) ? '🏆 LIVE STAGE' : '⚡ PRE-DRAW'}
                 </span>
+                {isClaimedWinner(currentSpotlightWinner) ? (
+                  <span className="font-mono text-xs uppercase px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded font-black tracking-wider flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>CLAIMED</span>
+                  </span>
+                ) : (
+                  <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-wider flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    <span>UNCLAIMED</span>
+                  </span>
+                )}
               </div>
 
               <div className="font-mono text-xs text-neutral-400 hidden sm:block">
@@ -705,13 +864,19 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             {/* Massive Cinema-Scale Hero Card (Guaranteed Uniform & No Cut Off) */}
             <div className={`my-2 sm:my-3 flex-1 bg-gradient-to-b from-[#14151a] to-[#0c0d10] border-3 sm:border-4 border-[#ff6a00] rounded-3xl p-4 sm:p-6 lg:p-8 shadow-[0_0_80px_rgba(255,106,0,0.25)] flex flex-col justify-between text-center min-h-0 overflow-hidden ${fadeCardClasses}`}>
               {/* Badge */}
-              <div className="shrink-0 flex items-center justify-center">
+              <div className="shrink-0 flex items-center justify-center gap-2">
                 <div className={`inline-flex items-center gap-2 px-3.5 py-1 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
                   isLiveWinner(currentSpotlightWinner) ? 'bg-amber-400 text-black' : 'bg-[#ff6a00] text-black'
                 }`}>
                   <Trophy className="w-4 h-4 fill-current" />
                   <span>{isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE WINNER' : 'PRE-DRAW RAFFLE WINNER'}</span>
                 </div>
+                {isClaimedWinner(currentSpotlightWinner) && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 font-mono font-black text-xs uppercase tracking-wider rounded-full bg-emerald-500 text-white shadow-md">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>CLAIMED</span>
+                  </div>
+                )}
               </div>
 
               {/* Huge Name with Dynamic Proportional Typography */}
@@ -777,7 +942,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <div className="flex flex-wrap items-end justify-between gap-4 mb-6 border-b border-white/15 pb-4">
               <div>
                 <span className="font-mono text-xs uppercase px-2.5 py-0.5 bg-[#ff6a00] text-black font-black tracking-widest">
-                  OFFICIAL ANNOUNCEMENT
+                  OFFICIAL ANNOUNCEMENT • {claimFilter === 'UNCLAIMED' ? 'UNCLAIMED' : claimFilter === 'CLAIMED' ? 'CLAIMED' : 'ALL'}
                 </span>
                 <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white mt-1.5">
                   {drawSource === 'LIVE'
@@ -806,12 +971,21 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                       <span className="font-mono text-xs font-black text-neutral-400">
                         #{(currentPage - 1) * (pageSize || 0) + idx + 1}
                       </span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase ${
                           isLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                         }`}>
                           {isLive ? 'LIVE' : 'PRE-DRAW'}
                         </span>
+                        {isClaimedWinner(winner) ? (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            CLAIMED
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            UNCLAIMED
+                          </span>
+                        )}
                         {dConfig && (
                           <span className={`text-[10px] font-mono px-2 py-0.5 border ${dConfig.badgeBg} font-black uppercase tracking-wider`}>
                             {dConfig.number} {dConfig.id}
