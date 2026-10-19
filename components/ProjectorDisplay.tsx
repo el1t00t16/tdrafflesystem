@@ -1032,24 +1032,29 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       className="w-full flex-1 min-h-0 bg-white border-3 sm:border-4 border-emerald-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 xl:p-9 shadow-2xl ring-4 ring-emerald-500/20 animate-grand-winner-pulse flex flex-col justify-between overflow-hidden"
                     >
                       {/* District Header - Balanced Horizontal Bar (Left: Tag, Center: District Title, Right: Winners Count) */}
-                      <div className="shrink-0 pb-2 sm:pb-3 mb-2 sm:mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2">
+                      <div className="shrink-0 pb-2 sm:pb-3 mb-2 sm:mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 relative">
                         {/* Left: District Winners Label */}
-                        <div className="w-1/3 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
+                        <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0 z-10">
                           <span className="text-sm sm:text-base shrink-0">🏆</span>
-                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 uppercase tracking-[0.2em] truncate">
+                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 uppercase tracking-[0.2em] whitespace-nowrap">
                             District Winners
                           </span>
                         </div>
 
-                        {/* Center: District Title (Strictly Centered) */}
-                        <div className="w-1/3 text-center flex justify-center">
-                          <h3 className="font-mono text-lg sm:text-2xl lg:text-3xl font-black uppercase tracking-[0.25em] text-[#ff6a00] leading-none whitespace-nowrap">
-                            {currentDistrict.title}
+                        {/* Center: District Title (Strictly Centered, Cleanly Proportioned, No Overlap) */}
+                        <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
+                          <h3 className="font-mono text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
+                            {currentDistrict.id === 'PRIVATE' ? 'PRIVATE' : currentDistrict.title}
                           </h3>
+                          {currentDistrict.id === 'PRIVATE' && (
+                            <span className="font-mono text-[10px] sm:text-xs font-bold text-neutral-500 tracking-wider uppercase mt-1 truncate max-w-full">
+                              ECCD • Private School • LSB
+                            </span>
+                          )}
                         </div>
 
                         {/* Right: Winner Count Badge */}
-                        <div className="w-1/3 flex items-center justify-end">
+                        <div className="flex items-center justify-end shrink-0 z-10">
                           {hasWinners ? (
                             <div className="font-mono text-xs sm:text-sm font-black text-[#ff6a00] bg-[#ff6a00]/10 border border-[#ff6a00]/30 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full shadow-2xs whitespace-nowrap">
                               {winners.length} {winners.length === 1 ? 'Winner' : 'Winners'}

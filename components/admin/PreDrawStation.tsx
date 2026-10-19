@@ -1076,24 +1076,29 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     {/* Massive Projector Stage Card (Screenshot #2) */}
                     <div className="bg-white dark:bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]">
                       {/* District Header - Left: District Winners label, Center: District Title, Right: Winner count */}
-                      <div className="pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0">
+                      <div className="pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0 relative">
                         {/* Left: District Winners Label */}
-                        <div className="w-1/3 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
+                        <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0 z-10">
                           <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
-                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] truncate">
+                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] whitespace-nowrap">
                             DISTRICT WINNERS
                           </span>
                         </div>
 
-                        {/* Center: District Title (Strictly Centered in Vibrant Orange) */}
-                        <div className="w-1/3 text-center flex justify-center">
-                          <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.25em] text-[#ff6a00] leading-none whitespace-nowrap">
-                            {currentCarouselDistrict.title}
+                        {/* Center: District Title (Strictly Centered, Cleanly Proportioned, No Overlap) */}
+                        <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
+                          <h3 className="font-mono text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
+                            {currentCarouselDistrict.id === 'PRIVATE' ? 'PRIVATE' : currentCarouselDistrict.title}
                           </h3>
+                          {currentCarouselDistrict.id === 'PRIVATE' && (
+                            <span className="font-mono text-[10px] sm:text-xs font-bold text-neutral-500 dark:text-neutral-400 tracking-wider uppercase mt-1 truncate max-w-full">
+                              ECCD • Private School • LSB
+                            </span>
+                          )}
                         </div>
 
                         {/* Right: Winner Count Badge */}
-                        <div className="w-1/3 flex items-center justify-end">
+                        <div className="flex items-center justify-end shrink-0 z-10">
                           <div className="font-mono text-xs sm:text-sm font-black text-[#ff6a00] bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-700/50 px-3 sm:px-4 py-1 rounded-full whitespace-nowrap shadow-2xs">
                             {carouselWinners.length} {carouselWinners.length === 1 ? 'Winner' : 'Winners'}
                           </div>
