@@ -218,9 +218,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
     }, 350);
   }, []);
 
-  // Auto-Cycle Engine (Defaults to Active with 5s per card)
+  // Auto-Cycle Engine (Defaults to Active with 2s per card)
   const [isSlideshowActive, setIsSlideshowActive] = useState<boolean>(true);
-  const [slideIntervalSeconds, setSlideIntervalSeconds] = useState<number>(5);
+  const [slideIntervalSeconds, setSlideIntervalSeconds] = useState<number>(2);
   const [slideProgress, setSlideProgress] = useState(0);
 
   // Stage UI Visibility (H to toggle)
@@ -735,8 +735,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               className="bg-black border border-white/20 text-amber-400 font-mono text-xs px-2 py-1.5 outline-none cursor-pointer rounded-xs"
               title="Change auto-cycle interval"
             >
+              <option value={2}>2s / card (Default)</option>
               <option value={3}>3s / card</option>
-              <option value={5}>5s / card (Default)</option>
+              <option value={5}>5s / card</option>
               <option value={8}>8s / card</option>
               <option value={10}>10s / card</option>
             </select>
