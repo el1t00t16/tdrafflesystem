@@ -418,6 +418,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     setIsReviewOpen(false);
     setIsShuffling(true);
     setHasDrawnRound(false);
+    setIsControlsCollapsed(true);
 
     // Filter participants by district for authentic reel cycling
     const participantsByDistrict: Record<District, Participant[]> = {
