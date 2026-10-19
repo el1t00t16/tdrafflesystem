@@ -55,7 +55,11 @@ export default function ClaimsPage() {
     return null;
   });
 
-  const [sessionChecked] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [isCloudConfigured, setIsCloudConfigured] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -565,7 +569,7 @@ export default function ClaimsPage() {
     });
   };
 
-  if (!sessionChecked) {
+  if (!isMounted) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-neutral-400 font-mono text-xs">
         <Loader2 className="w-5 h-5 animate-spin text-[#ff6a00] mr-2" />

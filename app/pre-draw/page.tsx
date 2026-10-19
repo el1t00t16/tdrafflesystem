@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { PreDrawWinnerViewer } from '../../components/pre-draw/PreDrawWinnerViewer';
 import { Winner } from '../../lib/types';
 import { 
@@ -12,6 +13,12 @@ import {
 
 export default function PreDrawStandalonePage() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [winners, setWinners] = useState<Winner[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -100,6 +107,15 @@ export default function PreDrawStandalonePage() {
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-neutral-400 font-mono text-xs">
+        <Loader2 className="w-5 h-5 animate-spin text-[#ff6a00] mr-2" />
+        Loading Pre-Draw Station...
+      </div>
+    );
+  }
 
   return (
     <PreDrawWinnerViewer
