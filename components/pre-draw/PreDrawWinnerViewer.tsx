@@ -23,7 +23,9 @@ import {
   X,
   LayoutGrid,
   User,
-  Clock
+  Clock,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { soundSynthesizer } from '../../lib/sound';
 
@@ -117,6 +119,52 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   // Claim Status Filter: 'UNCLAIMED' (default - excludes claimed winners) | 'ALL' | 'CLAIMED'
   const [claimFilter, setClaimFilter] = useState<'UNCLAIMED' | 'ALL' | 'CLAIMED'>(initialClaimFilter);
   const [selectedPrizeFilter, setSelectedPrizeFilter] = useState<string>('ALL');
+
+  // Overall Theme State: Dark Mode (Default for LED Stage) & Light Mode
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const saved = localStorage.getItem('td26_theme_mode');
+      if (saved) return saved === 'dark';
+      return document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.classList.contains('dark');
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleTheme = useCallback(() => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      try {
+        if (next) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('td26_theme_mode', 'dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('td26_theme_mode', 'light');
+        }
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  // Sync theme class on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('td26_theme_mode');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
+        setIsDarkMode(false);
+      } else if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('dark');
+        setIsDarkMode(true);
+      }
+    } catch (e) {}
+  }, []);
 
   // Classification Helpers
   const isLiveWinner = useCallback((w: Winner) => {
@@ -409,12 +457,14 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         onToggleFullscreen();
       } else if (e.key.toLowerCase() === 'm' && onToggleSound) {
         onToggleSound();
+      } else if (e.key.toLowerCase() === 'l') {
+        toggleTheme();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNextSlide, handlePrevSlide, onToggleFullscreen, onToggleSound]);
+  }, [handleNextSlide, handlePrevSlide, onToggleFullscreen, onToggleSound, toggleTheme]);
 
   // Active winner for Spotlight View
   const currentSpotlightWinner = activeWinners.length > 0 ? activeWinners[spotlightIndex % activeWinners.length] : null;
@@ -450,12 +500,14 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   };
 
   return (
-    <div className={`bg-[#0d0d0e] text-[#f8f7f4] flex flex-col select-none relative font-sans ${
+    <div className={`flex flex-col select-none relative font-sans transition-colors duration-200 ${
+      isDarkMode ? 'bg-[#0a0a0c] text-[#f8f7f4]' : 'bg-[#f4f2ec] text-[#1a1a1e]'
+    } ${
       viewerMode === 'grid' ? 'min-h-screen overflow-x-hidden' : 'h-screen max-h-screen overflow-hidden'
     }`}>
       {/* Top 5-Second Progress Bar for LED Wall */}
       {isSlideshowActive && (
-        <div className="fixed top-0 left-0 right-0 h-1.5 bg-neutral-900 z-50 overflow-hidden">
+        <div className={`fixed top-0 left-0 right-0 h-1.5 z-50 overflow-hidden ${isDarkMode ? 'bg-neutral-900' : 'bg-neutral-200'}`}>
           <div 
             className="h-full bg-gradient-to-r from-amber-500 via-[#ff6a00] to-emerald-400 transition-all duration-75 ease-linear shadow-[0_0_12px_rgba(255,106,0,0.8)]"
             style={{ width: `${slideProgress}%` }}
@@ -465,13 +517,19 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
 
       {/* Control Header Bar */}
       {isControlsVisible && (
-        <header className="bg-[#141416] border-b border-white/10 px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 z-40 shadow-lg">
+        <header className={`border-b px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 z-40 shadow-lg transition-colors duration-200 ${
+          isDarkMode ? 'bg-[#121316] border-white/10 text-white' : 'bg-white border-neutral-300 text-neutral-900 shadow-xs'
+        }`}>
           <div className="flex items-center gap-3">
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-neutral-200 border border-white/15 text-xs font-mono font-bold uppercase transition-colors cursor-pointer rounded-xs"
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase transition-colors cursor-pointer rounded-xs border ${
+                  isDarkMode 
+                    ? 'bg-white/10 hover:bg-white/20 text-neutral-200 border-white/15' 
+                    : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                }`}
                 title="Return to main stage / console"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -484,15 +542,15 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 <Sparkles className="w-4 h-4" />
               </span>
               <div>
-                <h1 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                <h1 className={`text-xs sm:text-sm font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>
                   {eventName}
                 </h1>
-                <p className="text-[10px] sm:text-xs text-neutral-400 font-mono flex items-center gap-1.5 flex-wrap">
+                <p className={`text-[10px] sm:text-xs font-mono flex items-center gap-1.5 flex-wrap ${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'}`}>
                   <span>LED Wall Showcase •</span>
-                  <span className="text-amber-400 font-bold">{sourceUnclaimedCount} Unclaimed</span>
+                  <span className="text-amber-500 dark:text-amber-400 font-bold">{sourceUnclaimedCount} Unclaimed</span>
                   <span>•</span>
-                  <span className="text-emerald-400 font-bold">{sourceClaimedCount} Claimed</span>
-                  <span className="text-neutral-500">({sourceTotalCount} Total)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{sourceClaimedCount} Claimed</span>
+                  <span className="opacity-60">({sourceTotalCount} Total)</span>
                 </p>
               </div>
             </div>
@@ -501,7 +559,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
           {/* Draw Source & Claim Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Draw Source Switcher Pills */}
-            <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
+            <div className={`inline-flex border rounded-lg p-0.5 shrink-0 font-mono text-xs ${
+              isDarkMode ? 'border-white/20 bg-neutral-900' : 'border-neutral-300 bg-neutral-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => {
@@ -512,7 +572,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   drawSource === 'ALL'
                     ? 'bg-indigo-600 text-white shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show all previous winners (Live Stage + Pre-Draw) [Key: T]"
               >
@@ -530,7 +590,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   drawSource === 'LIVE'
                     ? 'bg-amber-500 text-black shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show only Main Live Stage Raffle winners [Key: T]"
               >
@@ -548,7 +608,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   drawSource === 'PRE_DRAW'
                     ? 'bg-emerald-600 text-white shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show only Pre-Draw batch winners [Key: T]"
               >
@@ -558,7 +618,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Claim Status Filter: Unclaimed (Default) vs Claimed vs All */}
-            <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
+            <div className={`inline-flex border rounded-lg p-0.5 shrink-0 font-mono text-xs ${
+              isDarkMode ? 'border-white/20 bg-neutral-900' : 'border-neutral-300 bg-neutral-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => {
@@ -570,7 +632,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   claimFilter === 'UNCLAIMED'
                     ? 'bg-amber-500 text-black shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show only UNCLAIMED winners (Default - Cards disappear once prize is claimed) [Key: C]"
               >
@@ -589,7 +651,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   claimFilter === 'CLAIMED'
                     ? 'bg-emerald-600 text-white shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show only CLAIMED winners [Key: C]"
               >
@@ -607,8 +669,8 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 }}
                 className={`px-2.5 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1 cursor-pointer ${
                   claimFilter === 'ALL'
-                    ? 'bg-white/20 text-white shadow-xs font-black'
-                    : 'text-neutral-400 hover:text-white'
+                    ? (isDarkMode ? 'bg-white/20 text-white shadow-xs font-black' : 'bg-neutral-800 text-white shadow-xs font-black')
+                    : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
                 }`}
                 title="Show ALL winners (both claimed and unclaimed) [Key: C]"
               >
@@ -624,7 +686,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                   setSelectedPrizeFilter(e.target.value);
                   setSlideProgress(0);
                 }}
-                className="bg-neutral-900 border border-white/20 text-neutral-200 text-xs font-mono font-bold uppercase px-2.5 py-1 rounded-md cursor-pointer hover:border-[#ff6a00] transition-colors"
+                className={`border text-xs font-mono font-bold uppercase px-2.5 py-1 rounded-md cursor-pointer hover:border-[#ff6a00] transition-colors ${
+                  isDarkMode 
+                    ? 'bg-neutral-900 border-white/20 text-neutral-200' 
+                    : 'bg-white border-neutral-300 text-neutral-900'
+                }`}
                 title="Filter by specific prize"
               >
                 <option value="ALL">All Prizes ({sourceFilteredWinners.length})</option>
@@ -638,7 +704,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
           </div>
 
           {/* Mode Switcher: 1-by-1 Spotlight vs Grid */}
-          <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
+          <div className={`inline-flex border rounded-lg p-0.5 shrink-0 font-mono text-xs ${
+            isDarkMode ? 'border-white/20 bg-neutral-900' : 'border-neutral-300 bg-neutral-100'
+          }`}>
             <button
               type="button"
               onClick={() => {
@@ -650,7 +718,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               className={`px-3 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewerMode === 'spotlight'
                   ? 'bg-amber-500 text-black shadow-xs font-black'
-                  : 'text-neutral-400 hover:text-white'
+                  : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
               }`}
               title="1-by-1 Winner Spotlight (Rotates 1 winner per card)"
             >
@@ -669,7 +737,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               className={`px-3 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewerMode === 'grid'
                   ? 'bg-indigo-600 text-white shadow-xs font-black'
-                  : 'text-neutral-400 hover:text-white'
+                  : isDarkMode ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
               }`}
               title="Overview Grid"
             >
@@ -678,7 +746,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </button>
           </div>
 
-          {/* Stage Controls: Play/Pause, Speed, Sound, Fullscreen, Hide UI */}
+          {/* Stage Controls: Play/Pause, Speed, Sound, Theme, Fullscreen, Hide UI */}
           <div className="flex items-center gap-2">
             {/* Auto-Cycle Play / Pause */}
             <button
@@ -687,7 +755,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               className={`flex items-center gap-1.5 px-3 py-1.5 border text-xs font-mono font-black uppercase transition-all cursor-pointer shadow-sm rounded-xs ${
                 isSlideshowActive
                   ? 'bg-emerald-600 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                  : 'bg-white/10 text-neutral-300 border-white/20 hover:bg-white/20 hover:text-white'
+                  : isDarkMode
+                  ? 'bg-white/10 text-neutral-300 border-white/20 hover:bg-white/20 hover:text-white'
+                  : 'bg-neutral-100 text-neutral-700 border-neutral-300 hover:bg-neutral-200 hover:text-black'
               }`}
               title="Toggle Auto-Cycle (Spacebar)"
             >
@@ -702,7 +772,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 setSlideIntervalSeconds(Number(e.target.value));
                 setSlideProgress(0);
               }}
-              className="bg-black border border-white/20 text-amber-400 font-mono text-xs px-2 py-1.5 outline-none cursor-pointer rounded-xs"
+              className={`font-mono text-xs px-2 py-1.5 outline-none cursor-pointer rounded-xs border ${
+                isDarkMode 
+                  ? 'bg-black border-white/20 text-amber-400' 
+                  : 'bg-white border-neutral-300 text-amber-700 font-bold'
+              }`}
               title="Change auto-cycle interval"
             >
               <option value={2}>2s / card (Default)</option>
@@ -717,20 +791,42 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               <button
                 type="button"
                 onClick={onToggleSound}
-                className="p-1.5 bg-white/10 hover:bg-white/20 border border-white/15 text-neutral-300 hover:text-white transition-colors cursor-pointer rounded-xs"
-                title={soundEnabled ? 'Mute Transition Chimes' : 'Unmute Chimes'}
+                className={`p-1.5 border transition-colors cursor-pointer rounded-xs ${
+                  isDarkMode 
+                    ? 'bg-white/10 hover:bg-white/20 border-white/15 text-neutral-300 hover:text-white' 
+                    : 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-700 hover:text-black'
+                }`}
+                title={soundEnabled ? 'Mute Transition Chimes (M)' : 'Unmute Chimes (M)'}
               >
-                {soundEnabled ? <Volume2 className="w-4 h-4 text-[#ff6a00]" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
+                {soundEnabled ? <Volume2 className="w-4 h-4 text-[#ff6a00]" /> : <VolumeX className="w-4 h-4 opacity-50" />}
               </button>
             )}
+
+            {/* Overall Theme Toggle (Dark / Light) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`p-1.5 border transition-colors cursor-pointer rounded-xs flex items-center justify-center ${
+                isDarkMode 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/15 text-amber-300 hover:text-amber-200' 
+                  : 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800 hover:text-black'
+              }`}
+              title={isDarkMode ? 'Switch to Light Mode (Key: L)' : 'Switch to Dark Mode (Key: L)'}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
 
             {/* Fullscreen Toggle */}
             {onToggleFullscreen && (
               <button
                 type="button"
                 onClick={onToggleFullscreen}
-                className="p-1.5 bg-white/10 hover:bg-white/20 border border-white/15 text-neutral-300 hover:text-white transition-colors cursor-pointer rounded-xs"
-                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Stage Fullscreen (F)'}
+                className={`p-1.5 border transition-colors cursor-pointer rounded-xs ${
+                  isDarkMode 
+                    ? 'bg-white/10 hover:bg-white/20 border-white/15 text-neutral-300 hover:text-white' 
+                    : 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-700 hover:text-black'
+                }`}
+                title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Stage Fullscreen (F)'}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
@@ -740,7 +836,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <button
               type="button"
               onClick={() => setIsControlsVisible(false)}
-              className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 text-neutral-400 hover:text-white text-xs font-mono transition-colors rounded-xs cursor-pointer"
+              className={`px-2.5 py-1.5 border text-xs font-mono transition-colors rounded-xs cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/15 text-neutral-400 hover:text-white' 
+                  : 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-600 hover:text-black'
+              }`}
               title="Hide top bar for 100% clean LED Wall view (Press 'H' to show again)"
             >
               Hide UI (H)
@@ -754,7 +854,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         <button
           type="button"
           onClick={() => setIsControlsVisible(true)}
-          className="fixed top-3 right-3 z-50 p-2.5 bg-black/80 hover:bg-black border border-white/30 text-neutral-300 hover:text-white rounded-full transition-all shadow-2xl backdrop-blur-md cursor-pointer group"
+          className={`fixed top-3 right-3 z-50 p-2.5 border rounded-full transition-all shadow-2xl backdrop-blur-md cursor-pointer group ${
+            isDarkMode 
+              ? 'bg-black/80 hover:bg-black border-white/30 text-neutral-300 hover:text-white' 
+              : 'bg-white/90 hover:bg-white border-neutral-300 text-neutral-800 hover:text-black shadow-lg'
+          }`}
           title="Show stage controls (Press 'H')"
         >
           <SlidersHorizontal className="w-4 h-4 group-hover:scale-110 transition-transform text-[#ff6a00]" />
@@ -827,86 +931,103 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       ) : viewerMode === 'spotlight' && currentSpotlightWinner ? (
           <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-5 max-w-[1550px] w-full mx-auto animate-fade-in min-h-0 overflow-hidden">
             {/* Top Meta Bar */}
-            <div className="bg-[#111827] rounded-xl px-4 py-2 border border-white/10 flex items-center justify-between text-white shadow-xl shrink-0">
+            <div className={`rounded-xl px-4 py-2 border flex items-center justify-between shadow-xl shrink-0 transition-colors ${
+              isDarkMode 
+                ? 'bg-[#111827] border-white/10 text-white' 
+                : 'bg-white border-neutral-300 text-neutral-800 shadow-md'
+            }`}>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-widest flex items-center gap-1.5">
+                <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/40 rounded font-black tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>WINNER {spotlightIndex + 1} OF {activeWinners.length}</span>
                 </span>
-                <span className="font-mono text-xs uppercase px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 rounded font-bold">
+                <span className={`font-mono text-xs uppercase px-3 py-1 rounded font-bold border ${
+                  isDarkMode 
+                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' 
+                    : 'bg-indigo-50 text-indigo-700 border-indigo-300'
+                }`}>
                   {currentSpotlightWinner.district} DISTRICT
                 </span>
                 <span className={`font-mono text-xs uppercase px-3 py-1 rounded font-black tracking-wider ${
                   isLiveWinner(currentSpotlightWinner)
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40'
+                    : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40'
                 }`}>
                   {isLiveWinner(currentSpotlightWinner) ? '🏆 LIVE STAGE' : '⚡ PRE-DRAW'}
                 </span>
-                {isClaimedWinner(currentSpotlightWinner) ? (
-                  <span className="font-mono text-xs uppercase px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded font-black tracking-wider flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                {isClaimedWinner(currentSpotlightWinner) && (
+                  <span className="font-mono text-xs uppercase px-3 py-1 bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40 rounded font-black tracking-wider flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
                     <span>CLAIMED</span>
-                  </span>
-                ) : (
-                  <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-wider flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                    <span>UNCLAIMED</span>
                   </span>
                 )}
               </div>
 
-              <div className="font-mono text-xs text-neutral-400 hidden sm:block">
+              <div className={`font-mono text-xs hidden sm:block ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
                 DRAW REF #{currentSpotlightWinner.drawNumber || 'TD-2026'}
               </div>
             </div>
 
-            {/* Massive Cinema-Scale Hero Card (Guaranteed Uniform & No Cut Off) */}
-            <div className={`my-2 sm:my-3 flex-1 bg-gradient-to-b from-[#14151a] to-[#0c0d10] border-3 sm:border-4 border-[#ff6a00] rounded-3xl p-4 sm:p-6 lg:p-8 shadow-[0_0_80px_rgba(255,106,0,0.25)] flex flex-col justify-between text-center min-h-0 overflow-hidden ${fadeCardClasses}`}>
-              {/* Badge */}
-              <div className="shrink-0 flex items-center justify-center gap-2">
-                <div className={`inline-flex items-center gap-2 px-3.5 py-1 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
+            {/* Massive Cinema-Scale Hero Card (Guaranteed Uniform & Balanced UI) */}
+            <div className={`my-2 sm:my-3 flex-1 rounded-3xl p-5 sm:p-8 lg:p-10 flex flex-col justify-between text-center min-h-0 overflow-hidden transition-all duration-300 ${
+              isDarkMode
+                ? 'bg-gradient-to-b from-[#16171d] via-[#101115] to-[#0a0a0d] border-3 sm:border-4 border-[#ff6a00] shadow-[0_0_80px_rgba(255,106,0,0.28)]'
+                : 'bg-gradient-to-b from-[#ffffff] via-[#faf8f5] to-[#f4f0e8] border-3 sm:border-4 border-[#ff6a00] shadow-[0_12px_60px_rgba(255,106,0,0.18)]'
+            } ${fadeCardClasses}`}>
+              {/* Top Tier: Clean Award Pill */}
+              <div className="shrink-0 flex items-center justify-center gap-2.5 flex-wrap">
+                <div className={`inline-flex items-center gap-2 px-4 py-1.5 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
                   isLiveWinner(currentSpotlightWinner) ? 'bg-amber-400 text-black' : 'bg-[#ff6a00] text-black'
                 }`}>
                   <Trophy className="w-4 h-4 fill-current" />
                   <span>{isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE WINNER' : 'PRE-DRAW RAFFLE WINNER'}</span>
                 </div>
                 {isClaimedWinner(currentSpotlightWinner) && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 font-mono font-black text-xs uppercase tracking-wider rounded-full bg-emerald-500 text-white shadow-md">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 font-mono font-black text-xs uppercase tracking-wider rounded-full bg-emerald-600 text-white shadow-md">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>CLAIMED</span>
                   </div>
                 )}
               </div>
 
-              {/* Huge Name with Dynamic Proportional Typography */}
-              <div className="my-auto py-2 sm:py-3 flex-1 flex flex-col justify-center items-center min-h-0 overflow-hidden">
-                <h2 className={`font-winner font-black uppercase text-white tracking-tight drop-shadow-2xl max-w-full break-words px-2 ${getHeroNameFontClass(currentSpotlightWinner.name)}`}>
+              {/* Middle Tier: Huge Name with Dynamic Proportional Typography & Balanced Spacing */}
+              <div className="my-auto py-3 sm:py-5 flex-1 flex flex-col justify-center items-center min-h-0 overflow-hidden">
+                <h2 className={`font-winner font-black uppercase tracking-tight max-w-full break-words px-2 ${
+                  isDarkMode ? 'text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]' : 'text-neutral-950 drop-shadow-sm'
+                } ${getHeroNameFontClass(currentSpotlightWinner.name)}`}>
                   {currentSpotlightWinner.name}
                 </h2>
-                <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl text-amber-300 font-semibold mt-2 sm:mt-3 font-mono truncate max-w-full">
-                  {currentSpotlightWinner.school}
+                <div className={`text-lg sm:text-2xl lg:text-3xl xl:text-4xl font-semibold mt-2 sm:mt-3 font-mono truncate max-w-full flex items-center justify-center gap-2 ${
+                  isDarkMode ? 'text-amber-300' : 'text-amber-700 font-bold'
+                }`}>
+                  <School className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 opacity-80" />
+                  <span>{currentSpotlightWinner.school}</span>
                 </div>
                 {currentSpotlightWinner.position && (
-                  <div className="text-[11px] sm:text-xs md:text-sm text-neutral-400 font-mono uppercase mt-1 tracking-wider">
-                    {currentSpotlightWinner.position} • ID: <strong className="text-indigo-400">{currentSpotlightWinner.winnerId || currentSpotlightWinner.depedId}</strong>
+                  <div className={`mt-2 sm:mt-3 inline-flex items-center gap-2 px-3.5 py-1 rounded-full font-mono text-xs sm:text-sm uppercase tracking-wider ${
+                    isDarkMode ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-black/5 border border-black/10 text-neutral-700'
+                  }`}>
+                    <span>{currentSpotlightWinner.position}</span>
+                    <span className="opacity-40">•</span>
+                    <span>ID: <strong className={isDarkMode ? 'text-indigo-400 font-bold' : 'text-indigo-600 font-bold'}>{currentSpotlightWinner.winnerId || currentSpotlightWinner.depedId}</strong></span>
                   </div>
                 )}
               </div>
 
-              {/* Awarded Prize Box */}
-              <div className="shrink-0 max-w-xl w-full mx-auto p-3 sm:p-4 bg-black/60 border-2 border-amber-500/60 rounded-2xl shadow-lg">
-                <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-neutral-400 block mb-0.5">
+              {/* Bottom Tier: Balanced Grand Awarded Prize Box (No Redundant Cash Value) */}
+              <div className={`shrink-0 max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full mx-auto p-4 sm:p-5 rounded-2xl shadow-xl transition-colors ${
+                isDarkMode 
+                  ? 'bg-black/70 border-2 border-amber-500/70 shadow-[0_0_40px_rgba(255,106,0,0.18)] text-white' 
+                  : 'bg-white/95 border-2 border-amber-500/60 shadow-lg text-neutral-900'
+              }`}>
+                <span className={`text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] block mb-1 font-bold ${
+                  isDarkMode ? 'text-neutral-400' : 'text-neutral-600'
+                }`}>
                   {isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE AWARD' : 'OFFICIAL PRE-DRAW AWARD'}
                 </span>
-                <span className="text-xl sm:text-3xl lg:text-4xl font-black uppercase text-[#ff6a00] block tracking-wide truncate">
+                <span className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black uppercase text-[#ff6a00] block tracking-wide truncate">
                   {currentSpotlightWinner.prizeName}
                 </span>
-                {currentSpotlightWinner.unitValue > 0 && (
-                  <span className="text-xs sm:text-sm font-mono text-neutral-300 mt-0.5 block">
-                    Cash Value: ₱{currentSpotlightWinner.unitValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -915,18 +1036,26 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               <button
                 type="button"
                 onClick={handlePrevSpotlight}
-                className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded border border-white/20 flex items-center gap-1 cursor-pointer"
+                className={`px-3 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-colors ${
+                  isDarkMode 
+                    ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-white/20' 
+                    : 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-300 shadow-xs'
+                }`}
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Prev</span>
               </button>
-              <span className="text-neutral-400 uppercase tracking-wider">
+              <span className={`uppercase tracking-wider ${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'}`}>
                 CARD {spotlightIndex + 1} OF {activeWinners.length} • AUTO-CYCLING EVERY {slideIntervalSeconds}S
               </span>
               <button
                 type="button"
                 onClick={handleNextSpotlight}
-                className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded border border-white/20 flex items-center gap-1 cursor-pointer"
+                className={`px-3 py-1.5 rounded border flex items-center gap-1 cursor-pointer transition-colors ${
+                  isDarkMode 
+                    ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-white/20' 
+                    : 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-300 shadow-xs'
+                }`}
               >
                 <span>Next</span>
                 <ChevronRight className="w-4 h-4" />
@@ -939,12 +1068,12 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
           /* ========================================================================= */
           <main className="flex-1 flex flex-col p-4 sm:p-8 max-w-[1920px] w-full mx-auto justify-between animate-fade-in">
             {/* Headline */}
-            <div className="flex flex-wrap items-end justify-between gap-4 mb-6 border-b border-white/15 pb-4">
+            <div className={`flex flex-wrap items-end justify-between gap-4 mb-6 border-b pb-4 ${isDarkMode ? 'border-white/15' : 'border-neutral-300'}`}>
               <div>
                 <span className="font-mono text-xs uppercase px-2.5 py-0.5 bg-[#ff6a00] text-black font-black tracking-widest">
                   OFFICIAL ANNOUNCEMENT • {claimFilter === 'UNCLAIMED' ? 'UNCLAIMED' : claimFilter === 'CLAIMED' ? 'CLAIMED' : 'ALL'}
                 </span>
-                <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white mt-1.5">
+                <h2 className={`text-2xl sm:text-4xl font-black uppercase tracking-tight mt-1.5 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>
                   {drawSource === 'LIVE'
                     ? `LIVE STAGE RAFFLE WINNERS (${filteredWinners.length})`
                     : drawSource === 'PRE_DRAW'
@@ -952,7 +1081,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                     : `ALL RAFFLE WINNERS (${filteredWinners.length})`}
                 </h2>
               </div>
-              <div className="text-right font-mono text-xs text-neutral-400">
+              <div className={`text-right font-mono text-xs ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
                 PAGE {currentPage} OF {totalPages}
               </div>
             </div>
@@ -965,25 +1094,25 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 return (
                   <div
                     key={`${winner.winnerId}-${idx}`}
-                    className="bg-[#151518] hover:bg-[#1c1c20] border-2 border-white/15 hover:border-[#ff6a00] p-4 sm:p-5 flex flex-col justify-between transition-all duration-150 rounded-xl shadow-lg"
+                    className={`border-2 p-4 sm:p-5 flex flex-col justify-between transition-all duration-150 rounded-xl shadow-lg ${
+                      isDarkMode 
+                        ? 'bg-[#151518] hover:bg-[#1c1c20] border-white/15 hover:border-[#ff6a00] text-white' 
+                        : 'bg-white hover:bg-neutral-50 border-neutral-200 hover:border-[#ff6a00] text-neutral-900 shadow-sm'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="font-mono text-xs font-black text-neutral-400">
+                      <span className={`font-mono text-xs font-black ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
                         #{(currentPage - 1) * (pageSize || 0) + idx + 1}
                       </span>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase ${
-                          isLive ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          isLive ? 'bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40'
                         }`}>
                           {isLive ? 'LIVE' : 'PRE-DRAW'}
                         </span>
-                        {isClaimedWinner(winner) ? (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                        {isClaimedWinner(winner) && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/40">
                             CLAIMED
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-black tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                            UNCLAIMED
                           </span>
                         )}
                         {dConfig && (
@@ -994,16 +1123,16 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                       </div>
                     </div>
                     <div>
-                      <h4 className="text-base sm:text-lg font-black uppercase text-white leading-tight">
+                      <h4 className={`text-base sm:text-lg font-black uppercase leading-tight ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>
                         {winner.name}
                       </h4>
-                      <p className="text-xs text-neutral-300 mt-1 truncate">
+                      <p className={`text-xs mt-1 truncate ${isDarkMode ? 'text-neutral-300' : 'text-neutral-600'}`}>
                         {winner.school}
                       </p>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono">
+                    <div className={`mt-3 pt-3 border-t flex items-center justify-between text-xs font-mono ${isDarkMode ? 'border-white/10' : 'border-neutral-200'}`}>
                       <span className="text-[#ff6a00] font-black truncate">{winner.prizeName}</span>
-                      <span className="text-neutral-500 text-[10px]">{winner.winnerId}</span>
+                      <span className={`text-[10px] ${isDarkMode ? 'text-neutral-500' : 'text-neutral-400'}`}>{winner.winnerId}</span>
                     </div>
                   </div>
                 );
@@ -1011,7 +1140,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Bottom Page Controls */}
-            <footer className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono text-neutral-400">
+            <footer className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-mono ${isDarkMode ? 'border-white/10 text-neutral-400' : 'border-neutral-300 text-neutral-600'}`}>
               <div className="flex items-center gap-2">
                 <span>SHOW:</span>
                 {[8, 12, 16].map((sz) => (
@@ -1020,7 +1149,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                     type="button"
                     onClick={() => setPageSize(sz)}
                     className={`px-2 py-0.5 border ${
-                      pageSize === sz ? 'bg-[#ff6a00] text-black border-[#ff6a00] font-black' : 'bg-white/5 border-white/15'
+                      pageSize === sz 
+                        ? 'bg-[#ff6a00] text-black border-[#ff6a00] font-black' 
+                        : isDarkMode ? 'bg-white/5 border-white/15' : 'bg-neutral-100 border-neutral-300 text-neutral-700'
                     }`}
                   >
                     {sz}
@@ -1031,14 +1162,22 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 <button
                   type="button"
                   onClick={handlePrevSlide}
-                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded border border-white/20"
+                  className={`px-3 py-1 rounded border transition-colors ${
+                    isDarkMode 
+                      ? 'bg-white/10 hover:bg-white/20 text-white border-white/20' 
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                  }`}
                 >
                   Prev
                 </button>
                 <button
                   type="button"
                   onClick={handleNextSlide}
-                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded border border-white/20"
+                  className={`px-3 py-1 rounded border transition-colors ${
+                    isDarkMode 
+                      ? 'bg-white/10 hover:bg-white/20 text-white border-white/20' 
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                  }`}
                 >
                   Next
                 </button>
