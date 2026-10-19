@@ -167,6 +167,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   const [displayMode, setDisplayMode] = useState<'grid' | 'carousel'>('grid');
   const [carouselIndex, setCarouselIndex] = useState<number>(0);
   const [isAutoCycling, setIsAutoCycling] = useState<boolean>(true);
+  const [isControlsCollapsed, setIsControlsCollapsed] = useState<boolean>(false);
 
   // Keep selected prize in sync if prizes inventory loads asynchronously
   useEffect(() => {
@@ -777,20 +778,54 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
       )}
 
       {activeTab === 'console' && (
-        <div className="flex flex-col lg:grid lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-4 sm:gap-5 items-start">
-          {/* LEFT COLUMN: OPERATOR CONTROL DECK */}
-          <div className="w-full bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-2xl relative border-t-4 border-t-indigo-600 space-y-4 lg:sticky lg:top-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1a1a1a]/15 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="font-mono text-xs font-black uppercase tracking-wider text-[#1a1a1a] dark:text-white">
-                  BATCH CONTROLS
-                </h3>
-              </div>
-              <span className="font-mono text-[9px] font-bold px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded">
-                STUDIO DECK
+        <div
+          className={`flex flex-col gap-4 sm:gap-5 items-start transition-all duration-300 ${
+            isControlsCollapsed
+              ? 'w-full'
+              : 'lg:grid lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr]'
+          }`}
+        >
+          {/* FLOATING RE-OPEN TAB WHEN CONTROLS ARE COLLAPSED */}
+          {isControlsCollapsed && (
+            <button
+              type="button"
+              onClick={() => setIsControlsCollapsed(false)}
+              className="fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider py-4 px-2 rounded-r-xl shadow-2xl flex flex-col items-center gap-1.5 transition-all hover:pl-3 border-y border-r border-indigo-400 cursor-pointer animate-fade-in group"
+              title="Click to show Batch Controls Deck"
+            >
+              <ChevronRight className="w-4 h-4 text-amber-300 group-hover:translate-x-0.5 transition-transform" />
+              <SlidersHorizontal className="w-4 h-4 text-white" />
+              <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] tracking-widest uppercase font-bold mt-1">
+                CONTROLS
               </span>
-            </div>
+            </button>
+          )}
+
+          {/* LEFT COLUMN: OPERATOR CONTROL DECK */}
+          {!isControlsCollapsed && (
+            <div className="w-full bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 shadow-sm dark:shadow-2xl relative border-t-4 border-t-indigo-600 space-y-4 lg:sticky lg:top-4 animate-fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-[#1a1a1a]/15 dark:border-white/10">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="font-mono text-xs font-black uppercase tracking-wider text-[#1a1a1a] dark:text-white">
+                    BATCH CONTROLS
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[9px] font-bold px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded">
+                    STUDIO DECK
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsControlsCollapsed(true)}
+                    className="p-1 px-1.5 rounded bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer border border-[#1a1a1a]/10 dark:border-white/10"
+                    title="Collapse Controls Deck to maximize Full Projector Card screen"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Hide</span>
+                  </button>
+                </div>
+              </div>
 
             {/* 1. Select Prize */}
             <div className="space-y-1.5">
@@ -1094,6 +1129,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               </span>
             </button>
           </div>
+        )}
 
           {/* RIGHT COLUMN: 5-DISTRICT REEL & SCREEN RECORDING STAGE */}
           <div className="w-full min-w-0">
@@ -1131,7 +1167,22 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto font-mono text-right">
+                      <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto font-mono text-right">
+                        {/* Toggle Controls Deck Button */}
+                        <button
+                          type="button"
+                          onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
+                          className={`px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer border ${
+                            isControlsCollapsed
+                              ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400 shadow-xs'
+                              : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border-white/20'
+                          }`}
+                          title={isControlsCollapsed ? 'Show Batch Controls Deck' : 'Hide Batch Controls (Maximize Screen)'}
+                        >
+                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                          <span>{isControlsCollapsed ? 'Show Controls' : 'Hide Controls'}</span>
+                        </button>
+
                         {/* View Switcher: 5-Grid View vs Full Projector Card */}
                         <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-800 shrink-0">
                           <button
@@ -1383,6 +1434,19 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                           )}
                           <button
                             type="button"
+                            onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
+                            className={`px-3 py-2 font-mono text-xs font-bold uppercase rounded border flex items-center gap-1.5 cursor-pointer transition-colors ${
+                              isControlsCollapsed
+                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400 shadow-xs'
+                                : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border-white/10'
+                            }`}
+                            title={isControlsCollapsed ? 'Show Batch Controls Deck' : 'Maximize Projector Card (Hide Controls)'}
+                          >
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            <span>{isControlsCollapsed ? 'Show Deck' : 'Maximize'}</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setDisplayMode('grid')}
                             className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white font-mono text-xs font-bold uppercase rounded border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
                           >
@@ -1393,7 +1457,13 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                       </div>
 
                       {/* Massive Projector Stage Card */}
-                      <div className="bg-white dark:bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]">
+                      <div
+                        className={`bg-white dark:bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between transition-all duration-300 ${
+                          isControlsCollapsed
+                            ? 'min-h-[440px] sm:min-h-[540px] lg:min-h-[620px]'
+                            : 'min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]'
+                        }`}
+                      >
                         {/* District Header */}
                         <div className="pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0 relative">
                           <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0 z-10">
@@ -1404,7 +1474,13 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                           </div>
 
                           <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
-                            <h3 className="font-mono text-xl sm:text-2xl lg:text-3xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
+                            <h3
+                              className={`font-mono font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full ${
+                                isControlsCollapsed
+                                  ? 'text-2xl sm:text-3xl lg:text-4xl'
+                                  : 'text-xl sm:text-2xl lg:text-3xl'
+                              }`}
+                            >
                               {currentCarouselDistrict.id === 'PRIVATE' ? 'PRIVATE' : currentCarouselDistrict.title}
                             </h3>
                             {currentCarouselDistrict.id === 'PRIVATE' && (
@@ -1428,7 +1504,13 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                               <div className="font-mono text-xs sm:text-sm uppercase tracking-widest text-[#ff6a00] font-bold animate-pulse">
                                 ⚡ SHUFFLING {currentCarouselDistrict.title.toUpperCase()} CANDIDATES...
                               </div>
-                              <div className="font-winner font-black text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-[#111827] dark:text-white uppercase tracking-tight">
+                              <div
+                                className={`font-winner font-black text-[#111827] dark:text-white uppercase tracking-tight ${
+                                  isControlsCollapsed
+                                    ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
+                                    : 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
+                                }`}
+                              >
                                 {shufflingNames[currentCarouselDistrict.id]?.name || 'DepEd Participant'}
                               </div>
                               <div className="w-32 h-1 bg-[#ff6a00] mx-auto rounded-full animate-pulse" />
@@ -1442,9 +1524,13 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                                   <div
                                     className={`font-winner font-black text-[#111827] dark:text-white uppercase tracking-tight leading-[1.08] drop-shadow-xs ${
                                       carouselWinners.length === 1
-                                        ? 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl'
+                                        ? isControlsCollapsed
+                                          ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl'
+                                          : 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl'
                                         : carouselWinners.length <= 3
-                                        ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
+                                        ? isControlsCollapsed
+                                          ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
+                                          : 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
                                         : carouselWinners.length <= 5
                                         ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
                                         : 'text-lg sm:text-xl md:text-2xl'
