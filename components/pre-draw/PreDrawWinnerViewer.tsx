@@ -483,9 +483,32 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       ? 'opacity-0 scale-[1.01]'
       : 'opacity-100 scale-100 blur-0'
   }`;
+  // Dynamic typography scaler for Hero / Spotlight cards to maintain uniform height and prevent overflow
+  const getHeroNameFontClass = (name: string) => {
+    const cleanName = (name || '').trim();
+    const len = cleanName.length;
+    const words = cleanName.split(/\s+/).filter(Boolean).length;
+
+    // Ultra long names (>= 36 chars or >= 5 words)
+    if (len >= 36 || words >= 5) {
+      return 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-[4rem] leading-[1.1]';
+    }
+    // Very long names (>= 28 chars or >= 4 words, e.g. "PASAMANERO, SHAJARA MAE FERNANDEZ")
+    if (len >= 28 || words >= 4) {
+      return 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-[4.85rem] leading-[1.08]';
+    }
+    // Medium-long names (>= 20 chars or >= 3 words, e.g. "CADIENTE, JONA MAE MONTEBON")
+    if (len >= 20 || words >= 3) {
+      return 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[6.25rem] leading-[1.04]';
+    }
+    // Short names (< 20 chars, e.g. "ESCANER, ROY O")
+    return 'text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl 2xl:text-[8rem] leading-[1.02]';
+  };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0e] text-[#f8f7f4] flex flex-col select-none relative overflow-x-hidden font-sans">
+    <div className={`bg-[#0d0d0e] text-[#f8f7f4] flex flex-col select-none relative font-sans ${
+      viewerMode === 'grid' ? 'min-h-screen overflow-x-hidden' : 'h-screen max-h-screen overflow-hidden'
+    }`}>
       {/* Top 5-Second Progress Bar for LED Wall */}
       {isSlideshowActive && (
         <div className="fixed top-0 left-0 right-0 h-1.5 bg-neutral-900 z-50 overflow-hidden">
@@ -796,9 +819,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
           </div>
         </main>
       ) : viewerMode === 'batchCard' && currentBatch ? (
-          <main className="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto min-h-0">
+          <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-6 max-w-[1700px] w-full mx-auto min-h-0 overflow-hidden">
             {/* Top Projector Header Bar */}
-            <div className="bg-[#111827] rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shrink-0 shadow-xl">
+            <div className="bg-[#111827] rounded-xl p-3 sm:p-4 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shrink-0 shadow-xl">
               {/* Left: Status Badge */}
               <div className="flex items-center gap-2 w-full sm:w-1/4 justify-start">
                 <span className={`px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded shadow-xs flex items-center gap-2 ${
@@ -813,7 +836,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
 
               {/* Center: Large Prize & Value */}
               <div className="text-center w-full sm:w-2/4">
-                <div className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black text-[#ff6a00] tracking-tight uppercase truncate drop-shadow-md">
+                <div className="font-mono text-2xl sm:text-3xl lg:text-4xl font-black text-[#ff6a00] tracking-tight uppercase truncate drop-shadow-md">
                   {currentBatch.prizeName}
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-1 text-xs font-mono">
@@ -837,9 +860,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Massive Projector Stage Card with Fade In/Out */}
-            <div className={`my-3 sm:my-4 flex-1 bg-[#121418] border-3 sm:border-4 border-amber-500 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-2xl ring-4 ring-amber-500/20 flex flex-col justify-between min-h-[460px] sm:min-h-[540px] lg:min-h-[600px] ${fadeCardClasses}`}>
+            <div className={`my-2 sm:my-3 flex-1 bg-[#121418] border-3 sm:border-4 border-amber-500 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl ring-4 ring-amber-500/20 flex flex-col justify-between min-h-0 overflow-hidden ${fadeCardClasses}`}>
               {/* Card Header */}
-              <div className="pb-3 mb-3 border-b-2 border-amber-500/40 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0">
+              <div className="pb-2.5 mb-2.5 border-b-2 border-amber-500/40 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0">
                 <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 shrink-0" />
                   <span className="font-mono text-xs sm:text-base font-black text-amber-400 uppercase tracking-[0.2em] whitespace-nowrap">
@@ -848,7 +871,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 </div>
 
                 <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
-                  <h3 className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.15em] text-white leading-none truncate max-w-full">
+                  <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.15em] text-white leading-none truncate max-w-full">
                     {currentBatch.drawNumber}
                   </h3>
                   {(currentBatch.date || currentBatch.time) && (
@@ -866,16 +889,16 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               </div>
 
               {/* Card Center: Winner Names */}
-              <div className="flex-1 flex flex-col justify-center items-center py-4 px-2 overflow-hidden">
+              <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 px-2 overflow-hidden min-h-0">
                 {currentBatch.winners.length === 1 ? (
-                  <div className="text-center w-full py-4 space-y-4">
-                    <div className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl 2xl:text-[9.5rem] font-winner font-black uppercase text-white tracking-tight leading-[1.05] drop-shadow-2xl">
+                  <div className="text-center w-full py-2 space-y-2 sm:space-y-3 my-auto">
+                    <div className={`font-winner font-black uppercase text-white tracking-tight drop-shadow-2xl max-w-full break-words px-2 ${getHeroNameFontClass(currentBatch.winners[0].name)}`}>
                       {currentBatch.winners[0].name}
                     </div>
-                    <div className="text-xl sm:text-3xl lg:text-4xl text-amber-300 font-semibold font-mono">
+                    <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl text-amber-300 font-semibold font-mono truncate max-w-full">
                       {currentBatch.winners[0].school}
                     </div>
-                    <div className="text-xs sm:text-base text-neutral-300 font-mono flex items-center justify-center gap-2 flex-wrap">
+                    <div className="text-[11px] sm:text-xs md:text-sm text-neutral-300 font-mono flex items-center justify-center gap-2 flex-wrap">
                       {currentBatch.winners[0].position && <span>{currentBatch.winners[0].position}</span>}
                       <span>•</span>
                       <span className="px-2.5 py-0.5 rounded font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
@@ -1042,9 +1065,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Massive Projector Stage Card (Screenshot #2) */}
-            <div className={`my-3 sm:my-4 flex-1 bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-[460px] sm:min-h-[540px] lg:min-h-[600px] ${fadeCardClasses}`}>
+            <div className={`my-2 sm:my-3 flex-1 bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-0 overflow-hidden ${fadeCardClasses}`}>
               {/* Card Header */}
-              <div className="pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0 relative">
+              <div className="pb-2.5 mb-2.5 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0 relative">
                 <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0 z-10">
                   <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
                   <span className="font-mono text-xs sm:text-base font-black text-emerald-400 uppercase tracking-[0.2em] whitespace-nowrap">
@@ -1053,7 +1076,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 </div>
 
                 <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
-                  <h3 className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
+                  <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
                     {currentDistrictConfig.id === 'PRIVATE' ? 'PRIVATE' : currentDistrictConfig.title}
                   </h3>
                   {currentDistrictConfig.id === 'PRIVATE' && (
@@ -1071,22 +1094,22 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               </div>
 
               {/* Card Center: Winner Names */}
-              <div className="flex-1 flex flex-col justify-center items-center py-4 px-2 overflow-hidden">
+              <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 px-2 overflow-hidden min-h-0">
                 {currentDistrictWinners.length > 0 ? (
                   <div className={`flex flex-col justify-center items-center w-full ${
-                    currentDistrictWinners.length <= 3 ? 'space-y-4 sm:space-y-8' : 'space-y-2 sm:space-y-4'
+                    currentDistrictWinners.length <= 3 ? 'space-y-4 sm:space-y-6' : 'space-y-2 sm:space-y-3'
                   }`}>
                     {currentDistrictWinners.map((w, idx) => (
                       <div key={idx} className="text-center w-full animate-fade-in">
                         <div
-                          className={`font-winner font-black text-white uppercase tracking-tight leading-[1.06] drop-shadow-lg ${
+                          className={`font-winner font-black text-white uppercase tracking-tight leading-[1.06] drop-shadow-lg max-w-full break-words px-2 ${
                             currentDistrictWinners.length === 1
-                              ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl 2xl:text-[9.5rem]'
+                              ? getHeroNameFontClass(w.name)
                               : currentDistrictWinners.length <= 3
-                              ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
+                              ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
                               : currentDistrictWinners.length <= 5
-                              ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
-                              : 'text-xl sm:text-2xl md:text-3xl'
+                              ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                              : 'text-lg sm:text-xl md:text-2xl'
                           }`}
                         >
                           {w.name}
@@ -1198,9 +1221,9 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         /* MODE 2: 1-BY-1 WINNER SPOTLIGHT (Single Winner per 5-Second Card)          */
         /* ========================================================================= */
         viewerMode === 'spotlight' && currentSpotlightWinner ? (
-          <main className="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 max-w-[1500px] w-full mx-auto animate-fade-in min-h-0">
+          <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-5 max-w-[1550px] w-full mx-auto animate-fade-in min-h-0 overflow-hidden">
             {/* Top Meta Bar */}
-            <div className="bg-[#111827] rounded-2xl p-4 sm:p-5 border border-white/10 flex items-center justify-between text-white shadow-xl shrink-0">
+            <div className="bg-[#111827] rounded-xl px-4 py-2 border border-white/10 flex items-center justify-between text-white shadow-xl shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs uppercase px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded font-black tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -1223,11 +1246,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
               </div>
             </div>
 
-            {/* Massive Cinema-Scale Hero Card */}
-            <div className={`my-4 flex-1 bg-gradient-to-b from-[#14151a] to-[#0c0d10] border-4 border-[#ff6a00] rounded-3xl p-8 sm:p-12 lg:p-16 shadow-[0_0_80px_rgba(255,106,0,0.25)] flex flex-col justify-between text-center min-h-[500px] sm:min-h-[580px] ${fadeCardClasses}`}>
+            {/* Massive Cinema-Scale Hero Card (Guaranteed Uniform & No Cut Off) */}
+            <div className={`my-2 sm:my-3 flex-1 bg-gradient-to-b from-[#14151a] to-[#0c0d10] border-3 sm:border-4 border-[#ff6a00] rounded-3xl p-4 sm:p-6 lg:p-8 shadow-[0_0_80px_rgba(255,106,0,0.25)] flex flex-col justify-between text-center min-h-0 overflow-hidden ${fadeCardClasses}`}>
               {/* Badge */}
               <div className="shrink-0 flex items-center justify-center">
-                <div className={`inline-flex items-center gap-2 px-4 py-1.5 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
                   isLiveWinner(currentSpotlightWinner) ? 'bg-amber-400 text-black' : 'bg-[#ff6a00] text-black'
                 }`}>
                   <Trophy className="w-4 h-4 fill-current" />
@@ -1235,31 +1258,31 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 </div>
               </div>
 
-              {/* Huge Name */}
-              <div className="my-auto py-6">
-                <h2 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl 2xl:text-[9.5rem] font-winner font-black uppercase text-white tracking-tight leading-[1.05] drop-shadow-2xl">
+              {/* Huge Name with Dynamic Proportional Typography */}
+              <div className="my-auto py-2 sm:py-3 flex-1 flex flex-col justify-center items-center min-h-0 overflow-hidden">
+                <h2 className={`font-winner font-black uppercase text-white tracking-tight drop-shadow-2xl max-w-full break-words px-2 ${getHeroNameFontClass(currentSpotlightWinner.name)}`}>
                   {currentSpotlightWinner.name}
                 </h2>
-                <div className="text-xl sm:text-3xl lg:text-4xl text-amber-300 font-semibold mt-3 sm:mt-5 font-mono">
+                <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl text-amber-300 font-semibold mt-2 sm:mt-3 font-mono truncate max-w-full">
                   {currentSpotlightWinner.school}
                 </div>
                 {currentSpotlightWinner.position && (
-                  <div className="text-xs sm:text-base text-neutral-400 font-mono uppercase mt-1 tracking-wider">
+                  <div className="text-[11px] sm:text-xs md:text-sm text-neutral-400 font-mono uppercase mt-1 tracking-wider">
                     {currentSpotlightWinner.position} • ID: <strong className="text-indigo-400">{currentSpotlightWinner.winnerId || currentSpotlightWinner.depedId}</strong>
                   </div>
                 )}
               </div>
 
               {/* Awarded Prize Box */}
-              <div className="shrink-0 max-w-2xl w-full mx-auto p-4 sm:p-6 bg-black/60 border-2 border-amber-500/60 rounded-2xl shadow-lg">
-                <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-neutral-400 block mb-1">
+              <div className="shrink-0 max-w-xl w-full mx-auto p-3 sm:p-4 bg-black/60 border-2 border-amber-500/60 rounded-2xl shadow-lg">
+                <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-neutral-400 block mb-0.5">
                   {isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE AWARD' : 'OFFICIAL PRE-DRAW AWARD'}
                 </span>
-                <span className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase text-[#ff6a00] block tracking-wide">
+                <span className="text-xl sm:text-3xl lg:text-4xl font-black uppercase text-[#ff6a00] block tracking-wide truncate">
                   {currentSpotlightWinner.prizeName}
                 </span>
                 {currentSpotlightWinner.unitValue > 0 && (
-                  <span className="text-xs sm:text-sm font-mono text-neutral-300 mt-1 block">
+                  <span className="text-xs sm:text-sm font-mono text-neutral-300 mt-0.5 block">
                     Cash Value: ₱{currentSpotlightWinner.unitValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                   </span>
                 )}
@@ -1267,7 +1290,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Bottom Step Controls */}
-            <div className="flex items-center justify-center gap-4 font-mono text-xs shrink-0">
+            <div className="flex items-center justify-center gap-4 font-mono text-xs shrink-0 pt-1">
               <button
                 type="button"
                 onClick={handlePrevSpotlight}
