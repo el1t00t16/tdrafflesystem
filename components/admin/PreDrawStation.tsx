@@ -34,7 +34,14 @@ import {
   Loader2,
   ExternalLink,
   Eye,
-  Check
+  Check,
+  LayoutGrid,
+  Tv,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause
 } from 'lucide-react';
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -154,6 +161,72 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // View mode for 5-District Reel: 'grid' (Screenshot #1) or 'carousel' (Projector Full View in Screenshot #2)
+  const [displayMode, setDisplayMode] = useState<'grid' | 'carousel'>('grid');
+  const [carouselIndex, setCarouselIndex] = useState<number>(0);
+  const [isAutoCycling, setIsAutoCycling] = useState<boolean>(true);
+
+  // Keep selected prize in sync if prizes inventory loads asynchronously
+  useEffect(() => {
+    if (prizes.length > 0) {
+      if (!selectedPrizeId || !prizes.some((p) => p.id === selectedPrizeId)) {
+        const available = prizes.find((p) => p.remainingQuantity > 0);
+        setSelectedPrizeId(available ? available.id : prizes[0].id);
+      }
+    }
+  }, [prizes, selectedPrizeId]);
+
+  // Keyboard navigation for Full View Carousel (Arrow Left / Right)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (displayMode === 'carousel') {
+        if (e.key === 'ArrowRight') {
+          setCarouselIndex((prev) => (prev + 1) % 5);
+        } else if (e.key === 'ArrowLeft') {
+          setCarouselIndex((prev) => (prev - 1 + 5) % 5);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayMode]);
+
+  // Auto-cycle through districts every 5s when in Carousel / Projector Full View
+  useEffect(() => {
+    if (displayMode !== 'carousel' || !isAutoCycling || isShuffling) return;
+
+    // Find districts that have winners
+    const activeDistrictIndices = DISTRICT_CONFIG.map((d, idx) => ({
+      idx,
+      hasWinners: (revealedWinnersByDistrict[d.id] || []).length > 0
+    }))
+      .filter((item) => !hasDrawnRound || item.hasWinners)
+      .map((item) => item.idx);
+
+    if (activeDistrictIndices.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCarouselIndex((prev) => {
+        const currentPos = activeDistrictIndices.indexOf(prev);
+        if (currentPos === -1) return activeDistrictIndices[0];
+        const nextPos = (currentPos + 1) % activeDistrictIndices.length;
+        return activeDistrictIndices[nextPos];
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [displayMode, isAutoCycling, isShuffling, hasDrawnRound, revealedWinnersByDistrict]);
+
+  // Focus carousel on first active district with winners when round finishes
+  useEffect(() => {
+    if (hasDrawnRound) {
+      const firstActive = DISTRICT_CONFIG.findIndex((d) => (revealedWinnersByDistrict[d.id] || []).length > 0);
+      if (firstActive >= 0) {
+        setCarouselIndex(firstActive);
+      }
+    }
+  }, [hasDrawnRound, revealedWinnersByDistrict]);
 
   // Gate attendance transition states
   const [isGatePrepModalOpen, setIsGatePrepModalOpen] = useState(false);
@@ -704,290 +777,513 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
       {activeTab === 'console' && (
         <div className="space-y-6">
-          {/* THE 5 DISTRICT CARDS SHUFFLE DISPLAY (OPTIMIZED FOR WINDOWS SNIPPING TOOL WIN+SHIFT+S) */}
-          <div
-            id="predraw-recording-frame"
-            className={`space-y-4 p-3 sm:p-5 rounded-2xl transition-all relative ${
-              isRecordFrameMode
-                ? 'bg-neutral-900/5 dark:bg-black/60 border-2 border-dashed border-indigo-500/80 dark:border-indigo-400/80 shadow-xl ring-4 ring-indigo-500/10'
-                : 'bg-transparent'
-            }`}
-          >
-            {/* Visual Corner Crop Marks for Windows Snipping Tool (Win + Shift + S) */}
-            {isRecordFrameMode && (
-              <>
-                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-3 border-l-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
-                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-3 border-r-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
-                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-3 border-l-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
-                <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-3 border-r-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
-              </>
-            )}
+          {/* THE 5 DISTRICT SHUFFLE DISPLAY (GRID OR FULL PROJECTOR VIEW) */}
+          {(() => {
+            const currentCarouselDistrict = DISTRICT_CONFIG[carouselIndex] || DISTRICT_CONFIG[0];
+            const carouselWinners = revealedWinnersByDistrict[currentCarouselDistrict.id] || [];
 
-            {/* Official Video Audit Stamp & Snip Guide Banner */}
-            <div className="bg-[#111827] dark:bg-[#0c0d12] text-white rounded-xl p-3 sm:p-4 border border-neutral-700/80 shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0 ring-4 ring-red-500/20" />
-                  <div>
-                    <h2 className="font-mono text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                      MUNICIPAL TEACHERS&apos; DAY 2026 • OFFICIAL PRE-DRAW REEL
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-neutral-300 mt-0.5">
-                      <span className="bg-red-950/80 text-red-300 border border-red-700/60 px-1.5 py-0.2 rounded font-bold">
-                        📸 SNIP FRAME (WIN + SHIFT + S)
-                      </span>
-                      <span>•</span>
-                      <span className="text-amber-300 font-bold">
-                        BATCH: {provisionalBatch?.drawNumber || `PRE-${String(preDrawLogs.length + 1).padStart(4, '0')}`}
-                      </span>
-                      {currentPrize && (
-                        <>
-                          <span>•</span>
-                          <span className="text-indigo-300 font-bold uppercase">
-                            [{currentPrize.category || 'MINOR'}]
+            return (
+              <div
+                id="predraw-recording-frame"
+                className="space-y-4 p-3 sm:p-5 rounded-2xl transition-all relative bg-neutral-900/5 dark:bg-black/60 border-2 border-indigo-500/40 dark:border-indigo-400/40 shadow-xl"
+              >
+                {/* Official Video Audit Stamp Header Banner */}
+                <div className="bg-[#111827] dark:bg-[#0c0d12] text-white rounded-xl p-3 sm:p-4 border border-neutral-700/80 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0 ring-4 ring-emerald-500/20" />
+                      <div>
+                        <h2 className="font-mono text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                          MUNICIPAL TEACHERS&apos; DAY 2026 • OFFICIAL PRE-DRAW REEL
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-neutral-300 mt-0.5">
+                          <span className="text-amber-300 font-bold">
+                            BATCH: {provisionalBatch?.drawNumber || `PRE-${String(preDrawLogs.length + 1).padStart(4, '0')}`}
                           </span>
-                        </>
+                          {currentPrize && (
+                            <>
+                              <span>•</span>
+                              <span className="text-indigo-300 font-bold uppercase">
+                                [{currentPrize.category || 'MINOR'}]
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto font-mono text-right">
+                      {/* View Switcher: 5-Grid View vs Full Projector Card (Screenshot #2) */}
+                      <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-800 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setDisplayMode('grid')}
+                          className={`px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                            displayMode === 'grid'
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'text-neutral-400 hover:text-white'
+                          }`}
+                          title="5-District Grid Layout (All 5 Districts at Once)"
+                        >
+                          <LayoutGrid className="w-3.5 h-3.5" />
+                          <span>5-District Grid</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDisplayMode('carousel')}
+                          className={`px-2.5 py-1 text-xs font-mono font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                            displayMode === 'carousel'
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'text-neutral-400 hover:text-white'
+                          }`}
+                          title="Projector Full Card View (One District at a Time, Full Screen Legibility)"
+                        >
+                          <Tv className="w-3.5 h-3.5" />
+                          <span>Full Projector Card</span>
+                        </button>
+                      </div>
+
+                      <div className="text-right pl-2 border-l border-white/10 hidden sm:block">
+                        <div className="text-[10px] uppercase text-neutral-400 font-bold flex items-center justify-end gap-1">
+                          <Clock className="w-3 h-3 text-[#ff6a00]" />
+                          <span>PST TIME</span>
+                        </div>
+                        <div className="text-xs font-black text-amber-300 tracking-wide">
+                          {liveTimestamp || 'Philippine Standard Time'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Prize & Batch Meta Bar */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                    <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                      <span className="text-[9px] uppercase text-neutral-400 block font-bold">Active Prize</span>
+                      <span className="font-bold text-white truncate block text-xs sm:text-sm" title={currentPrize?.name}>
+                        {currentPrize?.name || 'No Prize Selected'}
+                      </span>
+                    </div>
+                    <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                      <span className="text-[9px] uppercase text-neutral-400 block font-bold">Draw Target</span>
+                      <span className="font-bold text-amber-400 text-xs sm:text-sm">
+                        {totalWinnersToDraw} {totalWinnersToDraw === 1 ? 'Winner' : 'Winners'} {distributionMode === 'EQUAL_PER_DISTRICT' ? '(Quota)' : '(Pool)'}
+                      </span>
+                    </div>
+                    <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                      <span className="text-[9px] uppercase text-neutral-400 block font-bold">Prize Unit Value</span>
+                      <span className="font-bold text-white text-xs sm:text-sm">
+                        {currentUnitVal > 0 ? `₱${currentUnitVal.toLocaleString('en-PH', { minimumFractionDigits: 2 })} ea` : 'Physical Item / Gift'}
+                      </span>
+                      {currentUnitVal > 0 && totalWinnersToDraw > 1 && (
+                        <span className="text-[9px] text-amber-300/80 block font-mono">
+                          Batch Total: ₱{(currentUnitVal * totalWinnersToDraw).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </span>
                       )}
+                    </div>
+                    <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                      <span className="text-[9px] uppercase text-neutral-400 block font-bold">Reel Status</span>
+                      <span className={`font-bold text-xs sm:text-sm uppercase ${
+                        isShuffling
+                          ? 'text-[#ff6a00] animate-pulse'
+                          : hasDrawnRound
+                          ? 'text-emerald-400'
+                          : 'text-neutral-300'
+                      }`}>
+                        {isShuffling
+                          ? `⚡ Spinning (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
+                          : hasDrawnRound
+                          ? `🏆 ${provisionalBatch?.winners.length || 0} Winners`
+                          : '● Standby'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-auto font-mono text-right">
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase text-neutral-400 font-bold flex items-center justify-end gap-1">
-                      <Clock className="w-3 h-3 text-[#ff6a00]" />
-                      <span>OFFICIAL PST TIME</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-black text-amber-300 tracking-wide">
-                      {liveTimestamp || 'Philippine Standard Time'}
-                    </div>
+                {/* Dynamic Reel Progress Bar */}
+                {isShuffling && (
+                  <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 overflow-hidden rounded-full shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 via-[#ff6a00] to-emerald-500 transition-all duration-75"
+                      style={{ width: `${shuffleProgress}%` }}
+                    />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsRecordFrameMode(!isRecordFrameMode)}
-                    title="Toggle Snipping Border Guides"
-                    className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded border border-white/10 text-[10px] font-mono font-bold uppercase transition-colors shrink-0 cursor-pointer"
-                  >
-                    {isRecordFrameMode ? '📸 Guides ON' : 'Guides OFF'}
-                  </button>
-                </div>
-              </div>
+                )}
 
-              {/* Live Prize & Batch Meta Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
-                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Active Prize</span>
-                  <span className="font-bold text-white truncate block text-xs sm:text-sm" title={currentPrize?.name}>
-                    {currentPrize?.name || 'No Prize Selected'}
-                  </span>
-                </div>
-                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
-                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Draw Target</span>
-                  <span className="font-bold text-amber-400 text-xs sm:text-sm">
-                    {totalWinnersToDraw} {totalWinnersToDraw === 1 ? 'Winner' : 'Winners'} {distributionMode === 'EQUAL_PER_DISTRICT' ? '(Quota)' : '(Pool)'}
-                  </span>
-                </div>
-                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
-                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Unit Value</span>
-                  <span className="font-bold text-white text-xs sm:text-sm">
-                    {currentUnitVal > 0 ? `₱${currentUnitVal.toLocaleString()} ea` : 'Token / Item'}
-                  </span>
-                </div>
-                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
-                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Reel Status</span>
-                  <span className={`font-bold text-xs sm:text-sm uppercase ${
-                    isShuffling
-                      ? 'text-[#ff6a00] animate-pulse'
-                      : hasDrawnRound
-                      ? 'text-emerald-400'
-                      : 'text-neutral-300'
-                  }`}>
-                    {isShuffling
-                      ? `⚡ Spinning (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
-                      : hasDrawnRound
-                      ? `🏆 ${provisionalBatch?.winners.length || 0} Winners`
-                      : '● Standby'}
-                  </span>
-                </div>
-              </div>
-            </div>
+                {/* VIEW 1: 5-DISTRICT GRID VIEW (Screenshot #1 Layout) */}
+                {displayMode === 'grid' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+                    {DISTRICT_CONFIG.map(({ id, title, isPrivate }) => {
+                      const districtWinners = revealedWinnersByDistrict[id] || [];
+                      const hasWinners = hasDrawnRound && districtWinners.length > 0;
 
-            {/* Dynamic Reel Progress Bar */}
-            {isShuffling && (
-              <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 overflow-hidden rounded-full shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 via-[#ff6a00] to-emerald-500 transition-all duration-75"
-                  style={{ width: `${shuffleProgress}%` }}
-                />
-              </div>
-            )}
-
-            {/* 5 District Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
-              {DISTRICT_CONFIG.map(({ id, title, isPrivate }) => {
-                const districtWinners = revealedWinnersByDistrict[id] || [];
-                const hasWinners = hasDrawnRound && districtWinners.length > 0;
-
-                return (
-                  <div
-                    key={id}
-                    className={`bg-white dark:bg-[#141416] border-2 rounded-2xl p-4 transition-all flex flex-col justify-between min-h-[150px] shadow-sm ${
-                      isShuffling
-                        ? 'border-[#ff6a00] bg-orange-50/80 dark:bg-orange-950/20 ring-4 ring-[#ff6a00]/30 shadow-lg scale-[1.01]'
-                        : hasWinners
-                        ? 'border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-md'
-                        : 'border-[#1a1a1a]/20 dark:border-white/10'
-                    } ${isPrivate ? 'sm:col-span-2 sm:w-1/2 sm:mx-auto w-full' : ''}`}
-                  >
-                    {/* Card Header with Orange Underline Border */}
-                    <div className="text-center pb-2 mb-2 border-b-2 border-[#ff6a00]/30 relative flex items-center justify-center">
-                      <h4 className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#ff6a00]">
-                        {title}
-                      </h4>
-                      {hasWinners && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 rounded-full">
-                          {districtWinners.length} 🏆
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="flex-1 flex flex-col justify-center items-center py-1 text-center min-h-[85px] overflow-hidden">
-                      {isShuffling ? (
-                        <div className="w-full flex-1 flex flex-col justify-between items-center overflow-hidden min-h-0">
-                          {/* 3-Line Rolling Mechanical Reel Tumbler */}
-                          <div
-                            key={shufflingNames[id]?.name}
-                            className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
-                          >
-                            {/* Top / Incoming Candidate */}
-                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
-                              {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
-                            </div>
-
-                            {/* Center / Active Candidate (High-Contrast Focal Line with Big Legible Text) */}
-                            <div className="w-full text-center px-2 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-[#1a1a1f] border-2 border-[#ff6a00] shadow-md ring-2 ring-[#ff6a00]/30">
-                              <div className="font-winner font-black text-base sm:text-lg md:text-xl lg:text-2xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
-                                {shufflingNames[id]?.name || 'DepEd Participant'}
-                              </div>
-                            </div>
-
-                            {/* Bottom / Outgoing Candidate */}
-                            <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
-                              {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
-                            </div>
-                          </div>
-
-                          <div className="font-mono text-[9px] sm:text-[10px] text-[#ff6a00] font-bold uppercase tracking-widest animate-pulse pt-0.5 shrink-0">
-                            [ SHUFFLING {districtEligibleCounts[id] || 0} CANDIDATES... ]
-                          </div>
-                        </div>
-                      ) : hasWinners ? (
-                        <div className="w-full space-y-2 overflow-y-auto max-h-[170px] pr-1">
-                          {districtWinners.map((w, idx) => (
-                            <div
-                              key={idx}
-                              className="p-2.5 rounded-xl bg-white dark:bg-[#1a1a1f] border border-emerald-500/50 shadow-xs text-left"
+                      return (
+                        <div
+                          key={id}
+                          className={`bg-white dark:bg-[#141416] border-2 rounded-2xl p-4 transition-all flex flex-col justify-between min-h-[160px] shadow-sm ${
+                            isShuffling
+                              ? 'border-[#ff6a00] bg-orange-50/80 dark:bg-orange-950/20 ring-4 ring-[#ff6a00]/30 shadow-lg scale-[1.01]'
+                              : hasWinners
+                              ? 'border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-md'
+                              : 'border-[#1a1a1a]/20 dark:border-white/10'
+                          } ${isPrivate ? 'sm:col-span-2 sm:w-1/2 sm:mx-auto w-full' : ''}`}
+                        >
+                          {/* Card Header with Orange Underline Border */}
+                          <div className="text-center pb-2 mb-2 border-b-2 border-[#ff6a00]/30 relative flex items-center justify-between">
+                            {/* Expand to Full View Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCarouselIndex(DISTRICT_CONFIG.findIndex((d) => d.id === id));
+                                setDisplayMode('carousel');
+                              }}
+                              className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-[#ff6a00] rounded transition-colors cursor-pointer"
+                              title={`Open ${title} in Full Projector View`}
                             >
-                              <div className="flex items-center justify-between gap-1 mb-0.5">
-                                <span className="font-mono text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
-                                  WINNER #{idx + 1}
-                                </span>
-                                <span className="font-mono text-[11px] font-black text-indigo-600 dark:text-indigo-400">
-                                  {w.id}
-                                </span>
+                              <Maximize2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            <h4 className="font-mono text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#ff6a00]">
+                              {title}
+                            </h4>
+
+                            {hasWinners ? (
+                              <div className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 rounded-full">
+                                {districtWinners.length} 🏆
                               </div>
-                              <div className="font-winner font-black text-sm sm:text-base md:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
-                                {w.fullName}
+                            ) : (
+                              <div className="w-5" />
+                            )}
+                          </div>
+
+                          {/* Card Body */}
+                          <div className="flex-1 flex flex-col justify-center items-center py-1 text-center min-h-[90px] overflow-hidden">
+                            {isShuffling ? (
+                              <div className="w-full flex-1 flex flex-col justify-between items-center overflow-hidden min-h-0">
+                                {/* 3-Line Rolling Mechanical Reel Tumbler */}
+                                <div
+                                  key={shufflingNames[id]?.name}
+                                  className="w-full flex-1 flex flex-col items-center justify-around py-0.5 min-h-0 animate-reel-slide"
+                                >
+                                  {/* Top / Incoming Candidate */}
+                                  <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
+                                    {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
+                                  </div>
+
+                                  {/* Center / Active Candidate (High-Contrast Focal Line with Big Legible Text) */}
+                                  <div className="w-full text-center px-2 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-[#1a1a1f] border-2 border-[#ff6a00] shadow-md ring-2 ring-[#ff6a00]/30">
+                                    <div className="font-winner font-black text-base sm:text-lg md:text-xl lg:text-2xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
+                                      {shufflingNames[id]?.name || 'DepEd Participant'}
+                                    </div>
+                                  </div>
+
+                                  {/* Bottom / Outgoing Candidate */}
+                                  <div className="w-full text-center truncate font-winner font-bold text-xs sm:text-sm md:text-base text-neutral-400 dark:text-neutral-500 opacity-60 uppercase tracking-tight select-none">
+                                    {shufflingNames[id]?.bottomName || '••• DepEd Candidate •••'}
+                                  </div>
+                                </div>
+
+                                <div className="font-mono text-[9px] sm:text-[10px] text-[#ff6a00] font-bold uppercase tracking-widest animate-pulse pt-0.5 shrink-0">
+                                  [ SHUFFLING {districtEligibleCounts[id] || 0} CANDIDATES... ]
+                                </div>
                               </div>
-                              <div className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 truncate mt-0.5">
-                                {w.school} {w.position ? `• ${w.position}` : ''}
+                            ) : hasWinners ? (
+                              <div className="w-full space-y-2 overflow-y-auto max-h-[190px] pr-1">
+                                {districtWinners.map((w, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="p-2.5 rounded-xl bg-white dark:bg-[#1a1a1f] border border-emerald-500/50 shadow-xs text-left"
+                                  >
+                                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                                      <span className="font-mono text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
+                                        WINNER #{idx + 1}
+                                      </span>
+                                      <span className="font-mono text-[11px] font-black text-indigo-600 dark:text-indigo-400">
+                                        {w.id}
+                                      </span>
+                                    </div>
+                                    <div className="font-winner font-black text-sm sm:text-base md:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
+                                      {w.fullName}
+                                    </div>
+                                    <div className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 truncate mt-0.5">
+                                      {w.school} {w.position ? `• ${w.position}` : ''}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-neutral-400 font-mono text-xs uppercase tracking-wider space-y-0.5">
-                          <div className="font-semibold">Waiting for pre-draw...</div>
-                          <div className="text-[10px] text-neutral-400">
-                            Pool: {districtEligibleCounts[id] || 0} eligible teachers
+                            ) : (
+                              <div className="text-neutral-400 font-mono text-xs uppercase tracking-wider space-y-0.5">
+                                <div className="font-semibold">Waiting for pre-draw...</div>
+                                <div className="text-[10px] text-neutral-400">
+                                  Pool: {districtEligibleCounts[id] || 0} eligible teachers
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* VIEW 2: FULL PROJECTOR CARD VIEW (Screenshot #2 Projector Layout) */}
+                {displayMode === 'carousel' && (
+                  <div className="space-y-4 animate-fade-in">
+                    {/* Projector Header Bar (Screenshot #2) */}
+                    <div className="bg-[#111827] dark:bg-[#0c0d12] rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white">
+                      {/* Left: Status Badge */}
+                      <div className="flex items-center gap-2 w-full sm:w-1/4 justify-start">
+                        <span className="px-3 py-1 font-mono text-xs font-black uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs">
+                          {hasDrawnRound ? '🏆 WINNERS REVEALED' : '⏳ PENDING DRAW'}
+                        </span>
+                      </div>
+
+                      {/* Center: Large Prize & Allocation Subtext (Screenshot #2) */}
+                      <div className="text-center w-full sm:w-2/4">
+                        <div className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase">
+                          {currentUnitVal > 0 ? `₱ ${currentUnitVal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : currentPrize?.name || 'RAFFLE PRIZE'}
+                        </div>
+                        <div className="font-mono text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-[#ff6a00] mt-1">
+                          LGU MALUNGON • {distributionMode === 'EQUAL_PER_DISTRICT' ? `${winnersPerDistrict} PER DISTRICT (5 DISTRICTS = ${totalWinnersToDraw} WINNERS)` : `${totalWinnersToDraw} WINNERS TOTAL (COMBINED POOL)`}
+                        </div>
+                      </div>
+
+                      {/* Right: Quick Action Controls */}
+                      <div className="flex items-center gap-2 w-full sm:w-1/4 justify-end">
+                        {hasDrawnRound && provisionalBatch && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundSynthesizer.playSuccess();
+                              handleConfirmBatch();
+                            }}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-black uppercase tracking-wider rounded flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>CONFIRM</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDisplayMode('grid')}
+                          className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white font-mono text-xs font-bold uppercase rounded border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          <LayoutGrid className="w-3.5 h-3.5" />
+                          <span>GRID</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Massive Projector Stage Card (Screenshot #2) */}
+                    <div className="bg-white dark:bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]">
+                      {/* District Header - Left: District Winners label, Center: District Title, Right: Winner count */}
+                      <div className="pb-3 mb-3 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0">
+                        {/* Left: District Winners Label */}
+                        <div className="w-1/3 flex items-center justify-start gap-1.5 sm:gap-2 min-w-0">
+                          <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
+                          <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] truncate">
+                            DISTRICT WINNERS
+                          </span>
+                        </div>
+
+                        {/* Center: District Title (Strictly Centered in Vibrant Orange) */}
+                        <div className="w-1/3 text-center flex justify-center">
+                          <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.25em] text-[#ff6a00] leading-none whitespace-nowrap">
+                            {currentCarouselDistrict.title}
+                          </h3>
+                        </div>
+
+                        {/* Right: Winner Count Badge */}
+                        <div className="w-1/3 flex items-center justify-end">
+                          <div className="font-mono text-xs sm:text-sm font-black text-[#ff6a00] bg-orange-50 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-700/50 px-3 sm:px-4 py-1 rounded-full whitespace-nowrap shadow-2xs">
+                            {carouselWinners.length} {carouselWinners.length === 1 ? 'Winner' : 'Winners'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Winner Names - Maximum Size for Projector Readability (Screenshot #2) */}
+                      <div className="flex-1 flex flex-col justify-center items-center py-4 px-2 overflow-hidden">
+                        {isShuffling ? (
+                          <div className="text-center w-full animate-fade-in space-y-4">
+                            <div className="font-mono text-xs sm:text-sm uppercase tracking-widest text-[#ff6a00] font-bold animate-pulse">
+                              ⚡ SHUFFLING {currentCarouselDistrict.title.toUpperCase()} CANDIDATES...
+                            </div>
+                            <div className="font-winner font-black text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-[#111827] dark:text-white uppercase tracking-tight">
+                              {shufflingNames[currentCarouselDistrict.id]?.name || 'DepEd Participant'}
+                            </div>
+                            <div className="w-32 h-1 bg-[#ff6a00] mx-auto rounded-full animate-pulse" />
+                          </div>
+                        ) : carouselWinners.length > 0 ? (
+                          <div className={`flex flex-col justify-center items-center w-full ${
+                            carouselWinners.length <= 3 ? 'space-y-4 sm:space-y-6' : 'space-y-2 sm:space-y-3'
+                          }`}>
+                            {carouselWinners.map((w, idx) => (
+                              <div key={idx} className="text-center w-full animate-fade-in">
+                                <div
+                                  className={`font-winner font-black text-[#111827] dark:text-white uppercase tracking-tight leading-[1.08] drop-shadow-xs ${
+                                    carouselWinners.length === 1
+                                      ? 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl'
+                                      : carouselWinners.length <= 3
+                                      ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
+                                      : carouselWinners.length <= 5
+                                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                                      : 'text-lg sm:text-xl md:text-2xl'
+                                  }`}
+                                >
+                                  {w.fullName}
+                                </div>
+                                <div className="text-[11px] sm:text-xs md:text-sm font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                  {w.school} {w.position ? `• ${w.position}` : ''} • <span className="font-bold text-indigo-600 dark:text-indigo-400">{w.id}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-10 space-y-2 text-neutral-400 font-mono">
+                            <div className="text-base sm:text-xl font-bold uppercase tracking-wider text-neutral-500">
+                              No winners recorded yet for {currentCarouselDistrict.title}
+                            </div>
+                            <div className="text-xs text-neutral-400">
+                              Eligible pool: {districtEligibleCounts[currentCarouselDistrict.id] || 0} candidates
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Footer: Event Title (Screenshot #2) */}
+                      <div className="shrink-0 text-center pt-3 flex flex-col items-center">
+                        <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent mb-2 rounded-full" />
+                        <span className="font-mono text-[10px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
+                          MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Carousel Navigation Bar (Screenshot #2) */}
+                    <div className="flex flex-col items-center justify-center gap-2 pt-2 font-mono">
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setCarouselIndex((prev) => (prev - 1 + 5) % 5)}
+                          className="p-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
+                          title="Previous District (Left Arrow)"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+
+                        {DISTRICT_CONFIG.map((d, idx) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => setCarouselIndex(idx)}
+                            className={`transition-all duration-300 rounded-full cursor-pointer ${
+                              idx === carouselIndex
+                                ? 'w-8 sm:w-10 h-2.5 sm:h-3 bg-[#ff6a00] shadow-md'
+                                : (revealedWinnersByDistrict[d.id] || []).length > 0
+                                ? 'w-2.5 sm:w-3 h-2.5 sm:h-3 bg-emerald-400 hover:bg-emerald-500 hover:scale-110'
+                                : 'w-2.5 sm:w-3 h-2.5 sm:h-3 bg-neutral-500 hover:bg-neutral-400 hover:scale-110'
+                            }`}
+                            title={`${d.title} (${(revealedWinnersByDistrict[d.id] || []).length} winners)`}
+                          />
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => setCarouselIndex((prev) => (prev + 1) % 5)}
+                          className="p-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
+                          title="Next District (Right Arrow)"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsAutoCycling(!isAutoCycling)}
+                          className={`p-1.5 rounded-full text-white transition-colors cursor-pointer ${
+                            isAutoCycling ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-neutral-700 hover:bg-neutral-600'
+                          }`}
+                          title={isAutoCycling ? 'Pause Auto-cycling' : 'Resume Auto-cycling'}
+                        >
+                          {isAutoCycling ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+
+                      <div className="text-[10px] text-neutral-400 tracking-wider uppercase">
+                        ‹ › ARROW KEYS TO NAVIGATE • {isAutoCycling ? 'AUTO CYCLING EVERY 5S' : 'AUTO CYCLING PAUSED'}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                )}
 
-            {/* IN-FRAME POST-DRAW ACTION BAR FOR SCREEN RECORDING */}
-            {hasDrawnRound && provisionalBatch && (
-              <div className="p-3.5 sm:p-4 rounded-xl bg-[#111827] dark:bg-[#0c0d12] border-2 border-emerald-500 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3 animate-fade-in text-white font-mono">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0">
-                    <Trophy className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs sm:text-sm font-black uppercase text-emerald-400 tracking-wide">
-                      REVEAL COMPLETE • {provisionalBatch.winners.length} WINNERS ILLUMINATED
+                {/* IN-FRAME POST-DRAW ACTION BAR FOR SCREEN RECORDING */}
+                {hasDrawnRound && provisionalBatch && (
+                  <div className="p-3.5 sm:p-4 rounded-xl bg-[#111827] dark:bg-[#0c0d12] border-2 border-emerald-500 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3 animate-fade-in text-white font-mono">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0">
+                        <Trophy className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs sm:text-sm font-black uppercase text-emerald-400 tracking-wide">
+                          REVEAL COMPLETE • {provisionalBatch.winners.length} WINNERS ILLUMINATED
+                        </div>
+                        <div className="text-[10px] text-neutral-400">
+                          Recorded in Batch #{provisionalBatch.drawNumber} • Ready for screen recording
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-neutral-400">
-                      Recorded in Batch #{provisionalBatch.drawNumber} • Ready for screen recording
+
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundSynthesizer.playClick();
+                          handleDiscardBatch();
+                        }}
+                        className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-bold uppercase transition-colors cursor-pointer rounded"
+                      >
+                        Discard
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundSynthesizer.playClick();
+                          handleRedrawFromModal();
+                        }}
+                        className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Redraw</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundSynthesizer.playClick();
+                          setIsReviewOpen(true);
+                        }}
+                        className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Audit Sheet</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundSynthesizer.playSuccess();
+                          handleConfirmBatch();
+                        }}
+                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer rounded"
+                      >
+                        <Check className="w-4 h-4 text-white" />
+                        <span>Confirm &amp; Award Batch</span>
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundSynthesizer.playClick();
-                      handleDiscardBatch();
-                    }}
-                    className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-bold uppercase transition-colors cursor-pointer rounded"
-                  >
-                    Discard
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundSynthesizer.playClick();
-                      handleRedrawFromModal();
-                    }}
-                    className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Redraw</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundSynthesizer.playClick();
-                      setIsReviewOpen(true);
-                    }}
-                    className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Audit Sheet</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundSynthesizer.playSuccess();
-                      handleConfirmBatch();
-                    }}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer rounded"
-                  >
-                    <Check className="w-4 h-4 text-white" />
-                    <span>Confirm &amp; Award Batch</span>
-                  </button>
-                </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* BATCH CONTROLS CONSOLE */}
           <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm dark:shadow-2xl relative border-t-4 border-t-indigo-600 space-y-6">
