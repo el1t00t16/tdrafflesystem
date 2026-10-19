@@ -21,11 +21,9 @@ import {
   CheckCircle2, 
   Printer,
   X,
-  Tv,
   LayoutGrid,
   User,
-  Clock,
-  Layers
+  Clock
 } from 'lucide-react';
 import { soundSynthesizer } from '../../lib/sound';
 
@@ -160,43 +158,12 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
     return sourceFilteredWinners.filter((w) => (w.prizeId || w.prizeName) === selectedPrizeFilter);
   }, [sourceFilteredWinners, selectedPrizeFilter]);
 
-  // Group active winners into draw batches
-  const winnerBatches = useMemo<WinnerBatchGroup[]>(() => {
-    const map = new Map<string, WinnerBatchGroup>();
-    let batchSeq = 1;
-    activeWinners.forEach((w) => {
-      const key = w.drawNumber || `${w.prizeId || w.prizeName}_${w.date}_${w.time || ''}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          batchId: key,
-          batchNumber: batchSeq++,
-          drawNumber: w.drawNumber || `BATCH-${batchSeq - 1}`,
-          drawType: (w.drawType as 'LIVE' | 'PRE_DRAW') || (isLiveWinner(w) ? 'LIVE' : 'PRE_DRAW'),
-          prizeId: w.prizeId || '',
-          prizeName: w.prizeName || 'Special Prize',
-          unitValue: w.unitValue || 0,
-          date: w.date || '',
-          time: w.time || '',
-          winners: []
-        });
-      }
-      map.get(key)!.winners.push(w);
-    });
-    return Array.from(map.values());
-  }, [activeWinners, isLiveWinner]);
-
   // Viewer Display Modes:
-  // 'batchCard': Per-Batch Draw Card (Default for Live Stage, auto-cycling Batch 1 -> Batch 2 -> ...)
-  // 'stageCard': 5-District Projector Card (Screenshot #2 style, auto-cycling North -> East -> West -> South -> Private)
-  // 'spotlight': 1 Winner per Card, cycling every 5s across active winners
+  // 'spotlight': 1-by-1 Winner Hero Card (Auto-cycles every 2s across active winners)
   // 'grid': Multi-winner overview grid
-  const [viewerMode, setViewerMode] = useState<'batchCard' | 'stageCard' | 'spotlight' | 'grid'>(
-    initialDrawSource === 'LIVE' ? 'batchCard' : 'batchCard'
-  );
+  const [viewerMode, setViewerMode] = useState<'spotlight' | 'grid'>('spotlight');
 
-  // Presentation Indices
-  const [carouselBatchIndex, setCarouselBatchIndex] = useState(0);
-  const [carouselDistrictIndex, setCarouselDistrictIndex] = useState(0);
+  // Presentation Index (for 1-by-1 Hero Spotlight)
   const [spotlightIndex, setSpotlightIndex] = useState(0);
 
   // Crossfade Animation Controller (Smooth Fade-Out -> Data Swap -> Fade-In)
@@ -232,17 +199,11 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(12);
 
-  // Reset pagination, batch index & spotlight when source or prize filter changes
+  // Reset pagination & spotlight when source or prize filter changes
   useEffect(() => {
-    setCarouselBatchIndex(0);
     setSpotlightIndex(0);
     setSlideProgress(0);
     setCurrentPage(1);
-    if (drawSource === 'LIVE') {
-      setViewerMode('batchCard');
-    } else if (drawSource === 'PRE_DRAW') {
-      setViewerMode('stageCard');
-    }
   }, [drawSource, selectedPrizeFilter]);
 
   // Group winners by district
@@ -299,40 +260,6 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   }, [selectedDistrict, searchQuery, pageSize]);
 
   // --- Step Functions with Smooth Crossfade Animation ---
-  const handleNextBatch = useCallback(() => {
-    if (winnerBatches.length === 0) return;
-    if (soundEnabled) soundSynthesizer.playClick();
-    triggerTransition(() => {
-      setCarouselBatchIndex((prev) => (prev + 1) % winnerBatches.length);
-      setSlideProgress(0);
-    });
-  }, [winnerBatches.length, soundEnabled, triggerTransition]);
-
-  const handlePrevBatch = useCallback(() => {
-    if (winnerBatches.length === 0) return;
-    if (soundEnabled) soundSynthesizer.playClick();
-    triggerTransition(() => {
-      setCarouselBatchIndex((prev) => (prev - 1 + winnerBatches.length) % winnerBatches.length);
-      setSlideProgress(0);
-    });
-  }, [winnerBatches.length, soundEnabled, triggerTransition]);
-
-  const handleNextDistrict = useCallback(() => {
-    if (soundEnabled) soundSynthesizer.playClick();
-    triggerTransition(() => {
-      setCarouselDistrictIndex((prev) => (prev + 1) % DISTRICT_CONFIG.length);
-      setSlideProgress(0);
-    });
-  }, [soundEnabled, triggerTransition]);
-
-  const handlePrevDistrict = useCallback(() => {
-    if (soundEnabled) soundSynthesizer.playClick();
-    triggerTransition(() => {
-      setCarouselDistrictIndex((prev) => (prev - 1 + DISTRICT_CONFIG.length) % DISTRICT_CONFIG.length);
-      setSlideProgress(0);
-    });
-  }, [soundEnabled, triggerTransition]);
-
   const handleNextSpotlight = useCallback(() => {
     if (activeWinners.length === 0) return;
     if (soundEnabled) soundSynthesizer.playClick();
@@ -352,11 +279,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
   }, [activeWinners.length, soundEnabled, triggerTransition]);
 
   const handleNextSlide = useCallback(() => {
-    if (viewerMode === 'batchCard') {
-      handleNextBatch();
-    } else if (viewerMode === 'stageCard') {
-      handleNextDistrict();
-    } else if (viewerMode === 'spotlight') {
+    if (viewerMode === 'spotlight') {
       handleNextSpotlight();
     } else {
       triggerTransition(() => {
@@ -372,14 +295,10 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         setSlideProgress(0);
       });
     }
-  }, [viewerMode, handleNextBatch, handleNextDistrict, handleNextSpotlight, currentPage, totalPages, selectedDistrict, triggerTransition]);
+  }, [viewerMode, handleNextSpotlight, currentPage, totalPages, selectedDistrict, triggerTransition]);
 
   const handlePrevSlide = useCallback(() => {
-    if (viewerMode === 'batchCard') {
-      handlePrevBatch();
-    } else if (viewerMode === 'stageCard') {
-      handlePrevDistrict();
-    } else if (viewerMode === 'spotlight') {
+    if (viewerMode === 'spotlight') {
       handlePrevSpotlight();
     } else {
       triggerTransition(() => {
@@ -395,7 +314,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
         setSlideProgress(0);
       });
     }
-  }, [viewerMode, handlePrevBatch, handlePrevDistrict, handlePrevSpotlight, currentPage, selectedDistrict, triggerTransition]);
+  }, [viewerMode, handlePrevSpotlight, currentPage, selectedDistrict, triggerTransition]);
 
   // 5-Second Interval Timer Engine
   useEffect(() => {
@@ -431,23 +350,6 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
       } else if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         setIsSlideshowActive((prev) => !prev);
-      } else if (e.key === '1') {
-        setCarouselDistrictIndex(0);
-        setSelectedDistrict('NORTH');
-      } else if (e.key === '2') {
-        setCarouselDistrictIndex(1);
-        setSelectedDistrict('EAST');
-      } else if (e.key === '3') {
-        setCarouselDistrictIndex(2);
-        setSelectedDistrict('WEST');
-      } else if (e.key === '4') {
-        setCarouselDistrictIndex(3);
-        setSelectedDistrict('SOUTH');
-      } else if (e.key === '5') {
-        setCarouselDistrictIndex(4);
-        setSelectedDistrict('PRIVATE');
-      } else if (e.key.toLowerCase() === 'b') {
-        handleNextBatch();
       } else if (e.key.toLowerCase() === 't') {
         // Toggle Draw Source: ALL -> LIVE -> PRE_DRAW -> ALL
         setDrawSource((prev) => (prev === 'ALL' ? 'LIVE' : prev === 'LIVE' ? 'PRE_DRAW' : 'ALL'));
@@ -463,14 +365,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNextSlide, handlePrevSlide, handleNextBatch, onToggleFullscreen, onToggleSound]);
-
-  // Active district data for Stage Card View
-  const currentDistrictConfig = DISTRICT_CONFIG[carouselDistrictIndex] || DISTRICT_CONFIG[0];
-  const currentDistrictWinners = winnersByDistrict[currentDistrictConfig.id] || [];
-
-  // Active batch data for Batch Stage Card View
-  const currentBatch = winnerBatches.length > 0 ? winnerBatches[carouselBatchIndex % winnerBatches.length] : null;
+  }, [handleNextSlide, handlePrevSlide, onToggleFullscreen, onToggleSound]);
 
   // Active winner for Spotlight View
   const currentSpotlightWinner = activeWinners.length > 0 ? activeWinners[spotlightIndex % activeWinners.length] : null;
@@ -629,46 +524,8 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             )}
           </div>
 
-          {/* Mode Switcher: Per Batch vs District Card vs 1-by-1 Spotlight vs Grid */}
+          {/* Mode Switcher: 1-by-1 Spotlight vs Grid */}
           <div className="inline-flex border border-white/20 rounded-lg p-0.5 bg-neutral-900 shrink-0 font-mono text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                triggerTransition(() => {
-                  setViewerMode('batchCard');
-                  setSlideProgress(0);
-                });
-              }}
-              className={`px-3 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewerMode === 'batchCard'
-                  ? 'bg-amber-500 text-black shadow-xs font-black'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title="Per-Batch Draw Card (Auto-cycles Batch 1 -> Batch 2 -> ... every 5s with crossfade)"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Per Batch</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                triggerTransition(() => {
-                  setViewerMode('stageCard');
-                  setSlideProgress(0);
-                });
-              }}
-              className={`px-3 py-1 font-bold uppercase rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewerMode === 'stageCard'
-                  ? 'bg-[#ff6a00] text-white shadow-xs font-black'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title="Full Projector District Card (5-district rotation, auto-cycling every 5s)"
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span>District Card</span>
-            </button>
-
             <button
               type="button"
               onClick={() => {
@@ -682,7 +539,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                   ? 'bg-amber-500 text-black shadow-xs font-black'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="1-by-1 Winner Spotlight (Rotates 1 winner every 5s)"
+              title="1-by-1 Winner Spotlight (Rotates 1 winner per card)"
             >
               <User className="w-3.5 h-3.5" />
               <span>1-by-1 Hero</span>
@@ -819,409 +676,7 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             <span>LISTENING FOR LIVE SUPABASE REALTIME SYNC</span>
           </div>
         </main>
-      ) : viewerMode === 'batchCard' && currentBatch ? (
-          <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-6 max-w-[1700px] w-full mx-auto min-h-0 overflow-hidden">
-            {/* Top Projector Header Bar */}
-            <div className="bg-[#111827] rounded-xl p-3 sm:p-4 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shrink-0 shadow-xl">
-              {/* Left: Status Badge */}
-              <div className="flex items-center gap-2 w-full sm:w-1/4 justify-start">
-                <span className={`px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded shadow-xs flex items-center gap-2 ${
-                  currentBatch.drawType === 'LIVE'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                }`}>
-                  <Trophy className="w-3.5 h-3.5" />
-                  <span>{currentBatch.drawType === 'LIVE' ? 'LIVE STAGE RAFFLE' : 'PRE-DRAW BATCH'}</span>
-                </span>
-              </div>
-
-              {/* Center: Large Prize & Value */}
-              <div className="text-center w-full sm:w-2/4">
-                <div className="font-mono text-2xl sm:text-3xl lg:text-4xl font-black text-[#ff6a00] tracking-tight uppercase truncate drop-shadow-md">
-                  {currentBatch.prizeName}
-                </div>
-                <div className="flex items-center justify-center gap-2 mt-1 text-xs font-mono">
-                  {currentBatch.unitValue > 0 && (
-                    <span className="text-amber-300 font-bold px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 rounded-xs">
-                      ₱{currentBatch.unitValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })} ea
-                    </span>
-                  )}
-                  <span className="text-neutral-400 uppercase tracking-widest font-black">
-                    LGU MALUNGON • BATCH {currentBatch.batchNumber} OF {winnerBatches.length} ({isSlideshowActive ? `${slideIntervalSeconds}S ROTATION` : 'PAUSED'})
-                  </span>
-                </div>
-              </div>
-
-              {/* Right: Quick Batch Cue */}
-              <div className="flex items-center gap-2 w-full sm:w-1/4 justify-end font-mono text-xs text-neutral-400">
-                <span className="px-2.5 py-1 bg-black/40 border border-white/10 rounded font-black text-amber-400">
-                  REF: #{currentBatch.drawNumber}
-                </span>
-              </div>
-            </div>
-
-            {/* Massive Projector Stage Card with Fade In/Out */}
-            <div className={`my-2 sm:my-3 flex-1 bg-[#121418] border-3 sm:border-4 border-amber-500 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl ring-4 ring-amber-500/20 flex flex-col justify-between min-h-0 overflow-hidden ${fadeCardClasses}`}>
-              {/* Card Header */}
-              <div className="pb-2.5 mb-2.5 border-b-2 border-amber-500/40 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0">
-                <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 shrink-0" />
-                  <span className="font-mono text-xs sm:text-base font-black text-amber-400 uppercase tracking-[0.2em] whitespace-nowrap">
-                    OFFICIAL BATCH WINNERS
-                  </span>
-                </div>
-
-                <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
-                  <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.15em] text-white leading-none truncate max-w-full">
-                    {currentBatch.drawNumber}
-                  </h3>
-                  {(currentBatch.date || currentBatch.time) && (
-                    <span className="font-mono text-[10px] sm:text-xs text-neutral-400 tracking-widest uppercase mt-1">
-                      DRAW RECORD: {currentBatch.date} {currentBatch.time}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end shrink-0">
-                  <div className="font-mono text-xs sm:text-base font-black text-amber-300 bg-amber-950/40 border border-amber-700/50 px-3.5 sm:px-5 py-1.5 rounded-full whitespace-nowrap shadow-xs">
-                    {currentBatch.winners.length} {currentBatch.winners.length === 1 ? 'Winner' : 'Winners'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Center: Winner Names */}
-              <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 px-2 overflow-hidden min-h-0">
-                {currentBatch.winners.length === 1 ? (
-                  <div className="text-center w-full py-2 space-y-2 sm:space-y-3 my-auto">
-                    <div className={`font-winner font-black uppercase text-white tracking-tight drop-shadow-2xl max-w-full break-words px-2 ${getHeroNameFontClass(currentBatch.winners[0].name)}`}>
-                      {currentBatch.winners[0].name}
-                    </div>
-                    <div className="text-base sm:text-xl lg:text-2xl xl:text-3xl text-amber-300 font-semibold font-mono truncate max-w-full">
-                      {currentBatch.winners[0].school}
-                    </div>
-                    <div className="text-[11px] sm:text-xs md:text-sm text-neutral-300 font-mono flex items-center justify-center gap-2 flex-wrap">
-                      {currentBatch.winners[0].position && <span>{currentBatch.winners[0].position}</span>}
-                      <span>•</span>
-                      <span className="px-2.5 py-0.5 rounded font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                        {currentBatch.winners[0].district} DISTRICT
-                      </span>
-                      <span>•</span>
-                      <span className="text-neutral-400 font-bold">{currentBatch.winners[0].winnerId || currentBatch.winners[0].depedId}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`w-full flex flex-col justify-center items-center ${
-                    currentBatch.winners.length <= 3 ? 'space-y-4 sm:space-y-6' : 'space-y-2 sm:space-y-3'
-                  }`}>
-                    {currentBatch.winners.map((w, idx) => (
-                      <div key={idx} className="text-center w-full border-b border-white/10 pb-3 last:border-0 last:pb-0">
-                        <div
-                          className={`font-winner font-black text-white uppercase tracking-tight leading-[1.06] drop-shadow-lg ${
-                            currentBatch.winners.length <= 3
-                              ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
-                              : currentBatch.winners.length <= 5
-                              ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
-                              : 'text-xl sm:text-2xl md:text-3xl'
-                          }`}
-                        >
-                          {w.name}
-                        </div>
-                        <div className="text-xs sm:text-base md:text-lg font-mono text-neutral-300 mt-1 flex items-center justify-center gap-2 flex-wrap">
-                          <span className="text-amber-300 font-bold">{w.school}</span>
-                          {w.position && <span>• {w.position}</span>}
-                          <span className="px-2 py-0.5 rounded font-black text-[10px] sm:text-xs uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                            {w.district}
-                          </span>
-                          <span className="text-neutral-400 font-bold text-xs">{w.winnerId || w.depedId}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Card Footer: Event Title */}
-              <div className="shrink-0 text-center pt-3 flex flex-col items-center">
-                <div className="w-36 sm:w-56 h-0.5 bg-gradient-to-r from-transparent via-neutral-600 to-transparent mb-2 rounded-full" />
-                <span className="font-mono text-xs sm:text-sm text-neutral-400 font-bold uppercase tracking-[0.25em]">
-                  MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
-                </span>
-              </div>
-            </div>
-
-            {/* Batch Carousel Navigation Strip */}
-            <div className="flex flex-col items-center justify-center gap-2 pt-1 font-mono shrink-0">
-              <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap max-w-full">
-                <button
-                  type="button"
-                  onClick={handlePrevBatch}
-                  className="p-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
-                  title="Previous Batch (Left Arrow)"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                {/* Clickable Batch Indicator Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto max-w-[80vw] py-1 px-2 no-scrollbar">
-                  {winnerBatches.map((b, idx) => {
-                    const isCurrent = idx === carouselBatchIndex;
-                    return (
-                      <button
-                        key={b.batchId}
-                        type="button"
-                        onClick={() => {
-                          triggerTransition(() => {
-                            setCarouselBatchIndex(idx);
-                            setSlideProgress(0);
-                          });
-                        }}
-                        className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
-                          isCurrent
-                            ? 'bg-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.8)] font-black scale-105'
-                            : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-white/10'
-                        }`}
-                        title={`Batch ${b.batchNumber}: ${b.prizeName} (${b.winners.length} winners)`}
-                      >
-                        <span>Batch {b.batchNumber}</span>
-                        <span className="text-[10px] opacity-75">({b.winners.length})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleNextBatch}
-                  className="p-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
-                  title="Next Batch (Right Arrow)"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsSlideshowActive(!isSlideshowActive)}
-                  className={`p-2 rounded-full text-white transition-colors cursor-pointer ${
-                    isSlideshowActive ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-neutral-700 hover:bg-neutral-600'
-                  }`}
-                  title={isSlideshowActive ? 'Pause Auto-cycling' : 'Resume Auto-cycling'}
-                >
-                  {isSlideshowActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <div className="text-[11px] text-neutral-400 tracking-wider uppercase">
-                ‹ › ARROW KEYS • [B] NEXT BATCH • [T] TOGGLE SOURCE • {isSlideshowActive ? `AUTO CYCLING EVERY ${slideIntervalSeconds} SECONDS (CROSSFADE)` : 'ROTATION PAUSED'}
-              </div>
-            </div>
-          </main>
-        ) : viewerMode === 'stageCard' ? (
-          <main className="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto min-h-0">
-            {/* Top Projector Header Bar */}
-            <div className="bg-[#111827] rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-white shrink-0 shadow-xl">
-              {/* Left: Status Badge */}
-              <div className="flex items-center gap-2 w-full sm:w-1/4 justify-start">
-                {drawSource === 'LIVE' ? (
-                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs flex items-center gap-2">
-                    <Trophy className="w-3.5 h-3.5 text-amber-300" />
-                    <span>LIVE STAGE RAFFLE</span>
-                  </span>
-                ) : drawSource === 'PRE_DRAW' ? (
-                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>PRE-DRAW BATCH</span>
-                  </span>
-                ) : (
-                  <span className="px-3.5 py-1.5 font-mono text-xs font-black uppercase rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-xs flex items-center gap-2">
-                    <Award className="w-3.5 h-3.5 text-indigo-300" />
-                    <span>OFFICIAL WINNERS</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Center: Large Prize & Allocation Subtext */}
-              <div className="text-center w-full sm:w-2/4">
-                <div className="font-mono text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase truncate">
-                  {selectedPrizeFilter !== 'ALL'
-                    ? selectedPrizeFilter
-                    : currentDistrictWinners.length > 0 && currentDistrictWinners[0].unitValue > 0
-                    ? `₱ ${currentDistrictWinners[0].unitValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-                    : currentDistrictWinners.length > 0
-                    ? currentDistrictWinners[0].prizeName
-                    : drawSource === 'LIVE'
-                    ? 'LIVE STAGE RAFFLE'
-                    : drawSource === 'PRE_DRAW'
-                    ? 'OFFICIAL PRE-DRAW'
-                    : 'RAFFLE WINNERS'}
-                </div>
-                <div className="font-mono text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-[#ff6a00] mt-1">
-                  LGU MALUNGON • 5-DISTRICT ROTATION ({isSlideshowActive ? `${slideIntervalSeconds}S PER CARD` : 'PAUSED'})
-                </div>
-              </div>
-
-              {/* Right: Quick Navigation Cues */}
-              <div className="flex items-center gap-2 w-full sm:w-1/4 justify-end font-mono text-xs text-neutral-400">
-                <span className="hidden sm:inline">DISTRICT {carouselDistrictIndex + 1} OF 5</span>
-              </div>
-            </div>
-
-            {/* Massive Projector Stage Card (Screenshot #2) */}
-            <div className={`my-2 sm:my-3 flex-1 bg-[#121418] border-3 sm:border-4 border-emerald-500 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl ring-4 ring-emerald-500/20 flex flex-col justify-between min-h-0 overflow-hidden ${fadeCardClasses}`}>
-              {/* Card Header */}
-              <div className="pb-2.5 mb-2.5 border-b-2 border-[#ff6a00]/30 flex items-center justify-between gap-2 px-1 sm:px-2 shrink-0 relative">
-                <div className="flex items-center justify-start gap-1.5 sm:gap-2 shrink-0 z-10">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
-                  <span className="font-mono text-xs sm:text-base font-black text-emerald-400 uppercase tracking-[0.2em] whitespace-nowrap">
-                    DISTRICT WINNERS
-                  </span>
-                </div>
-
-                <div className="flex-1 text-center px-2 min-w-0 flex flex-col items-center justify-center">
-                  <h3 className="font-mono text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.2em] text-[#ff6a00] leading-none truncate max-w-full">
-                    {currentDistrictConfig.id === 'PRIVATE' ? 'PRIVATE' : currentDistrictConfig.title}
-                  </h3>
-                  {currentDistrictConfig.id === 'PRIVATE' && (
-                    <span className="font-mono text-xs sm:text-sm font-bold text-neutral-400 tracking-wider uppercase mt-1 truncate max-w-full">
-                      ECCD • Private School • LSB
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end shrink-0 z-10">
-                  <div className="font-mono text-xs sm:text-base font-black text-[#ff6a00] bg-orange-950/40 border border-orange-700/50 px-3.5 sm:px-5 py-1.5 rounded-full whitespace-nowrap shadow-xs">
-                    {currentDistrictWinners.length} {currentDistrictWinners.length === 1 ? 'Winner' : 'Winners'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Center: Winner Names */}
-              <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 px-2 overflow-hidden min-h-0">
-                {currentDistrictWinners.length > 0 ? (
-                  <div className={`flex flex-col justify-center items-center w-full ${
-                    currentDistrictWinners.length <= 3 ? 'space-y-4 sm:space-y-6' : 'space-y-2 sm:space-y-3'
-                  }`}>
-                    {currentDistrictWinners.map((w, idx) => (
-                      <div key={idx} className="text-center w-full animate-fade-in">
-                        <div
-                          className={`font-winner font-black text-white uppercase tracking-tight leading-[1.06] drop-shadow-lg max-w-full break-words px-2 ${
-                            currentDistrictWinners.length === 1
-                              ? getHeroNameFontClass(w.name)
-                              : currentDistrictWinners.length <= 3
-                              ? 'text-2xl sm:text-4xl md:text-5xl lg:text-6xl'
-                              : currentDistrictWinners.length <= 5
-                              ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
-                              : 'text-lg sm:text-xl md:text-2xl'
-                          }`}
-                        >
-                          {w.name}
-                        </div>
-                        <div className="text-xs sm:text-base md:text-lg font-mono text-neutral-300 mt-1 sm:mt-2">
-                          <span className="text-amber-300 font-bold">{w.school}</span>
-                          {w.position ? ` • ${w.position}` : ''} • <span className="font-bold text-indigo-400">{w.winnerId || w.depedId}</span>
-                          {drawSource === 'ALL' && (
-                            <span className={`ml-2 text-[10px] px-2 py-0.5 rounded font-black tracking-wider uppercase ${
-                              isLiveWinner(w)
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                            }`}>
-                              {isLiveWinner(w) ? 'LIVE STAGE' : 'PRE-DRAW'}
-                            </span>
-                          )}
-                        </div>
-                        {(currentDistrictWinners.length > 1 || selectedPrizeFilter === 'ALL') && (
-                          <div className="text-[11px] sm:text-xs font-mono text-[#ff6a00] font-black uppercase mt-0.5">
-                            PRIZE: {w.prizeName} {w.unitValue > 0 ? `(₱${w.unitValue.toLocaleString()})` : ''}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 space-y-2 text-neutral-400 font-mono">
-                    <div className="text-xl sm:text-2xl font-bold uppercase tracking-wider text-neutral-400">
-                      No winners recorded yet for {currentDistrictConfig.title}
-                    </div>
-                    <div className="text-xs text-neutral-500">
-                      Auto-advancing to next district in {slideIntervalSeconds}s...
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Card Footer: Event Title (Screenshot #2) */}
-              <div className="shrink-0 text-center pt-3 flex flex-col items-center">
-                <div className="w-36 sm:w-56 h-0.5 bg-gradient-to-r from-transparent via-neutral-600 to-transparent mb-2 rounded-full" />
-                <span className="font-mono text-xs sm:text-sm text-neutral-400 font-bold uppercase tracking-[0.25em]">
-                  MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
-                </span>
-              </div>
-            </div>
-
-            {/* Carousel Navigation Strip */}
-            <div className="flex flex-col items-center justify-center gap-2 pt-1 font-mono shrink-0">
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handlePrevDistrict}
-                  className="p-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
-                  title="Previous District (Left Arrow)"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                {DISTRICT_CONFIG.map((d, idx) => {
-                  const hasWin = (winnersByDistrict[d.id] || []).length > 0;
-                  const isCurrent = idx === carouselDistrictIndex;
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => {
-                        setCarouselDistrictIndex(idx);
-                        setSlideProgress(0);
-                      }}
-                      className={`transition-all duration-300 rounded-full cursor-pointer flex items-center justify-center ${
-                        isCurrent
-                          ? 'w-10 sm:w-12 h-3.5 bg-[#ff6a00] shadow-[0_0_12px_rgba(255,106,0,0.8)]'
-                          : hasWin
-                          ? 'w-3.5 h-3.5 bg-emerald-400 hover:bg-emerald-300 hover:scale-125'
-                          : 'w-3.5 h-3.5 bg-neutral-600 hover:bg-neutral-500'
-                      }`}
-                      title={`${d.title} (${(winnersByDistrict[d.id] || []).length} winners)`}
-                    />
-                  );
-                })}
-
-                <button
-                  type="button"
-                  onClick={handleNextDistrict}
-                  className="p-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white transition-colors cursor-pointer"
-                  title="Next District (Right Arrow)"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsSlideshowActive(!isSlideshowActive)}
-                  className={`p-2 rounded-full text-white transition-colors cursor-pointer ${
-                    isSlideshowActive ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-neutral-700 hover:bg-neutral-600'
-                  }`}
-                  title={isSlideshowActive ? 'Pause Auto-cycling' : 'Resume Auto-cycling'}
-                >
-                  {isSlideshowActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-              </div>
-
-              <div className="text-[11px] text-neutral-400 tracking-wider uppercase">
-                ‹ › ARROW KEYS TO NAVIGATE • [T] TOGGLE SOURCE • {isSlideshowActive ? `AUTO CYCLING EVERY ${slideIntervalSeconds} SECONDS` : 'ROTATION PAUSED'}
-              </div>
-            </div>
-          </main>
-        ) : /* ========================================================================= */
-        /* MODE 2: 1-BY-1 WINNER SPOTLIGHT (Single Winner per 5-Second Card)          */
-        /* ========================================================================= */
-        viewerMode === 'spotlight' && currentSpotlightWinner ? (
+      ) : viewerMode === 'spotlight' && currentSpotlightWinner ? (
           <main className="flex-1 flex flex-col justify-between p-2.5 sm:p-4 lg:p-5 max-w-[1550px] w-full mx-auto animate-fade-in min-h-0 overflow-hidden">
             {/* Top Meta Bar */}
             <div className="bg-[#111827] rounded-xl px-4 py-2 border border-white/10 flex items-center justify-between text-white shadow-xl shrink-0">
