@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   District,
   DistributionMode,
@@ -32,7 +32,9 @@ import {
   UserCheck,
   X,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Eye,
+  Check
 } from 'lucide-react';
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -127,6 +129,31 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     SOUTH: [],
     PRIVATE: []
   });
+
+  // Windows Snipping Tool (Win + Shift + S) Recording Frame & Live Clock
+  const [isRecordFrameMode, setIsRecordFrameMode] = useState<boolean>(true);
+  const [liveTimestamp, setLiveTimestamp] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      setLiveTimestamp(`${dateStr} • ${timeStr}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Gate attendance transition states
   const [isGatePrepModalOpen, setIsGatePrepModalOpen] = useState(false);
@@ -352,7 +379,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
       setShuffleProgress(Math.min(100, Math.round((elapsed / durationMs) * 100)));
 
-      // When finished: reveal cards and open review table
+      // When finished: reveal cards and keep winners illuminated on 5 cards for screen recording
       if (remaining <= 0) {
         soundSynthesizer.stopSpinning();
         soundSynthesizer.playCelebrationFanfare();
@@ -361,11 +388,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
         setIsShuffling(false);
         setHasDrawnRound(true);
         setRevealedWinnersByDistrict(selectedByDistrict);
-
-        // Open batch review modal after 700ms so user sees the 5 cards light up with winners
-        setTimeout(() => {
-          setIsReviewOpen(true);
-        }, 700);
+        // Do not auto-open modal: keep 5 cards visible and illuminated for screen recording
         return;
       }
 
@@ -433,7 +456,14 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
     stepReel();
   };
 
-  // Redraw action from modal (closes modal and re-shuffles 5 cards)
+  // Discard provisional batch
+  const handleDiscardBatch = () => {
+    setIsReviewOpen(false);
+    setProvisionalBatch(null);
+    setHasDrawnRound(false);
+  };
+
+  // Redraw action from modal or in-frame action bar (re-shuffles 5 cards)
   const handleRedrawFromModal = () => {
     setIsReviewOpen(false);
     handleExecuteRng();
@@ -674,25 +704,117 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
 
       {activeTab === 'console' && (
         <div className="space-y-6">
-          {/* THE 5 DISTRICT CARDS SHUFFLE DISPLAY (User requested: North, East, West, South, Private) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2 font-mono text-xs font-black uppercase tracking-widest text-[#1a1a1a] dark:text-white">
-                <Sparkles className="w-4 h-4 text-[#ff6a00]" />
-                <span>5-DISTRICT SHUFFLE DISPLAY (PRE-DRAW REEL)</span>
+          {/* THE 5 DISTRICT CARDS SHUFFLE DISPLAY (OPTIMIZED FOR WINDOWS SNIPPING TOOL WIN+SHIFT+S) */}
+          <div
+            id="predraw-recording-frame"
+            className={`space-y-4 p-3 sm:p-5 rounded-2xl transition-all relative ${
+              isRecordFrameMode
+                ? 'bg-neutral-900/5 dark:bg-black/60 border-2 border-dashed border-indigo-500/80 dark:border-indigo-400/80 shadow-xl ring-4 ring-indigo-500/10'
+                : 'bg-transparent'
+            }`}
+          >
+            {/* Visual Corner Crop Marks for Windows Snipping Tool (Win + Shift + S) */}
+            {isRecordFrameMode && (
+              <>
+                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-3 border-l-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
+                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-3 border-r-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
+                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-3 border-l-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
+                <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-3 border-r-3 border-indigo-600 dark:border-indigo-400 pointer-events-none" />
+              </>
+            )}
+
+            {/* Official Video Audit Stamp & Snip Guide Banner */}
+            <div className="bg-[#111827] dark:bg-[#0c0d12] text-white rounded-xl p-3 sm:p-4 border border-neutral-700/80 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0 ring-4 ring-red-500/20" />
+                  <div>
+                    <h2 className="font-mono text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                      MUNICIPAL TEACHERS&apos; DAY 2026 • OFFICIAL PRE-DRAW REEL
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-neutral-300 mt-0.5">
+                      <span className="bg-red-950/80 text-red-300 border border-red-700/60 px-1.5 py-0.2 rounded font-bold">
+                        📸 SNIP FRAME (WIN + SHIFT + S)
+                      </span>
+                      <span>•</span>
+                      <span className="text-amber-300 font-bold">
+                        BATCH: {provisionalBatch?.drawNumber || `PRE-${String(preDrawLogs.length + 1).padStart(4, '0')}`}
+                      </span>
+                      {currentPrize && (
+                        <>
+                          <span>•</span>
+                          <span className="text-indigo-300 font-bold uppercase">
+                            [{currentPrize.category || 'MINOR'}]
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-end sm:self-auto font-mono text-right">
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase text-neutral-400 font-bold flex items-center justify-end gap-1">
+                      <Clock className="w-3 h-3 text-[#ff6a00]" />
+                      <span>OFFICIAL PST TIME</span>
+                    </div>
+                    <div className="text-xs sm:text-sm font-black text-amber-300 tracking-wide">
+                      {liveTimestamp || 'Philippine Standard Time'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecordFrameMode(!isRecordFrameMode)}
+                    title="Toggle Snipping Border Guides"
+                    className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded border border-white/10 text-[10px] font-mono font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                  >
+                    {isRecordFrameMode ? '📸 Guides ON' : 'Guides OFF'}
+                  </button>
+                </div>
               </div>
-              <span className="font-mono text-[10px] text-neutral-500 uppercase">
-                {isShuffling
-                  ? `⚡ SHUFFLING... (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
-                  : hasDrawnRound
-                  ? '🏆 WINNERS REVEALED'
-                  : 'READY TO SHUFFLE'}
-              </span>
+
+              {/* Live Prize & Batch Meta Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Active Prize</span>
+                  <span className="font-bold text-white truncate block text-xs sm:text-sm" title={currentPrize?.name}>
+                    {currentPrize?.name || 'No Prize Selected'}
+                  </span>
+                </div>
+                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Draw Target</span>
+                  <span className="font-bold text-amber-400 text-xs sm:text-sm">
+                    {totalWinnersToDraw} {totalWinnersToDraw === 1 ? 'Winner' : 'Winners'} {distributionMode === 'EQUAL_PER_DISTRICT' ? '(Quota)' : '(Pool)'}
+                  </span>
+                </div>
+                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Unit Value</span>
+                  <span className="font-bold text-white text-xs sm:text-sm">
+                    {currentUnitVal > 0 ? `₱${currentUnitVal.toLocaleString()} ea` : 'Token / Item'}
+                  </span>
+                </div>
+                <div className="bg-neutral-800/80 p-2 rounded border border-white/5">
+                  <span className="text-[9px] uppercase text-neutral-400 block font-bold">Reel Status</span>
+                  <span className={`font-bold text-xs sm:text-sm uppercase ${
+                    isShuffling
+                      ? 'text-[#ff6a00] animate-pulse'
+                      : hasDrawnRound
+                      ? 'text-emerald-400'
+                      : 'text-neutral-300'
+                  }`}>
+                    {isShuffling
+                      ? `⚡ Spinning (${Math.max(0, (reelDuration * (100 - shuffleProgress) / 100)).toFixed(1)}s)`
+                      : hasDrawnRound
+                      ? `🏆 ${provisionalBatch?.winners.length || 0} Winners`
+                      : '● Standby'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Dynamic Reel Progress Bar */}
             {isShuffling && (
-              <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 overflow-hidden rounded-full">
+              <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 overflow-hidden rounded-full shadow-inner">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 via-[#ff6a00] to-emerald-500 transition-all duration-75"
                   style={{ width: `${shuffleProgress}%` }}
@@ -700,6 +822,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               </div>
             )}
 
+            {/* 5 District Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch">
               {DISTRICT_CONFIG.map(({ id, title, isPrivate }) => {
                 const districtWinners = revealedWinnersByDistrict[id] || [];
@@ -708,11 +831,11 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 return (
                   <div
                     key={id}
-                    className={`bg-white dark:bg-[#141416] border-2 rounded-2xl p-4 transition-all flex flex-col justify-between min-h-[140px] shadow-sm ${
+                    className={`bg-white dark:bg-[#141416] border-2 rounded-2xl p-4 transition-all flex flex-col justify-between min-h-[150px] shadow-sm ${
                       isShuffling
-                        ? 'border-[#ff6a00] bg-orange-50/80 dark:bg-orange-950/20 ring-4 ring-[#ff6a00]/25 shadow-md'
+                        ? 'border-[#ff6a00] bg-orange-50/80 dark:bg-orange-950/20 ring-4 ring-[#ff6a00]/30 shadow-lg scale-[1.01]'
                         : hasWinners
-                        ? 'border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-md'
+                        ? 'border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-md'
                         : 'border-[#1a1a1a]/20 dark:border-white/10'
                     } ${isPrivate ? 'sm:col-span-2 sm:w-1/2 sm:mx-auto w-full' : ''}`}
                   >
@@ -729,7 +852,7 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                     </div>
 
                     {/* Card Body */}
-                    <div className="flex-1 flex flex-col justify-center items-center py-1 text-center min-h-[75px] overflow-hidden">
+                    <div className="flex-1 flex flex-col justify-center items-center py-1 text-center min-h-[85px] overflow-hidden">
                       {isShuffling ? (
                         <div className="w-full flex-1 flex flex-col justify-between items-center overflow-hidden min-h-0">
                           {/* 3-Line Rolling Mechanical Reel Tumbler */}
@@ -742,9 +865,9 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                               {shufflingNames[id]?.topName || '••• DepEd Candidate •••'}
                             </div>
 
-                            {/* Center / Active Candidate (Highlighted Focal Line, Name Only, No School) */}
-                            <div className="w-full text-center px-1.5 py-0.5 sm:py-1 rounded-md bg-[#ff6a00]/10 border border-[#ff6a00]/30 shadow-2xs">
-                              <div className="font-winner font-black text-sm sm:text-base md:text-lg lg:text-xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
+                            {/* Center / Active Candidate (High-Contrast Focal Line with Big Legible Text) */}
+                            <div className="w-full text-center px-2 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-[#1a1a1f] border-2 border-[#ff6a00] shadow-md ring-2 ring-[#ff6a00]/30">
+                              <div className="font-winner font-black text-base sm:text-lg md:text-xl lg:text-2xl text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
                                 {shufflingNames[id]?.name || 'DepEd Participant'}
                               </div>
                             </div>
@@ -760,14 +883,25 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                           </div>
                         </div>
                       ) : hasWinners ? (
-                        <div className="w-full space-y-1.5 overflow-y-auto max-h-[140px] pr-1">
+                        <div className="w-full space-y-2 overflow-y-auto max-h-[170px] pr-1">
                           {districtWinners.map((w, idx) => (
-                            <div key={idx} className="border-b border-neutral-200 dark:border-white/10 pb-1 last:border-b-0">
-                              <div className="font-winner font-black text-base sm:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-snug">
+                            <div
+                              key={idx}
+                              className="p-2.5 rounded-xl bg-white dark:bg-[#1a1a1f] border border-emerald-500/50 shadow-xs text-left"
+                            >
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <span className="font-mono text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
+                                  WINNER #{idx + 1}
+                                </span>
+                                <span className="font-mono text-[11px] font-black text-indigo-600 dark:text-indigo-400">
+                                  {w.id}
+                                </span>
+                              </div>
+                              <div className="font-winner font-black text-sm sm:text-base md:text-lg text-[#111827] dark:text-white uppercase tracking-tight leading-tight truncate">
                                 {w.fullName}
                               </div>
-                              <div className="text-[10px] font-mono text-neutral-500 truncate">
-                                {w.school} • <span className="font-bold text-indigo-600 dark:text-indigo-400">{w.id}</span>
+                              <div className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 truncate mt-0.5">
+                                {w.school} {w.position ? `• ${w.position}` : ''}
                               </div>
                             </div>
                           ))}
@@ -785,6 +919,74 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
                 );
               })}
             </div>
+
+            {/* IN-FRAME POST-DRAW ACTION BAR FOR SCREEN RECORDING */}
+            {hasDrawnRound && provisionalBatch && (
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#111827] dark:bg-[#0c0d12] border-2 border-emerald-500 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3 animate-fade-in text-white font-mono">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0">
+                    <Trophy className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-black uppercase text-emerald-400 tracking-wide">
+                      REVEAL COMPLETE • {provisionalBatch.winners.length} WINNERS ILLUMINATED
+                    </div>
+                    <div className="text-[10px] text-neutral-400">
+                      Recorded in Batch #{provisionalBatch.drawNumber} • Ready for screen recording
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundSynthesizer.playClick();
+                      handleDiscardBatch();
+                    }}
+                    className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-bold uppercase transition-colors cursor-pointer rounded"
+                  >
+                    Discard
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundSynthesizer.playClick();
+                      handleRedrawFromModal();
+                    }}
+                    className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Redraw</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundSynthesizer.playClick();
+                      setIsReviewOpen(true);
+                    }}
+                    className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 border border-white/20 text-white text-xs font-black uppercase flex items-center gap-1.5 transition-colors cursor-pointer rounded"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Audit Sheet</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundSynthesizer.playSuccess();
+                      handleConfirmBatch();
+                    }}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition-all cursor-pointer rounded"
+                  >
+                    <Check className="w-4 h-4 text-white" />
+                    <span>Confirm &amp; Award Batch</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* BATCH CONTROLS CONSOLE */}
