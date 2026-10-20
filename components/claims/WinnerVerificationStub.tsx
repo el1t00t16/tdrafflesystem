@@ -103,7 +103,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 color: black !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                height: auto !important;
+                height: 100% !important;
+                width: 100% !important;
+                position: relative !important;
               }
               .print\\:hidden {
                 display: none !important;
@@ -121,14 +123,15 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 border: 2px solid black !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                position: absolute !important;
                 ${
                   printPosition === 'UPPER_LEFT'
-                    ? 'margin: 0.5cm 0 0 0.5cm !important; float: left !important;'
+                    ? 'top: 0.5cm !important; left: 0.5cm !important; right: auto !important; margin: 0 !important; float: none !important;'
                     : printPosition === 'UPPER_RIGHT'
-                    ? 'margin: 0.5cm 0.5cm 0 auto !important; float: right !important;'
+                    ? 'top: 0.5cm !important; right: 0.5cm !important; left: auto !important; margin: 0 !important; float: none !important;'
                     : printPosition === 'CENTER'
-                    ? 'margin: 0.5cm auto 0 auto !important;'
-                    : 'margin: 0.5cm auto !important; float: none !important;'
+                    ? 'top: 0.5cm !important; left: 50% !important; transform: translateX(-50%) !important; margin: 0 !important; float: none !important;'
+                    : 'top: 0.5cm !important; left: 0.5cm !important; margin: 0 !important; float: none !important;'
                 }
               }
             }
@@ -535,10 +538,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                   className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                     printPosition === 'UPPER_LEFT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                   }`}
-                  title="Upper-Left corner (feed 11cm x 7cm slip on left guide of Letter tray)"
+                  title="Left side edge of Letter size (0.5cm from top-left) - matches Epson right-side tray guide feed"
                 >
                   <AlignLeft className="w-3 h-3" />
-                  <span>Left Guide</span>
+                  <span>Left Side Edge (Epson)</span>
                 </button>
                 <button
                   type="button"
@@ -625,7 +628,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block overflow-x-auto">
           {activeFormat === 'HALF_LANDSCAPE' ? (
             /* Virtual Pre-cut Paper (11cm x 7cm) Simulation */
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center print:block print:w-full print:m-0 print:p-0">
               <div className="mb-2 flex items-center gap-2 text-[10px] font-mono uppercase text-neutral-600 print:hidden">
                 <span className="font-bold text-neutral-800 bg-white px-2 py-0.5 border border-neutral-300">
                   Pre-Cut Paper: 11cm × 7cm
@@ -642,7 +645,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                     : printPosition === 'UPPER_RIGHT'
                     ? 'justify-end'
                     : 'justify-center'
-                } items-center relative box-border print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}
+                } items-center relative box-border print:border-0 print:shadow-none print:!p-0 print:!m-0 print:!w-full print:!min-h-0 print:block print:static`}
                 style={{ width: '11cm', minHeight: '7cm', padding: '0.5cm' }}
               >
                 <div className="absolute -top-3 left-2 bg-neutral-800 text-white text-[8px] font-mono px-1.5 py-0.5 uppercase tracking-wider print:hidden">

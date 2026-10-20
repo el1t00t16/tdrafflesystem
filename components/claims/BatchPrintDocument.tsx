@@ -202,10 +202,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'UPPER_LEFT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Upper-Left corner (feed 11cm x 7cm slip on left guide of Letter tray)"
+                title="Left side edge of Letter size (0.5cm from top-left) - matches printer right-side guide feed"
               >
                 <AlignLeft className="w-3 h-3" />
-                <span>Left Guide</span>
+                <span>Left Side Edge (Epson)</span>
               </button>
               <button
                 type="button"
@@ -213,10 +213,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'UPPER_RIGHT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Upper-Right corner (feed 11cm x 7cm slip on right guide of Letter tray)"
+                title="Right side edge of Letter size"
               >
                 <AlignRight className="w-3 h-3" />
-                <span>Right Guide</span>
+                <span>Right Edge</span>
               </button>
               <button
                 type="button"
@@ -224,7 +224,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'CENTER' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Center sliders of printer tray"
+                title="Center of letter page"
               >
                 <AlignCenter className="w-3 h-3" />
                 <span>Center</span>
@@ -303,6 +303,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 position: static !important;
               }
               .batch-page-1by1 {
+                position: relative !important;
                 width: ${trayPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
                 height: ${trayPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
                 max-width: ${trayPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
@@ -335,14 +336,15 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 border: 2px solid black !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                position: absolute !important;
                 ${
                   trayPosition === 'UPPER_LEFT'
-                    ? 'margin: 0.5cm 0 0 0.5cm !important; float: left !important;'
+                    ? 'top: 0.5cm !important; left: 0.5cm !important; right: auto !important; margin: 0 !important; float: none !important;'
                     : trayPosition === 'UPPER_RIGHT'
-                    ? 'margin: 0.5cm 0.5cm 0 auto !important; float: right !important;'
+                    ? 'top: 0.5cm !important; right: 0.5cm !important; left: auto !important; margin: 0 !important; float: none !important;'
                     : trayPosition === 'CENTER'
-                    ? 'margin: 0.5cm auto 0 auto !important;'
-                    : 'margin: 0.5cm auto !important; float: none !important;'
+                    ? 'top: 0.5cm !important; left: 50% !important; transform: translateX(-50%) !important; margin: 0 !important; float: none !important;'
+                    : 'top: 0.5cm !important; left: 0.5cm !important; margin: 0 !important; float: none !important;'
                 }
               }
               .batch-sheet-8up {
@@ -450,7 +452,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             </div>
 
             {/* Virtual Paper Sheet with selected Tray Alignment */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center print:block print:w-full print:m-0 print:p-0">
               <div
                 className={`bg-white border-2 border-dashed border-neutral-400 shadow-md flex ${
                   trayPosition === 'UPPER_LEFT'
@@ -458,7 +460,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                     : trayPosition === 'UPPER_RIGHT'
                     ? 'justify-end'
                     : 'justify-center'
-                } items-center relative box-border print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}
+                } items-center relative box-border print:border-0 print:shadow-none print:!p-0 print:!m-0 print:!w-full print:!min-h-0 print:block print:static`}
                 style={{ width: '11cm', minHeight: '7cm', padding: '0.5cm' }}
               >
                 <div className="absolute -top-3 left-2 bg-neutral-800 text-white text-[8px] font-mono px-1.5 py-0.5 uppercase tracking-wider print:hidden">
