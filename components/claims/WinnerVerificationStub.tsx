@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Winner } from '../../lib/types';
-import { Printer, X, ShieldCheck, QrCode as QrIcon, AlignLeft, AlignRight, AlignCenter } from 'lucide-react';
+import { Printer, X, ShieldCheck, QrCode as QrIcon, AlignLeft, AlignRight, AlignCenter, Sparkles } from 'lucide-react';
 import QRCode from 'qrcode';
 
 export type StubLayoutFormat = 'HALF_LANDSCAPE' | 'QUARTER_PORTRAIT';
-export type PrintPosition = 'UPPER_LEFT' | 'UPPER_RIGHT' | 'CENTER';
+export type PrintPosition = 'UPPER_LEFT' | 'UPPER_RIGHT' | 'CENTER' | 'EXACT_11X7';
 
 interface WinnerVerificationStubProps {
   winner: Winner;
@@ -87,7 +87,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
     window.print();
   };
 
-  // 1. Half Landscape Stub (10.5cm in width by 6cm in height — Balanced Official UI)
+  // 1. Half Landscape Stub (Exact 10cm in width by 6cm in height inside 11cm x 7cm pre-cut paper / 1/8 Letter)
   const landscapeContent = (
     <>
       {!isBatchChild && (
@@ -95,7 +95,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
           __html: `
             @media print {
               @page {
-                size: letter portrait;
+                size: ${printPosition === 'EXACT_11X7' ? '11cm 7cm landscape' : 'letter portrait'};
                 margin: 0;
               }
               html, body {
@@ -109,11 +109,11 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 display: none !important;
               }
               .winner-stub-landscape-printable {
-                width: 10.5cm !important;
+                width: 10cm !important;
                 height: 6cm !important;
-                max-width: 10.5cm !important;
+                max-width: 10cm !important;
                 max-height: 6cm !important;
-                min-width: 10.5cm !important;
+                min-width: 10cm !important;
                 min-height: 6cm !important;
                 box-sizing: border-box !important;
                 background: white !important;
@@ -123,10 +123,12 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 break-inside: avoid !important;
                 ${
                   printPosition === 'UPPER_LEFT'
-                    ? 'margin: 0.15in 0 0 0.15in !important; float: left !important;'
+                    ? 'margin: 0.5cm 0 0 0.5cm !important; float: left !important;'
                     : printPosition === 'UPPER_RIGHT'
-                    ? 'margin: 0.15in 0.15in 0 auto !important; float: right !important;'
-                    : 'margin: 0.2in auto !important;'
+                    ? 'margin: 0.5cm 0.5cm 0 auto !important; float: right !important;'
+                    : printPosition === 'CENTER'
+                    ? 'margin: 0.5cm auto 0 auto !important;'
+                    : 'margin: 0.5cm auto !important; float: none !important;'
                 }
               }
             }
@@ -136,10 +138,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       <div
         className={`bg-white text-black border-2 border-black flex flex-col justify-between text-[10px] leading-tight font-sans relative overflow-hidden select-none box-border ${
           isBatchChild && isGrid
-            ? 'w-full h-full max-w-[9.6cm] max-h-[5.85cm] p-1.5'
-            : 'w-[10.5cm] max-w-[10.5cm] h-[6cm] max-h-[6cm] min-h-[6cm] p-1.5 winner-stub-landscape-printable'
+            ? 'w-[10cm] h-[6cm] p-1.5'
+            : 'w-[10cm] max-w-[10cm] h-[6cm] max-h-[6cm] min-h-[6cm] p-1.5 winner-stub-landscape-printable'
         } print:border-black print:border-solid print:m-0`}
-        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '9.6cm', maxHeight: '5.85cm' } : { width: '10.5cm', height: '6cm' }}
+        style={{ width: '10cm', height: '6cm' }}
       >
         {/* Top Government & Event Header */}
         <div className="border-b-2 border-black pb-1 mb-1 flex items-center justify-between gap-1.5 shrink-0 bg-white">
@@ -505,16 +507,25 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
             <ShieldCheck className="w-5 h-5 text-indigo-400" />
             <div>
               <span className="font-mono text-xs font-bold uppercase tracking-wider block">
-                {activeFormat === 'HALF_LANDSCAPE' ? 'Pre-Cut Stub (10.5cm × 6cm)' : '1/4 Letter (Portrait) Stub'}
+                {activeFormat === 'HALF_LANDSCAPE' ? 'Pre-Cut Stub (10cm × 6cm inside 11cm × 7cm)' : '1/4 Letter (Portrait) Stub'}
               </span>
               <span className="font-mono text-[10px] text-neutral-400 block">
-                {activeFormat === 'HALF_LANDSCAPE' ? 'Position: ' + (printPosition === 'UPPER_LEFT' ? 'Upper-Left' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Center') : 'Legacy 1/4 Sheet Format'}
+                {activeFormat === 'HALF_LANDSCAPE'
+                  ? 'Feed Position: ' +
+                    (printPosition === 'UPPER_LEFT'
+                      ? 'Upper-Left (Left Guide)'
+                      : printPosition === 'UPPER_RIGHT'
+                      ? 'Upper-Right (Right Guide)'
+                      : printPosition === 'CENTER'
+                      ? 'Center Sliders'
+                      : 'Exact 11cm × 7cm Paper')
+                  : 'Legacy 1/4 Sheet Format'}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Position Selector (Upper-Left / Upper-Right / Center) */}
+            {/* Position Selector (Upper-Left / Upper-Right / Center / Exact 11x7) */}
             {activeFormat === 'HALF_LANDSCAPE' && (
               <div className="flex items-center bg-black/60 p-0.5 border border-white/20 text-[10px] font-mono">
                 <span className="text-neutral-400 px-1.5 uppercase font-bold text-[9px] hidden sm:inline">Position:</span>
@@ -524,10 +535,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                   className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                     printPosition === 'UPPER_LEFT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                   }`}
-                  title="Upper-Left corner (default for left-side feed or pre-cut)"
+                  title="Upper-Left corner (feed 11cm x 7cm slip on left guide of Letter tray)"
                 >
                   <AlignLeft className="w-3 h-3" />
-                  <span>Upper-Left</span>
+                  <span>Left Guide</span>
                 </button>
                 <button
                   type="button"
@@ -535,10 +546,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                   className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                     printPosition === 'UPPER_RIGHT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                   }`}
-                  title="Upper-Right corner (select if your printer tray feeds along the right edge)"
+                  title="Upper-Right corner (feed 11cm x 7cm slip on right guide of Letter tray)"
                 >
                   <AlignRight className="w-3 h-3" />
-                  <span>Upper-Right</span>
+                  <span>Right Guide</span>
                 </button>
                 <button
                   type="button"
@@ -546,10 +557,21 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                   className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                     printPosition === 'CENTER' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                   }`}
-                  title="Center of letter page"
+                  title="Center sliders of printer tray"
                 >
                   <AlignCenter className="w-3 h-3" />
                   <span>Center</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintPosition('EXACT_11X7')}
+                  className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                    printPosition === 'EXACT_11X7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+                  }`}
+                  title="Exact 11cm x 7cm Custom Paper Size selected in printer settings"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Exact 11×7cm</span>
                 </button>
               </div>
             )}
@@ -562,9 +584,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 className={`px-2 py-1 uppercase font-bold transition-all cursor-pointer ${
                   activeFormat === 'HALF_LANDSCAPE' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="10.5cm width by 6cm height (Safe for pre-cut slips, no clipped edges)"
+                title="10cm width by 6cm height inside 11cm x 7cm pre-cut slip (0.5cm safe margins)"
               >
-                10.5cm × 6cm
+                10cm × 6cm
               </button>
               <button
                 type="button"
@@ -601,22 +623,57 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
 
         {/* Stub Display with realistic placement preview */}
         <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block overflow-x-auto">
-          {/* Virtual Sheet simulation */}
-          <div className={`w-full max-w-[13cm] bg-white p-3 border border-neutral-300 shadow-inner flex ${
-            printPosition === 'UPPER_LEFT' ? 'justify-start' : printPosition === 'UPPER_RIGHT' ? 'justify-end' : 'justify-center'
-          } print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}>
-            {stubContent}
-          </div>
+          {activeFormat === 'HALF_LANDSCAPE' ? (
+            /* Virtual Pre-cut Paper (11cm x 7cm) Simulation */
+            <div className="flex flex-col items-center">
+              <div className="mb-2 flex items-center gap-2 text-[10px] font-mono uppercase text-neutral-600 print:hidden">
+                <span className="font-bold text-neutral-800 bg-white px-2 py-0.5 border border-neutral-300">
+                  Pre-Cut Paper: 11cm × 7cm
+                </span>
+                <span>➜</span>
+                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 border border-indigo-200">
+                  Printed Content: 10cm × 6cm (0.5cm Margins)
+                </span>
+              </div>
+              <div
+                className={`bg-white border-2 border-dashed border-neutral-400 shadow-xl flex ${
+                  printPosition === 'UPPER_LEFT'
+                    ? 'justify-start'
+                    : printPosition === 'UPPER_RIGHT'
+                    ? 'justify-end'
+                    : 'justify-center'
+                } items-center relative box-border print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}
+                style={{ width: '11cm', minHeight: '7cm', padding: '0.5cm' }}
+              >
+                <div className="absolute -top-3 left-2 bg-neutral-800 text-white text-[8px] font-mono px-1.5 py-0.5 uppercase tracking-wider print:hidden">
+                  Pre-Cut Paper (11cm × 7cm)
+                </div>
+                {stubContent}
+              </div>
+            </div>
+          ) : (
+            <div className="w-full max-w-[13cm] bg-white p-3 border border-neutral-300 shadow-inner flex justify-center print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto">
+              {stubContent}
+            </div>
+          )}
 
           <div className="mt-3 flex items-center gap-2 text-[10px] font-mono text-neutral-600 uppercase tracking-wider print:hidden">
-            <span>Size: 10.5cm × 6cm</span>
+            <span>Content: 10cm × 6cm</span>
+            <span>•</span>
+            <span>Paper: 11cm × 7cm (1/8 Letter)</span>
             <span>•</span>
             <span className="font-bold text-indigo-900">
-              Tray Feed: {printPosition === 'UPPER_LEFT' ? 'Upper-Left Corner' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right Corner (Right Guide)' : 'Centered'}
+              {printPosition === 'UPPER_LEFT'
+                ? 'Feed: Upper-Left (Left Guide)'
+                : printPosition === 'UPPER_RIGHT'
+                ? 'Feed: Upper-Right (Right Guide)'
+                : printPosition === 'CENTER'
+                ? 'Feed: Center Sliders'
+                : 'Page: Exact 11cm × 7cm'}
             </span>
           </div>
           <p className="text-[10px] text-neutral-500 font-sans mt-1 text-center max-w-md print:hidden">
-            💡 If your printer feeds pre-cut paper against the right guide, select <strong>Upper-Right</strong>. If loaded on the left guide, select <strong>Upper-Left</strong>.
+            💡 <strong>1 Letter whole sheet cut into 8 pcs = 11cm × 7cm each.</strong> The content is sized exactly 10cm × 6cm, leaving 0.5cm (5mm) safe borders all around.
           </p>
         </div>
       </div>

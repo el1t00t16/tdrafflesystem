@@ -1400,7 +1400,7 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
                       type="button"
                       onClick={() => setVerifyingStubWinner(selectedWinner)}
                       className="py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 border border-indigo-300 dark:border-indigo-700/60 text-indigo-900 dark:text-indigo-200 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                      title="Print Official Verification Stub (11cm × 7cm Landscape / 1/4 Letter)"
+                      title="Print Official Verification Stub (10cm × 6cm inside 11cm × 7cm Paper)"
                     >
                       <Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                       <span>Print Stub</span>

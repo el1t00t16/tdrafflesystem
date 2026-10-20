@@ -115,9 +115,9 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 <Sparkles className="w-3 h-3 text-emerald-400" />
                 <span>
                   {printMode === '1_BY_1_LANDSCAPE'
-                    ? '1 by 1 Pre-Cut (10.5cm × 6cm)'
+                    ? '1 by 1 Pre-Cut (10cm × 6cm inside 11cm × 7cm)'
                     : printMode === '8_UP_LETTER'
-                    ? '8-Up Letter (10cm × 6cm)'
+                    ? '8-Up Letter (10cm × 6cm inside 11cm × 7cm cut)'
                     : printMode === '2_UP_QUARTER'
                     ? '2-Up 1/4 Sheet (10cm × 6cm)'
                     : '1/4 Letter Portrait'}
@@ -127,9 +127,9 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             <p className="text-[11px] text-neutral-400 truncate max-w-xl font-sans mt-0.5">
               {prizeName} •{' '}
               {printMode === '1_BY_1_LANDSCAPE'
-                ? `1 Stub per Page for Pre-Cut 10.5cm × 6cm Paper (${trayPosition === 'UPPER_LEFT' ? 'Upper-Left' : trayPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Centered'})`
+                ? `1 Stub per Page for Pre-Cut 11cm × 7cm Paper (Content: 10cm × 6cm • ${trayPosition === 'UPPER_LEFT' ? 'Left Guide' : trayPosition === 'UPPER_RIGHT' ? 'Right Guide' : trayPosition === 'CENTER' ? 'Centered' : 'Exact 11×7cm'})`
                 : printMode === '8_UP_LETTER'
-                ? '8 Stubs per standard Letter Sheet'
+                ? '8 Stubs per standard Letter Sheet (Cut into 8 pcs: 11cm × 7cm with 10cm × 6cm stubs)'
                 : printMode === '2_UP_QUARTER'
                 ? '2 Stubs per 1/4 Letter Sheet with center cut line'
                 : '1 Stub per 1/4 Letter Sheet (Portrait)'}
@@ -149,10 +149,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Prints 1 stub per pre-cut 10.5cm x 6cm sheet (1 by 1 feeding, no clipped edges)"
+              title="Prints 1 stub per pre-cut 11cm x 7cm sheet (10cm x 6cm content, 0.5cm safe borders)"
             >
               <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-              <span>1 by 1 Pre-Cut (10.5×6cm)</span>
+              <span>1 by 1 Pre-Cut (10×6cm)</span>
             </button>
             <button
               type="button"
@@ -162,9 +162,9 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Prints 8 stubs per full Letter sheet"
+              title="Prints 8 stubs (10cm x 6cm) on full Letter sheet (cut into 8 pcs: 11cm x 7cm each)"
             >
-              <span>8-Up Letter</span>
+              <span>8-Up Letter (11×7cm Cut)</span>
             </button>
             <button
               type="button"
@@ -202,10 +202,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'UPPER_LEFT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Upper-Left corner (default for left-guide feed)"
+                title="Upper-Left corner (feed 11cm x 7cm slip on left guide of Letter tray)"
               >
                 <AlignLeft className="w-3 h-3" />
-                <span>Upper-Left</span>
+                <span>Left Guide</span>
               </button>
               <button
                 type="button"
@@ -213,10 +213,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'UPPER_RIGHT' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Upper-Right corner (select if your printer tray feeds along the right edge)"
+                title="Upper-Right corner (feed 11cm x 7cm slip on right guide of Letter tray)"
               >
                 <AlignRight className="w-3 h-3" />
-                <span>Upper-Right</span>
+                <span>Right Guide</span>
               </button>
               <button
                 type="button"
@@ -224,10 +224,21 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
                   trayPosition === 'CENTER' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="Center of letter page"
+                title="Center sliders of printer tray"
               >
                 <AlignCenter className="w-3 h-3" />
                 <span>Center</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTrayPosition('EXACT_11X7')}
+                className={`px-2 py-1 uppercase font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  trayPosition === 'EXACT_11X7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Exact 11cm x 7cm Custom Paper Size in printer driver"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Exact 11×7cm</span>
               </button>
             </div>
           )}
@@ -274,7 +285,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           __html: `
             @media print {
               @page {
-                size: letter portrait;
+                size: ${printMode === '1_BY_1_LANDSCAPE' && trayPosition === 'EXACT_11X7' ? '11cm 7cm landscape' : 'letter portrait'};
                 margin: 0;
               }
               html, body {
@@ -292,10 +303,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 position: static !important;
               }
               .batch-page-1by1 {
-                width: 8.5in !important;
-                height: 11in !important;
-                max-width: 8.5in !important;
-                max-height: 11in !important;
+                width: ${trayPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
+                height: ${trayPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
+                max-width: ${trayPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
+                max-height: ${trayPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 page-break-after: always !important;
@@ -312,11 +323,11 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 break-after: auto !important;
               }
               .batch-page-1by1 .winner-stub-landscape-printable {
-                width: 10.5cm !important;
+                width: 10cm !important;
                 height: 6cm !important;
-                max-width: 10.5cm !important;
+                max-width: 10cm !important;
                 max-height: 6cm !important;
-                min-width: 10.5cm !important;
+                min-width: 10cm !important;
                 min-height: 6cm !important;
                 box-sizing: border-box !important;
                 background: white !important;
@@ -326,23 +337,24 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 break-inside: avoid !important;
                 ${
                   trayPosition === 'UPPER_LEFT'
-                    ? 'margin: 0.15in 0 0 0.15in !important; float: left !important;'
+                    ? 'margin: 0.5cm 0 0 0.5cm !important; float: left !important;'
                     : trayPosition === 'UPPER_RIGHT'
-                    ? 'margin: 0.15in 0.15in 0 auto !important; float: right !important;'
-                    : 'margin: 0.2in auto !important;'
+                    ? 'margin: 0.5cm 0.5cm 0 auto !important; float: right !important;'
+                    : trayPosition === 'CENTER'
+                    ? 'margin: 0.5cm auto 0 auto !important;'
+                    : 'margin: 0.5cm auto !important; float: none !important;'
                 }
               }
               .batch-sheet-8up {
-                width: 8.1in !important;
-                height: 10.65in !important;
-                max-width: 8.1in !important;
-                max-height: 10.65in !important;
+                width: 8.5in !important;
+                height: 11in !important;
+                max-width: 8.5in !important;
+                max-height: 11in !important;
                 margin: 0 auto !important;
-                padding: 0.05in !important;
+                padding: 0 !important;
                 display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
-                grid-template-rows: repeat(4, 1fr) !important;
-                gap: 0.06in !important;
+                grid-template-columns: repeat(2, 4.25in) !important;
+                grid-template-rows: repeat(4, 2.75in) !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 page-break-inside: avoid !important;
@@ -353,6 +365,26 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
               .batch-sheet-8up:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
+              }
+              .batch-sheet-8up .grid-cell-8up {
+                width: 4.25in !important;
+                height: 2.75in !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border: 1px dashed #ccc !important;
+              }
+              .batch-sheet-8up .winner-stub-landscape-printable {
+                width: 10cm !important;
+                height: 6cm !important;
+                max-width: 10cm !important;
+                max-height: 6cm !important;
+                min-width: 10cm !important;
+                min-height: 6cm !important;
+                box-sizing: border-box !important;
+                margin: 0 auto !important;
+                float: none !important;
               }
               .batch-sheet-2up {
                 width: 4.15in !important;
@@ -400,7 +432,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           `
         }} />
 
-        {/* 1. 1 BY 1 PRE-CUT MODE (1 STUB PER PAGE ON PRE-CUT 10.5cm x 6cm PAPER) */}
+        {/* 1. 1 BY 1 PRE-CUT MODE (1 STUB PER PAGE ON PRE-CUT 11cm x 7cm PAPER, CONTENT: 10cm x 6cm) */}
         {printMode === '1_BY_1_LANDSCAPE' && sortedWinners.map((winner, idx) => (
           <div
             key={`page-1by1-${winner.winnerId}`}
@@ -410,7 +442,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             <div className="w-full max-w-[13.5cm] pb-1 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
               <span className="font-bold text-indigo-900 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Page {idx + 1} of {sortedWinners.length} • Pre-Cut (10.5cm × 6cm)</span>
+                <span>Page {idx + 1} of {sortedWinners.length} • Pre-Cut (10cm × 6cm on 11cm × 7cm Paper)</span>
               </span>
               <span className="text-neutral-500">
                 Ticket: {winner.winnerId} ({winner.district})
@@ -418,32 +450,44 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             </div>
 
             {/* Virtual Paper Sheet with selected Tray Alignment */}
-            <div className={`w-full max-w-[13.5cm] bg-white p-2 border border-neutral-200 shadow-inner flex ${
-              trayPosition === 'UPPER_LEFT' ? 'justify-start' : trayPosition === 'UPPER_RIGHT' ? 'justify-end' : 'justify-center'
-            } print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}>
-              <WinnerVerificationStub
-                winner={winner}
-                isModal={false}
-                isBatchChild={true}
-                isGrid={false}
-                layoutFormat="HALF_LANDSCAPE"
-                positionProp={trayPosition}
-              />
+            <div className="flex flex-col items-center">
+              <div
+                className={`bg-white border-2 border-dashed border-neutral-400 shadow-md flex ${
+                  trayPosition === 'UPPER_LEFT'
+                    ? 'justify-start'
+                    : trayPosition === 'UPPER_RIGHT'
+                    ? 'justify-end'
+                    : 'justify-center'
+                } items-center relative box-border print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}
+                style={{ width: '11cm', minHeight: '7cm', padding: '0.5cm' }}
+              >
+                <div className="absolute -top-3 left-2 bg-neutral-800 text-white text-[8px] font-mono px-1.5 py-0.5 uppercase tracking-wider print:hidden">
+                  Pre-Cut Paper (11cm × 7cm)
+                </div>
+                <WinnerVerificationStub
+                  winner={winner}
+                  isModal={false}
+                  isBatchChild={true}
+                  isGrid={false}
+                  layoutFormat="HALF_LANDSCAPE"
+                  positionProp={trayPosition}
+                />
+              </div>
             </div>
           </div>
         ))}
 
-        {/* 2. 8-UP LETTER MODE (8 STUBS PER LETTER PAGE) */}
+        {/* 2. 8-UP LETTER MODE (8 STUBS OF 10cm x 6cm ON FULL LETTER SHEET - CUT IN 8 PCS: 11cm x 7cm) */}
         {printMode === '8_UP_LETTER' && chunks8Up.map((chunk, pageIdx) => (
           <div
             key={`page-8up-${pageIdx}`}
-            className="batch-sheet-8up bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-3 box-border grid grid-cols-2 gap-2 print:m-0 print:p-0 print:block"
+            className="batch-sheet-8up bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-2 box-border grid grid-cols-2 gap-1 print:m-0 print:p-0"
           >
             {/* Screen Page Header Indicator */}
             <div className="col-span-2 pb-1 mb-1 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
               <span className="font-bold text-indigo-900 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Letter Sheet {pageIdx + 1} of {chunks8Up.length} • 8 Stubs per Sheet (11cm × 7cm)</span>
+                <span>Letter Sheet {pageIdx + 1} of {chunks8Up.length} • 8 Stubs per Sheet (10cm × 6cm inside 11cm × 7cm cut)</span>
               </span>
               <span className="text-neutral-500">
                 Tickets: {chunk[0]?.winnerId} ... {chunk[chunk.length - 1]?.winnerId}
@@ -452,7 +496,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
 
             {/* Render 8 Stubs in a 2x4 Grid */}
             {chunk.map((winner) => (
-              <div key={winner.winnerId} className="w-full flex justify-center items-center p-0.5">
+              <div
+                key={winner.winnerId}
+                className="grid-cell-8up w-full h-full flex justify-center items-center p-1 box-border relative border border-dashed border-neutral-300 print:border-neutral-300"
+              >
                 <WinnerVerificationStub
                   winner={winner}
                   isModal={false}
@@ -468,7 +515,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             {chunk.length < 8 && Array.from({ length: 8 - chunk.length }).map((_, emptyIdx) => (
               <div
                 key={`empty-${emptyIdx}`}
-                className="w-full min-h-[6.8cm] border border-dashed border-neutral-200 flex items-center justify-center text-neutral-400 font-mono text-[10px] uppercase print:hidden"
+                className="grid-cell-8up w-full min-h-[6.8cm] border border-dashed border-neutral-200 flex items-center justify-center text-neutral-400 font-mono text-[10px] uppercase print:hidden"
               >
                 <span>Blank Space</span>
               </div>
