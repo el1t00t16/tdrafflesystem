@@ -50,13 +50,16 @@ import {
   batchSyncWinnersToSupabase,
   batchSyncLogsToSupabase,
   restoreFullSystemSnapshotInSupabase,
-  purgeLiveStageDryRunFromSupabase
+  purgeLiveStageDryRunFromSupabase,
+  generateLogsFromWinners
 } from '../lib/supabase';
 import { downloadJsonFile } from '../lib/utils';
 import {
   markWinnerAsPrintedInStorage,
   markWinnersBatchAsPrintedInStorage,
   markWinnerAsUnprintedInStorage,
+  markWinnersBatchAsUnprintedInStorage,
+  clearPrintedWinnersMap,
   mergeWinnersWithPrintStatus
 } from '../lib/printQueueStorage';
 
@@ -139,7 +142,20 @@ export default function Home() {
     return INITIAL_WINNERS;
   });
 
-  const [logs, setLogs] = useState<RaffleLog[]>(INITIAL_LOGS);
+  const [logs, setLogs] = useState<RaffleLog[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('td26_raffle_logs');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.error('Error recovering cached raffle logs:', e);
+      }
+    }
+    return INITIAL_LOGS;
+  });
   const [settings, setSettings] = useState<SystemSettings>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -406,12 +422,21 @@ export default function Home() {
           }
 
           if (Array.isArray(cloudLogs)) {
-            setLogs(cloudLogs);
+            let effectiveLogs = cloudLogs;
+            if (effectiveLogs.length === 0 && Array.isArray(cloudWinners) && cloudWinners.length > 0) {
+              const generated = generateLogsFromWinners(cloudWinners);
+              if (generated.length > 0) {
+                effectiveLogs = generated;
+                batchSyncLogsToSupabase(generated).catch((err) => console.warn('Auto backfill logs push:', err));
+              }
+            }
+            setLogs(effectiveLogs);
             try {
-              if (cloudLogs.length > 0) {
-                localStorage.setItem('td26_raffle_logs', JSON.stringify(cloudLogs));
+              if (effectiveLogs.length > 0) {
+                localStorage.setItem('td26_raffle_logs', JSON.stringify(effectiveLogs));
               } else {
                 localStorage.removeItem('td26_raffle_logs');
+      clearPrintedWinnersMap();
               }
             } catch (e) {
               console.error(e);
@@ -526,8 +551,14 @@ export default function Home() {
 
         onLogAdded: (log) => {
           setLogs((prev) => {
-            if (prev.some((l) => l.logId === log.logId)) return prev;
-            return [log, ...prev];
+            const exists = prev.some((l) => l.logId === log.logId);
+            const next = exists ? prev.map((l) => (l.logId === log.logId ? log : l)) : [log, ...prev];
+            try {
+              localStorage.setItem('td26_raffle_logs', JSON.stringify(next));
+            } catch (e) {
+              console.error(e);
+            }
+            return next;
           });
         }
       });
@@ -1113,7 +1144,11 @@ export default function Home() {
       winnersPerDistrict: temporaryDrawResult.winnersPerDistrict,
       targetDistrict: temporaryDrawResult.targetDistrict
     };
-    setLogs((prev) => [newLog, ...prev]);
+    setLogs((prev) => {
+      const next = [newLog, ...prev];
+      try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+      return next;
+    });
     pushLogToSupabase(newLog).catch((err) => console.warn('Supabase log push:', err));
 
     // Close Review Modal
@@ -1241,7 +1276,11 @@ export default function Home() {
       winnersPerDistrict: batch.winnersPerDistrict,
       drawType: 'PRE_DRAW'
     };
-    setLogs((prev) => [newLog, ...prev]);
+    setLogs((prev) => {
+      const next = [newLog, ...prev];
+      try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+      return next;
+    });
     pushLogToSupabase(newLog).catch((err) => console.warn('Supabase log push:', err));
   };
 
@@ -1271,7 +1310,11 @@ export default function Home() {
       winnersPerDistrict: temporaryDrawResult.winnersPerDistrict,
       targetDistrict: temporaryDrawResult.targetDistrict
     };
-    setLogs((prev) => [redrawnLog, ...prev]);
+    setLogs((prev) => {
+      const next = [redrawnLog, ...prev];
+      try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+      return next;
+    });
     pushLogToSupabase(redrawnLog).catch((err) => console.warn('Supabase redrawn log push:', err));
 
     // Reset display and temporary result
@@ -1693,7 +1736,12 @@ export default function Home() {
         admin: 'Stage Admin Desk',
         distributionMode: 'COMBINED_POOL'
       };
-      setLogs((prev) => [reactivateLog, ...prev]);
+      setLogs((prev) => {
+        const next = [reactivateLog, ...prev];
+        try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+        return next;
+      });
+      pushLogToSupabase(reactivateLog).catch((err) => console.warn('Supabase reactivate log push:', err));
     }
   };
 
@@ -1817,7 +1865,11 @@ export default function Home() {
       distributionMode: 'COMBINED_POOL',
       targetDistrict: winnerDistrict
     };
-    setLogs((prev) => [forfeitLog, ...prev]);
+    setLogs((prev) => {
+      const next = [forfeitLog, ...prev];
+      try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+      return next;
+    });
     pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase forfeit log push:', err));
   };
 
@@ -1871,6 +1923,65 @@ export default function Home() {
       }
       return updated;
     });
+  };
+
+  const handleRequeueBatch = (drawNumber: string, winnerIds: string[]) => {
+    soundSynthesizer.playSuccess();
+    markWinnersBatchAsUnprintedInStorage(winnerIds);
+    syncWinnerPrintStatusToSupabase(winnerIds, false);
+    const idSet = new Set(winnerIds);
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (idSet.has(w.winnerId)) {
+          return {
+            ...w,
+            isPrinted: false,
+            printedAt: undefined,
+            printedBy: undefined
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving requeued batch:', e);
+      }
+      return updated;
+    });
+  };
+
+  const handleRefreshLogs = async () => {
+    const cloudLogs = await fetchLogsFromSupabase();
+    if (Array.isArray(cloudLogs)) {
+      setLogs(cloudLogs);
+      try {
+        localStorage.setItem('td26_raffle_logs', JSON.stringify(cloudLogs));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleSyncLogsToCloud = async () => {
+    if (logs.length > 0) {
+      await batchSyncLogsToSupabase(logs);
+    }
+  };
+
+  const handleReconstructLogsFromWinners = async () => {
+    if (winners.length > 0) {
+      const generated = generateLogsFromWinners(winners);
+      setLogs(generated);
+      try {
+        localStorage.setItem('td26_raffle_logs', JSON.stringify(generated));
+      } catch (e) {
+        console.error(e);
+      }
+      if (isSupabaseConfigured()) {
+        await batchSyncLogsToSupabase(generated);
+      }
+    }
   };
 
   const handleRequeueWinner = (winnerId: string) => {
@@ -2442,6 +2553,10 @@ export default function Home() {
             onMarkAsPrinted={handleMarkAsPrinted}
             onMarkBatchAsPrinted={handleMarkBatchAsPrinted}
             onRequeueWinner={handleRequeueWinner}
+            onRequeueBatch={handleRequeueBatch}
+            onRefreshLogs={handleRefreshLogs}
+            onSyncLogsToCloud={handleSyncLogsToCloud}
+            onReconstructLogs={handleReconstructLogsFromWinners}
             eligiblePoolCount={eligiblePool.length}
             isDrawing={isDrawing}
             distributionMode={distributionMode}

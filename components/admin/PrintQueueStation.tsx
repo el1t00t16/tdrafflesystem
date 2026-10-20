@@ -27,6 +27,7 @@ interface PrintQueueStationProps {
   onMarkAsPrinted?: (winnerId: string) => void;
   onMarkBatchAsPrinted?: (winnerIds: string[]) => void;
   onRequeueWinner?: (winnerId: string) => void;
+  onRequeueBatch?: (drawNumber: string, winnerIds: string[]) => void;
 }
 
 export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
@@ -35,7 +36,8 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
   logs,
   onMarkAsPrinted = () => {},
   onMarkBatchAsPrinted = () => {},
-  onRequeueWinner = () => {}
+  onRequeueWinner = () => {},
+  onRequeueBatch = () => {}
 }) => {
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [searchFilter, setSearchFilter] = useState('');
@@ -48,6 +50,8 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
     winners: Winner[];
   } | null>(null);
   const [activeSinglePrint, setActiveSinglePrint] = useState<Winner | null>(null);
+  const [selectedHistoryBatch, setSelectedHistoryBatch] = useState<string>('');
+  const [isDispatchedExpanded, setIsDispatchedExpanded] = useState<boolean>(true);
 
   // Group all winners by Raffle Batch (drawNumber)
   const batchGroups = useMemo<PrintBatchGroup[]>(() => {
@@ -112,7 +116,32 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
     return Boolean(expandedBatches[batchNumber]);
   };
 
-  // Filtered batches in active queue
+  // Batches that are 100% dispatched / printed
+  const filteredDispatchedBatches = useMemo(() => {
+    return batchGroups
+      .map((g) => {
+        if (!searchFilter.trim()) return g;
+        const q = searchFilter.toLowerCase();
+        const matchesBatch =
+          (g.drawNumber || '').toLowerCase().includes(q) ||
+          (g.prizeName || '').toLowerCase().includes(q);
+        const matchingWinners = g.winners.filter(
+          (w) =>
+            (w.name || '').toLowerCase().includes(q) ||
+            (w.winnerId || '').toLowerCase().includes(q) ||
+            (w.participantId ? String(w.participantId).toLowerCase().includes(q) : false) ||
+            (w.school || '').toLowerCase().includes(q)
+        );
+        if (matchesBatch) return g;
+        if (matchingWinners.length > 0) {
+          return { ...g, winners: matchingWinners };
+        }
+        return null;
+      })
+      .filter((g): g is PrintBatchGroup => g !== null && g.pendingCount === 0 && g.printedCount > 0);
+  }, [batchGroups, searchFilter]);
+
+  // Filtered batches in active queue (with pending stubs)
   const filteredQueueBatches = useMemo(() => {
     return batchGroups
       .map((g) => {
@@ -448,7 +477,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                     </div>
 
                     {/* Batch Actions */}
-                    <div className="flex items-center gap-2 self-end md:self-center">
+                    <div className="flex flex-wrap items-center gap-2 self-end md:self-center">
                       <button
                         type="button"
                         onClick={() =>
@@ -458,7 +487,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                             winners: pendingWinners
                           })
                         }
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer"
                         title={`Print all ${batch.pendingCount} pending stubs for Batch ${batch.drawNumber} (10cm × 6cm inside 11cm × 7cm Paper)`}
                       >
                         <Printer className="w-4 h-4" />
@@ -474,6 +503,23 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                         <CheckCheck className="w-4 h-4" />
                         <span className="hidden sm:inline">Mark All Printed</span>
                       </button>
+
+                      {batch.printedCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const printedIds = batch.winners
+                              .filter((w) => w.isPrinted)
+                              .map((w) => w.winnerId);
+                            onRequeueBatch(batch.drawNumber, printedIds);
+                          }}
+                          className="px-3 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-400 dark:border-amber-700 hover:bg-amber-500 hover:text-black text-amber-900 dark:text-amber-200 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+                          title={`Re-queue ${batch.printedCount} printed stubs in Batch ${batch.drawNumber} back to pending queue`}
+                        >
+                          <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          <span>Re-Queue Printed ({batch.printedCount})</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -575,12 +621,249 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
               );
             })
           )}
+
+          {/* COMPLETED / DISPATCHED BATCHES SECTION */}
+          {filteredDispatchedBatches.length > 0 && (
+            <div className="space-y-3 pt-4 border-t-2 border-dashed border-[#1a1a1a]/20 dark:border-white/10">
+              <div 
+                className="flex items-center justify-between cursor-pointer select-none bg-neutral-100 dark:bg-neutral-900/80 px-4 py-2.5 border border-[#1a1a1a]/15 dark:border-white/10"
+                onClick={() => setIsDispatchedExpanded(!isDispatchedExpanded)}
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-mono font-black text-xs uppercase tracking-wider text-[#1a1a1a] dark:text-white">
+                    Dispatched &amp; Completed Batches ({filteredDispatchedBatches.length})
+                  </span>
+                  <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-bold px-2 py-0.5 border border-emerald-300 dark:border-emerald-800 uppercase">
+                    All Stubs Printed
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 uppercase font-mono">
+                    {isDispatchedExpanded ? 'Click to collapse' : 'Click to expand'}
+                  </span>
+                  {isDispatchedExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </div>
+
+              {isDispatchedExpanded && (
+                <div className="space-y-4">
+                  {filteredDispatchedBatches.map((batch) => {
+                    const expanded = isBatchExpanded(batch.drawNumber);
+                    return (
+                      <div
+                        key={batch.drawNumber}
+                        className="bg-white dark:bg-[#121212] border-2 border-neutral-300 dark:border-white/10 shadow-sm overflow-hidden opacity-95 hover:opacity-100 transition-opacity"
+                      >
+                        <div className="bg-[#f8f7f4] dark:bg-neutral-950 p-4 border-b border-[#1a1a1a]/15 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div
+                            className="flex items-center gap-3 cursor-pointer select-none"
+                            onClick={() => toggleBatchExpand(batch.drawNumber)}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleBatchExpand(batch.drawNumber);
+                              }}
+                              className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-300"
+                              title={expanded ? 'Collapse Batch' : 'Expand Batch to view winners'}
+                            >
+                              {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            </button>
+
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono font-black text-sm text-[#1a1a1a] dark:text-white uppercase tracking-wider">
+                                  BATCH {batch.drawNumber}
+                                </span>
+                                <span className="font-mono text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black px-2 py-0.5 border border-emerald-300 dark:border-emerald-800 uppercase inline-flex items-center gap-1">
+                                  <CheckCheck className="w-3 h-3 text-emerald-600" />
+                                  ALL {batch.winners.length} STUBS PRINTED
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                                <Gift className="w-3.5 h-3.5 text-indigo-500" />
+                                <span className="font-bold text-black dark:text-white">{batch.prizeName}</span>
+                                {batch.unitValue > 0 && (
+                                  <span className="font-mono text-neutral-500">(₱{batch.unitValue.toLocaleString()} each)</span>
+                                )}
+                                <span className="text-neutral-400">•</span>
+                                <span className="font-mono text-[11px] text-neutral-500">{batch.date} {batch.time}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Completed Batch Actions */}
+                          <div className="flex flex-wrap items-center gap-2 self-end md:self-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const allIds = batch.winners.map((w) => w.winnerId);
+                                onRequeueBatch(batch.drawNumber, allIds);
+                              }}
+                              className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                              title={`Re-queue all ${batch.winners.length} stubs in Batch ${batch.drawNumber} back to active pending print queue`}
+                            >
+                              <RotateCcw className="w-4 h-4 text-black" />
+                              <span>Re-Queue Batch ({batch.winners.length})</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveBatchPrint({
+                                  batchNumber: batch.drawNumber,
+                                  prizeName: batch.prizeName,
+                                  winners: batch.winners
+                                })
+                              }
+                              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                              title={`Print all ${batch.winners.length} stubs again for Batch ${batch.drawNumber}`}
+                            >
+                              <Printer className="w-4 h-4" />
+                              <span className="hidden sm:inline">Reprint All</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Expanded Winners Table */}
+                        {expanded && (
+                          <div className="overflow-x-auto">
+                            <table className="w-full min-w-[900px] text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-[#1a1a1a] text-white uppercase font-mono font-bold tracking-wider text-[10px]">
+                                  <th className="p-3 w-12">#</th>
+                                  <th className="p-3 whitespace-nowrap">Ticket ID</th>
+                                  <th className="p-3 whitespace-nowrap">Profiling ID</th>
+                                  <th className="p-3 whitespace-nowrap">Winner Name</th>
+                                  <th className="p-3 whitespace-nowrap">District</th>
+                                  <th className="p-3 whitespace-nowrap">School</th>
+                                  <th className="p-3 whitespace-nowrap">Position</th>
+                                  <th className="p-3 text-center whitespace-nowrap">Print Status</th>
+                                  <th className="p-3 text-right whitespace-nowrap">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#1a1a1a]/15 dark:divide-white/5">
+                                {batch.winners.map((w, idx) => (
+                                  <tr
+                                    key={w.winnerId}
+                                    className="hover:bg-[#f8f7f4] dark:hover:bg-neutral-900/50 transition-colors bg-neutral-50/50 dark:bg-neutral-950/30"
+                                  >
+                                    <td className="p-3 font-mono text-neutral-500">{idx + 1}</td>
+                                    <td className="p-3 font-mono font-black text-[#FF1E1E] whitespace-nowrap">{w.winnerId}</td>
+                                    <td className="p-3 font-mono font-bold text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                                      {w.participantId || 'N/A'}
+                                    </td>
+                                    <td className="p-3 font-black text-[#1a1a1a] dark:text-white uppercase whitespace-nowrap">
+                                      {w.name}
+                                    </td>
+                                    <td className="p-3 whitespace-nowrap">
+                                      <span className="bg-[#1a1a1a] dark:bg-neutral-950 text-white font-black text-[10px] px-2 py-0.5 border border-[#1a1a1a] dark:border-white/10 uppercase tracking-wider">
+                                        {w.district}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 text-neutral-700 dark:text-neutral-300 truncate max-w-[200px]" title={w.school}>
+                                      {w.school}
+                                    </td>
+                                    <td className="p-3 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">{w.position}</td>
+                                    <td className="p-3 text-center whitespace-nowrap">
+                                      <span className="font-mono text-[9px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 font-bold border border-emerald-300 dark:border-emerald-800 uppercase inline-flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        <span>PRINTED</span>
+                                      </span>
+                                    </td>
+                                    <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setActiveSinglePrint(w)}
+                                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer"
+                                        title="Print verification stub"
+                                      >
+                                        <Printer className="w-3 h-3" />
+                                        <span>Print</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => onRequeueWinner(w.winnerId)}
+                                        className="px-2.5 py-1 bg-amber-100 dark:bg-amber-950 hover:bg-amber-500 hover:text-black text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-mono text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer"
+                                        title="Re-queue this individual stub back to pending print"
+                                      >
+                                        <RotateCcw className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                        <span>Re-queue</span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       )}
 
       {/* TAB 2: PRINT HISTORY (Audit Archive of Printed Stubs) */}
       {activeTab === 'history' && (
         <div className="space-y-4">
+          {/* Batch Re-Queue Quick Action Strip */}
+          <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-400 dark:border-amber-800 p-3 sm:p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-amber-500 text-black">
+                <RotateCcw className="w-4 h-4 font-bold" />
+              </div>
+              <div>
+                <span className="font-mono font-black text-xs uppercase text-amber-900 dark:text-amber-200">
+                  RE-QUEUE PER BATCH BACK TO ACTIVE PRINT QUEUE
+                </span>
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-sans">
+                  Select any batch below to immediately move all its printed stubs back into the Active Print Queue.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <select
+                value={selectedHistoryBatch}
+                onChange={(e) => setSelectedHistoryBatch(e.target.value)}
+                className="bg-white dark:bg-neutral-900 border border-amber-400 dark:border-amber-700 text-xs font-mono font-bold px-3 py-2 text-[#1a1a1a] dark:text-white outline-none flex-1 md:flex-initial"
+              >
+                <option value="">-- Choose Batch to Re-Queue --</option>
+                {batchGroups
+                  .filter((b) => b.printedCount > 0)
+                  .map((b) => (
+                    <option key={b.drawNumber} value={b.drawNumber}>
+                      Batch {b.drawNumber} ({b.printedCount} printed stubs - {b.prizeName})
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                disabled={!selectedHistoryBatch}
+                onClick={() => {
+                  const targetGroup = batchGroups.find((b) => b.drawNumber === selectedHistoryBatch);
+                  if (targetGroup) {
+                    const ids = targetGroup.winners.filter((w) => w.isPrinted).map((w) => w.winnerId);
+                    onRequeueBatch(targetGroup.drawNumber, ids);
+                    setSelectedHistoryBatch('');
+                  }
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-black font-mono font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shadow-sm"
+              >
+                <RotateCcw className="w-4 h-4 text-black" />
+                <span>Re-Queue Batch</span>
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
             <div>
               <h3 className="font-black text-base sm:text-lg text-[#1a1a1a] dark:text-white uppercase tracking-tight">

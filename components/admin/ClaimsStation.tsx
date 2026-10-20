@@ -27,6 +27,7 @@ interface ClaimsStationProps {
   onMarkAsPrinted?: (winnerId: string) => void;
   onMarkBatchAsPrinted?: (winnerIds: string[]) => void;
   onRequeueWinner?: (winnerId: string) => void;
+  onRequeueBatch?: (drawNumber: string, winnerIds: string[]) => void;
 }
 
 export const ClaimsStation: React.FC<ClaimsStationProps> = ({
@@ -38,7 +39,8 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
   onForfeitPrize,
   onMarkAsPrinted,
   onMarkBatchAsPrinted,
-  onRequeueWinner
+  onRequeueWinner,
+  onRequeueBatch
 }) => {
   const [viewMode, setViewMode] = useState<'FAST' | 'LEGACY' | 'PRINT_QUEUE'>('FAST');
   const pendingPrintCount = winners.filter((w) => !w.isPrinted).length;
@@ -129,6 +131,7 @@ export const ClaimsStation: React.FC<ClaimsStationProps> = ({
           onMarkAsPrinted={onMarkAsPrinted}
           onMarkBatchAsPrinted={onMarkBatchAsPrinted}
           onRequeueWinner={onRequeueWinner}
+          onRequeueBatch={onRequeueBatch}
         />
       )}
     </div>

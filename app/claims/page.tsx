@@ -20,6 +20,7 @@ import {
   markWinnerAsPrintedInStorage,
   markWinnersBatchAsPrintedInStorage,
   markWinnerAsUnprintedInStorage,
+  markWinnersBatchAsUnprintedInStorage,
   mergeWinnersWithPrintStatus
 } from '../../lib/printQueueStorage';
 import { soundSynthesizer } from '../../lib/sound';
@@ -544,6 +545,32 @@ export default function ClaimsPage() {
     });
   };
 
+  const handleRequeueBatch = (drawNumber: string, winnerIds: string[]) => {
+    soundSynthesizer.playSuccess();
+    markWinnersBatchAsUnprintedInStorage(winnerIds);
+    syncWinnerPrintStatusToSupabase(winnerIds, false);
+    const idSet = new Set(winnerIds);
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (idSet.has(w.winnerId)) {
+          return {
+            ...w,
+            isPrinted: false,
+            printedAt: undefined,
+            printedBy: undefined
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving requeued batch in claims:', e);
+      }
+      return updated;
+    });
+  };
+
   const handleRequeueWinner = (winnerId: string) => {
     soundSynthesizer.playClick();
     markWinnerAsUnprintedInStorage(winnerId);
@@ -787,6 +814,7 @@ export default function ClaimsPage() {
             onMarkAsPrinted={handleMarkAsPrinted}
             onMarkBatchAsPrinted={handleMarkBatchAsPrinted}
             onRequeueWinner={handleRequeueWinner}
+            onRequeueBatch={handleRequeueBatch}
           />
         )}
       </main>

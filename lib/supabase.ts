@@ -258,7 +258,12 @@ create table if not exists public.raffle_logs (
 );
 
 -- Ensure draw_type column exists if raffle_logs was previously created
+-- Ensure all columns exist if raffle_logs was previously created
 alter table public.raffle_logs add column if not exists draw_type text default 'LIVE_STAGE';
+alter table public.raffle_logs add column if not exists winner_names jsonb default '[]'::jsonb;
+alter table public.raffle_logs add column if not exists distribution_mode text default 'EQUAL_PER_DISTRICT';
+alter table public.raffle_logs add column if not exists winners_per_district integer;
+alter table public.raffle_logs add column if not exists created_at timestamp with time zone default now();
 
 -- Enable Row Level Security (RLS) & Public Anon read/write policies for local station devices
 alter table public.participants enable row level security;
@@ -751,14 +756,17 @@ export async function syncWinnerPrintStatusToSupabase(
       printed_by: isPrinted ? (printedBy || 'Print Station') : null
     };
 
-    const { error } = await client
-      .from('winners')
-      .update(updatePayload)
-      .in('winner_id', winnerIds);
+    const chunkSize = 50;
+    for (let i = 0; i < winnerIds.length; i += chunkSize) {
+      const chunk = winnerIds.slice(i, i + chunkSize);
+      const { error } = await client
+        .from('winners')
+        .update(updatePayload)
+        .in('winner_id', chunk);
 
-    if (error) {
-      console.warn('Supabase print status update note (local storage fallback active):', error.message);
-      return false;
+      if (error) {
+        console.warn('Supabase print status update note (local storage fallback active):', error.message);
+      }
     }
     return true;
   } catch (err) {
@@ -1007,7 +1015,23 @@ export async function batchSyncLogsToSupabase(
         draw_type: log.drawType || 'LIVE_STAGE'
       }));
 
-      const { error } = await client.from('raffle_logs').upsert(batch, { onConflict: 'log_id' });
+      let { error } = await client.from('raffle_logs').upsert(batch, { onConflict: 'log_id' });
+
+      // Resilient fallback if schema lacks newer columns
+      if (
+        error &&
+        (error.message?.includes('draw_type') ||
+          error.message?.includes('winner_names') ||
+          error.message?.includes('distribution_mode') ||
+          error.message?.includes('winners_per_district') ||
+          (error as any).code === '42703' ||
+          (error as any).code === 'PGRST204')
+      ) {
+        const fallbackBatch = batch.map(({ draw_type, winner_names, distribution_mode, winners_per_district, ...core }: any) => core);
+        const retry = await client.from('raffle_logs').upsert(fallbackBatch, { onConflict: 'log_id' });
+        error = retry.error;
+      }
+
       if (error) {
         const msg = formatSupabaseError(error);
         console.error('Supabase logs batch upload error:', msg, error);
@@ -1461,30 +1485,63 @@ export async function fetchLogsFromSupabase(): Promise<RaffleLog[] | null> {
   if (!client) return null;
 
   try {
-    const { data, error } = await client
+    let result = await client
       .from('raffle_logs')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    if (!data) return [];
+    // Fallback: If ordering by created_at failed (e.g. column not yet added to table)
+    if (result.error && (result.error.code === '42703' || result.error.message?.includes('created_at'))) {
+      result = await client
+        .from('raffle_logs')
+        .select('*');
+    }
 
-    return data.map((row: any) => ({
-      logId: row.log_id,
-      drawNumber: row.draw_number,
-      timestamp: row.timestamp,
-      prizeId: row.prize_id,
-      prizeName: row.prize_name,
-      numberOfWinners: row.number_of_winners,
-      eligiblePoolSize: row.eligible_pool_size,
-      winnerIds: Array.isArray(row.winner_ids) ? row.winner_ids : [],
-      winnerNames: Array.isArray(row.winner_names) ? row.winner_names : [],
-      status: row.status,
-      admin: row.admin,
-      distributionMode: row.distribution_mode,
-      winnersPerDistrict: row.winners_per_district || undefined,
-      drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
-    }));
+    if (result.error) throw result.error;
+    if (!result.data) return [];
+
+    return result.data.map((row: any) => {
+      let winnerIds: string[] = [];
+      if (Array.isArray(row.winner_ids)) {
+        winnerIds = row.winner_ids;
+      } else if (typeof row.winner_ids === 'string') {
+        try {
+          const parsed = JSON.parse(row.winner_ids);
+          winnerIds = Array.isArray(parsed) ? parsed : [row.winner_ids];
+        } catch {
+          winnerIds = [row.winner_ids];
+        }
+      }
+
+      let winnerNames: string[] = [];
+      if (Array.isArray(row.winner_names)) {
+        winnerNames = row.winner_names;
+      } else if (typeof row.winner_names === 'string') {
+        try {
+          const parsed = JSON.parse(row.winner_names);
+          winnerNames = Array.isArray(parsed) ? parsed : [row.winner_names];
+        } catch {
+          winnerNames = [row.winner_names];
+        }
+      }
+
+      return {
+        logId: String(row.log_id || ''),
+        drawNumber: String(row.draw_number || ''),
+        timestamp: String(row.timestamp || ''),
+        prizeId: String(row.prize_id || ''),
+        prizeName: String(row.prize_name || ''),
+        numberOfWinners: Number(row.number_of_winners) || 1,
+        eligiblePoolSize: Number(row.eligible_pool_size) || 0,
+        winnerIds,
+        winnerNames,
+        status: (row.status || 'CONFIRMED') as any,
+        admin: String(row.admin || 'Admin'),
+        distributionMode: (row.distribution_mode || 'EQUAL_PER_DISTRICT') as any,
+        winnersPerDistrict: row.winners_per_district || undefined,
+        drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
+      };
+    });
   } catch (err) {
     console.error('Error fetching logs from Supabase:', err);
     return null;
@@ -1496,7 +1553,7 @@ export async function pushLogToSupabase(log: RaffleLog): Promise<boolean> {
   if (!client) return false;
 
   try {
-    const { error } = await client.from('raffle_logs').upsert({
+    const fullPayload = {
       log_id: log.logId,
       draw_number: log.drawNumber,
       timestamp: log.timestamp,
@@ -1511,7 +1568,36 @@ export async function pushLogToSupabase(log: RaffleLog): Promise<boolean> {
       distribution_mode: log.distributionMode,
       winners_per_district: log.winnersPerDistrict || null,
       draw_type: log.drawType || 'LIVE_STAGE'
-    });
+    };
+
+    let { error } = await client.from('raffle_logs').upsert(fullPayload, { onConflict: 'log_id' });
+
+    // Fallback if schema lacks newer columns (draw_type, winner_names, distribution_mode, etc.)
+    if (
+      error &&
+      (error.message?.includes('draw_type') ||
+        error.message?.includes('winner_names') ||
+        error.message?.includes('distribution_mode') ||
+        error.message?.includes('winners_per_district') ||
+        (error as any).code === '42703' ||
+        (error as any).code === 'PGRST204')
+    ) {
+      const basicPayload = {
+        log_id: log.logId,
+        draw_number: log.drawNumber,
+        timestamp: log.timestamp,
+        prize_id: log.prizeId,
+        prize_name: log.prizeName,
+        number_of_winners: log.numberOfWinners,
+        eligible_pool_size: log.eligiblePoolSize,
+        winner_ids: log.winnerIds,
+        status: log.status,
+        admin: log.admin
+      };
+      const retryResult = await client.from('raffle_logs').upsert(basicPayload, { onConflict: 'log_id' });
+      error = retryResult.error;
+    }
+
     if (error) throw error;
     return true;
   } catch (err) {
@@ -1523,6 +1609,59 @@ export async function pushLogToSupabase(log: RaffleLog): Promise<boolean> {
 // =========================================================================
 // EVENT PREPARATION & RESET HELPERS (Supabase Cloud Wipes & Normalization)
 // =========================================================================
+
+/**
+ * Generates structured RaffleLog audit records from existing confirmed winners.
+ * Used to backfill or connect Supabase raffle_logs when winners exist but audit logs are missing.
+ */
+export function generateLogsFromWinners(winners: Winner[]): RaffleLog[] {
+  if (!winners || winners.length === 0) return [];
+
+  const map = new Map<string, Winner[]>();
+  winners.forEach((w) => {
+    const key = w.drawNumber || 'DRAW-0001';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(w);
+  });
+
+  const generatedLogs: RaffleLog[] = [];
+  let logIndex = 1;
+
+  // Process in order of draw number
+  const sortedKeys = Array.from(map.keys()).sort((a, b) => {
+    const numA = parseInt(a.replace(/\D/g, '') || '0', 10);
+    const numB = parseInt(b.replace(/\D/g, '') || '0', 10);
+    return numA - numB;
+  });
+
+  sortedKeys.forEach((drawNumber) => {
+    const batchWinners = map.get(drawNumber) || [];
+    const first = batchWinners[0];
+    const logId = `LOG-${String(logIndex).padStart(4, '0')}`;
+    logIndex++;
+
+    const timestamp = first?.date && first?.time ? `${first.date} ${first.time}` : new Date().toISOString();
+    const isPreDraw = first?.drawType === 'PRE_DRAW' || drawNumber.toUpperCase().startsWith('PRE');
+
+    generatedLogs.push({
+      logId,
+      drawNumber,
+      timestamp,
+      prizeId: first?.prizeId || 'P001',
+      prizeName: first?.prizeName || 'Raffle Prize',
+      numberOfWinners: batchWinners.length,
+      eligiblePoolSize: batchWinners.length,
+      winnerIds: batchWinners.map((w) => w.participantId || w.winnerId),
+      winnerNames: batchWinners.map((w) => w.name),
+      status: 'CONFIRMED',
+      admin: isPreDraw ? 'Pre-Draw Committee' : 'Raffle Secretariat',
+      distributionMode: 'EQUAL_PER_DISTRICT',
+      drawType: isPreDraw ? 'PRE_DRAW' : 'LIVE_STAGE'
+    });
+  });
+
+  return generatedLogs.reverse(); // newest first
+}
 
 export async function clearWinnersFromSupabase(): Promise<{ success: boolean; error?: string }> {
   const client = getSupabase();
@@ -1924,24 +2063,38 @@ export function subscribeToRealtimeUpdates({
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'raffle_logs' },
+        { event: '*', schema: 'public', table: 'raffle_logs' },
         (payload) => {
+          if (payload.eventType === 'DELETE') return;
           if (onLogAdded && payload.new && (payload.new as any).log_id) {
             const row = payload.new as any;
+            let winnerIds: string[] = [];
+            if (Array.isArray(row.winner_ids)) {
+              winnerIds = row.winner_ids;
+            } else if (typeof row.winner_ids === 'string') {
+              try { const p = JSON.parse(row.winner_ids); winnerIds = Array.isArray(p) ? p : [row.winner_ids]; } catch { winnerIds = [row.winner_ids]; }
+            }
+            let winnerNames: string[] = [];
+            if (Array.isArray(row.winner_names)) {
+              winnerNames = row.winner_names;
+            } else if (typeof row.winner_names === 'string') {
+              try { const p = JSON.parse(row.winner_names); winnerNames = Array.isArray(p) ? p : [row.winner_names]; } catch { winnerNames = [row.winner_names]; }
+            }
             onLogAdded({
-              logId: row.log_id,
-              drawNumber: row.draw_number,
-              timestamp: row.timestamp,
-              prizeId: row.prize_id,
-              prizeName: row.prize_name,
-              numberOfWinners: row.number_of_winners,
-              eligiblePoolSize: row.eligible_pool_size,
-              winnerIds: Array.isArray(row.winner_ids) ? row.winner_ids : [],
-              winnerNames: Array.isArray(row.winner_names) ? row.winner_names : [],
-              status: row.status,
-              admin: row.admin,
-              distributionMode: row.distribution_mode,
-              winnersPerDistrict: row.winners_per_district || undefined
+              logId: String(row.log_id || ''),
+              drawNumber: String(row.draw_number || ''),
+              timestamp: String(row.timestamp || ''),
+              prizeId: String(row.prize_id || ''),
+              prizeName: String(row.prize_name || ''),
+              numberOfWinners: Number(row.number_of_winners) || 1,
+              eligiblePoolSize: Number(row.eligible_pool_size) || 0,
+              winnerIds,
+              winnerNames,
+              status: row.status || 'CONFIRMED',
+              admin: row.admin || 'Admin',
+              distributionMode: row.distribution_mode || 'EQUAL_PER_DISTRICT',
+              winnersPerDistrict: row.winners_per_district || undefined,
+              drawType: row.draw_type || (row.draw_number && String(row.draw_number).toUpperCase().startsWith('PRE') ? 'PRE_DRAW' : 'LIVE_STAGE')
             });
           }
         }

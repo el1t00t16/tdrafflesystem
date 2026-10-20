@@ -72,6 +72,10 @@ interface AdminDashboardProps {
   onMarkAsPrinted?: (winnerId: string) => void;
   onMarkBatchAsPrinted?: (winnerIds: string[]) => void;
   onRequeueWinner?: (winnerId: string) => void;
+  onRequeueBatch?: (drawNumber: string, winnerIds: string[]) => void;
+  onRefreshLogs?: () => Promise<void>;
+  onSyncLogsToCloud?: () => Promise<void>;
+  onReconstructLogs?: () => Promise<void>;
   eligiblePoolCount: number;
   isDrawing: boolean;
   distributionMode: DistributionMode;
@@ -117,6 +121,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onMarkAsPrinted,
   onMarkBatchAsPrinted,
   onRequeueWinner,
+  onRequeueBatch,
+  onRefreshLogs,
+  onSyncLogsToCloud,
+  onReconstructLogs,
   eligiblePoolCount,
   isDrawing,
   distributionMode,
@@ -244,6 +252,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onMarkAsPrinted={onMarkAsPrinted}
           onMarkBatchAsPrinted={onMarkBatchAsPrinted}
           onRequeueWinner={onRequeueWinner}
+          onRequeueBatch={onRequeueBatch}
         />
       )}
 
@@ -286,7 +295,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         />
       )}
 
-      {activeTab === 'logs' && <RaffleLogsView logs={logs} />}
+      {activeTab === 'logs' && (
+        <RaffleLogsView
+          logs={logs}
+          winners={winners}
+          onRefreshLogs={onRefreshLogs}
+          onSyncLogsToCloud={onSyncLogsToCloud}
+          onReconstructLogs={onReconstructLogs}
+        />
+      )}
 
       {activeTab === 'reports' && (
         <ReportsView
