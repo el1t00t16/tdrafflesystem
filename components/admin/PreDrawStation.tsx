@@ -42,7 +42,9 @@ import {
   ChevronRight,
   Play,
   Pause,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Save,
+  Download
 } from 'lucide-react';
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -70,6 +72,8 @@ interface PreDrawStationProps {
   onResetNonWinnersEligibility?: () => Promise<{ success: boolean; count: number; winnersKept: number; error?: string }>;
   allowMultipleWins: boolean;
   initialReelDuration?: number;
+  onExportBackup?: (note?: string) => void;
+  onCreateSnapshot?: (note?: string) => { success: boolean; message: string; timestamp?: string };
 }
 
 export const PreDrawStation: React.FC<PreDrawStationProps> = ({
@@ -80,7 +84,9 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
   onConfirmPreDrawBatch,
   onResetNonWinnersEligibility,
   allowMultipleWins,
-  initialReelDuration = 3
+  initialReelDuration = 3,
+  onExportBackup,
+  onCreateSnapshot
 }) => {
   // Local states
   const [selectedPrizeId, setSelectedPrizeId] = useState<string>(() => {
@@ -764,17 +770,50 @@ export const PreDrawStation: React.FC<PreDrawStationProps> = ({
               Keeps all <strong>{confirmedWinnersCount} Confirmed Winners</strong> locked (they cannot win on stage). Resets the remaining <strong>{nonWinnersCount} non-winners to INELIGIBLE</strong> so that teachers must physically scan badges at the entrance gate to qualify for the Live Stage!
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              soundSynthesizer.playClick();
-              setIsGatePrepModalOpen(true);
-            }}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
-          >
-            <UserCheck className="w-4 h-4 text-amber-300" />
-            <span>Prepare Roster for Gate</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onCreateSnapshot && (
+              <button
+                type="button"
+                onClick={() => {
+                  soundSynthesizer.playClick();
+                  const res = onCreateSnapshot('Post-Pre-Draw Official Snapshot');
+                  if (res.success) {
+                    setGateResetFeedback({ text: res.message });
+                  }
+                }}
+                className="px-3 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                title="Lock official pre-draw state before Friday morning rehearsal"
+              >
+                <Save className="w-3.5 h-3.5 text-black" />
+                <span>Save Snapshot</span>
+              </button>
+            )}
+            {onExportBackup && (
+              <button
+                type="button"
+                onClick={() => {
+                  soundSynthesizer.playClick();
+                  onExportBackup('Post-Pre-Draw Official Backup');
+                }}
+                className="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                title="Download full JSON backup file to your computer"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-200" />
+                <span>Download Backup</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                soundSynthesizer.playClick();
+                setIsGatePrepModalOpen(true);
+              }}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4 text-amber-300" />
+              <span>Prepare Roster for Gate</span>
+            </button>
+          </div>
         </div>
       )}
 

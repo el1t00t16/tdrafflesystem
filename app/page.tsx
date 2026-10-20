@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { AttendanceRecord, District, DistributionMode, EligibilityStatus, Participant, Prize, PrizeStatus, RaffleLog, SystemSettings, TemporaryDrawResult, Winner } from '../lib/types';
+import { AttendanceRecord, District, DistributionMode, EligibilityStatus, Participant, Prize, PrizeStatus, RaffleLog, SystemSettings, TemporaryDrawResult, Winner, SystemBackupPayload } from '../lib/types';
 import {
   INITIAL_PARTICIPANTS,
   INITIAL_PRIZES,
@@ -46,8 +46,13 @@ import {
   deleteParticipantFromSupabase,
   deleteParticipantsBatchFromSupabase,
   upsertSingleParticipantToSupabase,
-  syncWinnerPrintStatusToSupabase
+  syncWinnerPrintStatusToSupabase,
+  batchSyncWinnersToSupabase,
+  batchSyncLogsToSupabase,
+  restoreFullSystemSnapshotInSupabase,
+  purgeLiveStageDryRunFromSupabase
 } from '../lib/supabase';
+import { downloadJsonFile } from '../lib/utils';
 import {
   markWinnerAsPrintedInStorage,
   markWinnersBatchAsPrintedInStorage,
@@ -1035,6 +1040,7 @@ export default function Home() {
       date: dateStr,
       time: timeStr,
       claimStatus: 'UNCLAIMED',
+      drawType: 'LIVE_STAGE',
       isPrinted: false
     };
   });
@@ -2011,6 +2017,277 @@ export default function Home() {
     };
   };
 
+  
+  // =========================================================================
+  // SYSTEM BACKUP, SNAPSHOT & DRY RUN RECOVERY HANDLERS
+  // =========================================================================
+
+  const handleExportSystemBackup = (note?: string) => {
+    soundSynthesizer.playSuccess();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const dateStr = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const payload: SystemBackupPayload = {
+      version: '1.0',
+      system: "Municipal Teachers' Day 2026 Raffle System",
+      backupDate: new Date().toISOString(),
+      backupNote: note || `Full System Backup (${dateStr})`,
+      summary: {
+        totalParticipants: participants.length,
+        totalWinners: winners.length,
+        preDrawWinnersCount: winners.filter((w) => w.drawType === 'PRE_DRAW').length,
+        liveStageWinnersCount: winners.filter((w) => w.drawType === 'LIVE_STAGE').length,
+        totalPrizes: prizes.length,
+        totalLogs: logs.length
+      },
+      participants,
+      winners,
+      prizes,
+      logs,
+      attendanceRecords,
+      settings
+    };
+
+    const filename = `TeachersDay2026_Backup_${timestamp}.json`;
+    downloadJsonFile(filename, JSON.stringify(payload, null, 2));
+  };
+
+  const handleCreateBrowserSnapshot = (note?: string): { success: boolean; message: string; timestamp?: string } => {
+    soundSynthesizer.playSuccess();
+    const timestamp = new Date().toISOString();
+    const preDrawCount = winners.filter((w) => w.drawType === 'PRE_DRAW').length;
+    const payload: SystemBackupPayload = {
+      version: '1.0',
+      system: "Municipal Teachers' Day 2026 Raffle System",
+      backupDate: timestamp,
+      backupNote: note || 'Post-Pre-Draw Official Snapshot',
+      summary: {
+        totalParticipants: participants.length,
+        totalWinners: winners.length,
+        preDrawWinnersCount: preDrawCount,
+        liveStageWinnersCount: winners.filter((w) => w.drawType === 'LIVE_STAGE').length,
+        totalPrizes: prizes.length,
+        totalLogs: logs.length
+      },
+      participants,
+      winners,
+      prizes,
+      logs,
+      attendanceRecords,
+      settings
+    };
+
+    try {
+      localStorage.setItem('td26_golden_snapshot', JSON.stringify(payload));
+      return {
+        success: true,
+        timestamp,
+        message: `Snapshot saved! ${winners.length} winners (${preDrawCount} Pre-Draw) and ${participants.length.toLocaleString()} participants locked.`
+      };
+    } catch (err: any) {
+      console.error('Failed to save snapshot:', err);
+      return {
+        success: false,
+        message: `Failed to save snapshot to browser storage: ${err?.message || err}`
+      };
+    }
+  };
+
+  const applyRestoredBackup = async (backup: SystemBackupPayload): Promise<{ success: boolean; message: string }> => {
+    const normParticipants = normalizeParticipantList(backup.participants || []);
+    const normPrizes = normalizePrizeList(backup.prizes || []);
+    const normWinners = mergeWinnersWithPrintStatus(backup.winners || []);
+    const normLogs = backup.logs || [];
+    const normAttendance = backup.attendanceRecords || [];
+
+    setParticipants(normParticipants);
+    setPrizes(normPrizes);
+    setWinners(normWinners);
+    setLogs(normLogs);
+    setAttendanceRecords(normAttendance);
+    if (backup.settings) {
+      setSettings(backup.settings);
+    }
+    setDrawStatus('IDLE');
+    setRevealedWinners([]);
+    setTemporaryDrawResult(null);
+
+    try {
+      localStorage.setItem('td26_profiling_participants', JSON.stringify(normParticipants));
+      localStorage.setItem('td26_prizes', JSON.stringify(normPrizes));
+      localStorage.setItem('td26_winners', JSON.stringify(normWinners));
+      localStorage.setItem('td26_attendance_records', JSON.stringify(normAttendance));
+      if (backup.settings) {
+        localStorage.setItem('td26_settings', JSON.stringify(backup.settings));
+      }
+      localStorage.removeItem('td26_pending_draw_result');
+    } catch (e) {
+      console.error('LocalStorage sync error during restore:', e);
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const cloudRes = await restoreFullSystemSnapshotInSupabase({
+          participants: normParticipants,
+          winners: normWinners,
+          prizes: normPrizes,
+          logs: normLogs,
+          attendanceRecords: normAttendance
+        });
+        if (!cloudRes.success) {
+          return {
+            success: false,
+            message: `Restored locally, but Supabase Cloud sync had an issue: ${cloudRes.error}`
+          };
+        }
+      } catch (err: any) {
+        return {
+          success: false,
+          message: `Restored locally, but Supabase Cloud sync failed: ${err?.message || err}`
+        };
+      }
+    }
+
+    const preDrawCount = normWinners.filter((w) => w.drawType === 'PRE_DRAW').length;
+    return {
+      success: true,
+      message: `System successfully restored! Loaded ${normParticipants.length.toLocaleString()} participants, ${normWinners.length} winners (${preDrawCount} Pre-Draw), and ${normPrizes.length} prizes.`
+    };
+  };
+
+  const handleRestoreFromSnapshot = async (): Promise<{ success: boolean; message: string }> => {
+    soundSynthesizer.playCelebrationFanfare();
+    try {
+      const raw = localStorage.getItem('td26_golden_snapshot');
+      if (!raw) {
+        return { success: false, message: 'No snapshot found in browser storage.' };
+      }
+      const backup: SystemBackupPayload = JSON.parse(raw);
+      return await applyRestoredBackup(backup);
+    } catch (err: any) {
+      return { success: false, message: `Restore snapshot failed: ${err?.message || err}` };
+    }
+  };
+
+  const handleRestoreFromBackupFile = async (jsonString: string): Promise<{ success: boolean; message: string }> => {
+    soundSynthesizer.playCelebrationFanfare();
+    try {
+      const backup: SystemBackupPayload = JSON.parse(jsonString);
+      if (!backup.summary || !Array.isArray(backup.participants) || !Array.isArray(backup.winners)) {
+        return { success: false, message: 'Invalid backup file format. Missing required data arrays.' };
+      }
+      return await applyRestoredBackup(backup);
+    } catch (err: any) {
+      return { success: false, message: `Failed to parse backup file: ${err?.message || err}` };
+    }
+  };
+
+  const handleResetDryRunOnly = async (): Promise<{
+    success: boolean;
+    message: string;
+    liveStageRemoved?: number;
+    preDrawKept?: number;
+  }> => {
+    soundSynthesizer.playCelebrationFanfare();
+
+    const liveStageWinners = winners.filter((w) => w.drawType === 'LIVE_STAGE');
+    const preDrawWinners = winners.filter((w) => w.drawType !== 'LIVE_STAGE');
+    const liveStageWinnerIds = liveStageWinners.map((w) => w.winnerId);
+
+    const prizeRevertCounts: Record<string, number> = {};
+    liveStageWinners.forEach((w) => {
+      prizeRevertCounts[w.prizeId] = (prizeRevertCounts[w.prizeId] || 0) + 1;
+    });
+
+    const revertedPrizes = prizes.map((p) => {
+      const revertAmount = prizeRevertCounts[p.id] || 0;
+      if (revertAmount > 0) {
+        const newDrawn = Math.max(0, p.drawnQuantity - revertAmount);
+        const newRemaining = Math.min(p.quantity, p.remainingQuantity + revertAmount);
+        return {
+          ...p,
+          drawnQuantity: newDrawn,
+          remainingQuantity: newRemaining,
+          status: (newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED') as PrizeStatus
+        };
+      }
+      return p;
+    });
+
+    const preDrawParticipantIds = new Set(preDrawWinners.map((w) => w.participantId));
+    const updatedParticipants = participants.map((p) => {
+      if (preDrawParticipantIds.has(p.id)) {
+        return { ...p, winner: 'YES' as const };
+      }
+      return {
+        ...p,
+        winner: 'NO' as const,
+        claimed: 'NO' as const,
+        eligible: 'INELIGIBLE' as EligibilityStatus,
+        attendedAt: undefined,
+        attendedBy: undefined
+      };
+    });
+
+    const updatedWinners = preDrawWinners;
+    const updatedLogs = logs.filter((l) => l.drawType !== 'LIVE_STAGE');
+
+    setWinners(updatedWinners);
+    setPrizes(revertedPrizes);
+    setParticipants(updatedParticipants);
+    setLogs(updatedLogs);
+    setAttendanceRecords([]);
+    setDrawStatus('IDLE');
+    setRevealedWinners([]);
+    setTemporaryDrawResult(null);
+
+    try {
+      localStorage.setItem('td26_winners', JSON.stringify(updatedWinners));
+      localStorage.setItem('td26_prizes', JSON.stringify(revertedPrizes));
+      localStorage.setItem('td26_profiling_participants', JSON.stringify(updatedParticipants));
+      localStorage.removeItem('td26_attendance_records');
+      localStorage.removeItem('td26_pending_draw_result');
+    } catch (e) {
+      console.error('LocalStorage sync error during dry run reset:', e);
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const res = await purgeLiveStageDryRunFromSupabase({
+          liveStageWinnerIds,
+          revertedPrizes,
+          updatedParticipants
+        });
+        if (!res.success) {
+          return {
+            success: false,
+            liveStageRemoved: liveStageWinners.length,
+            preDrawKept: preDrawWinners.length,
+            message: `Dry run reset locally, but Supabase sync had an issue: ${res.error}`
+          };
+        }
+      } catch (err: any) {
+        return {
+          success: false,
+          liveStageRemoved: liveStageWinners.length,
+          preDrawKept: preDrawWinners.length,
+          message: `Dry run reset locally, but Supabase sync failed: ${err?.message || err}`
+        };
+      }
+    }
+
+    return {
+      success: true,
+      liveStageRemoved: liveStageWinners.length,
+      preDrawKept: preDrawWinners.length,
+      message: `Dry run test data purged! Removed ${liveStageWinners.length} live stage test winners, preserved ${preDrawWinners.length} Pre-Draw winners 100% intact, and reset non-winners to Ineligible for gate check-in.`
+    };
+  };
+
   if (!isMounted) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-neutral-400 font-mono text-xs">
@@ -2157,6 +2434,11 @@ export default function Home() {
             onForfeitPrize={handleForfeitPrize}
             onUpdateSettings={handleUpdateSettings}
             onPrepareNewEvent={handlePrepareNewEvent}
+            onExportBackup={handleExportSystemBackup}
+            onCreateSnapshot={handleCreateBrowserSnapshot}
+            onRestoreSnapshot={handleRestoreFromSnapshot}
+            onRestoreFromBackupFile={handleRestoreFromBackupFile}
+            onResetDryRunOnly={handleResetDryRunOnly}
             onMarkAsPrinted={handleMarkAsPrinted}
             onMarkBatchAsPrinted={handleMarkBatchAsPrinted}
             onRequeueWinner={handleRequeueWinner}

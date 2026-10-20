@@ -64,6 +64,11 @@ interface AdminDashboardProps {
   onForfeitPrize?: (winnerId: string, reason?: string) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
   onPrepareNewEvent: (options?: { resetAttendance?: boolean; deleteParticipants?: boolean }) => Promise<{ success: boolean; message: string }> | void;
+  onExportBackup?: (note?: string) => void;
+  onCreateSnapshot?: (note?: string) => { success: boolean; message: string; timestamp?: string };
+  onRestoreSnapshot?: () => Promise<{ success: boolean; message: string }>;
+  onRestoreFromBackupFile?: (jsonString: string) => Promise<{ success: boolean; message: string }>;
+  onResetDryRunOnly?: () => Promise<{ success: boolean; message: string; liveStageRemoved?: number; preDrawKept?: number }>;
   onMarkAsPrinted?: (winnerId: string) => void;
   onMarkBatchAsPrinted?: (winnerIds: string[]) => void;
   onRequeueWinner?: (winnerId: string) => void;
@@ -104,6 +109,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onForfeitPrize,
   onUpdateSettings,
   onPrepareNewEvent,
+  onExportBackup,
+  onCreateSnapshot,
+  onRestoreSnapshot,
+  onRestoreFromBackupFile,
+  onResetDryRunOnly,
   onMarkAsPrinted,
   onMarkBatchAsPrinted,
   onRequeueWinner,
@@ -221,6 +231,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onResetNonWinnersEligibility={onResetNonWinnersEligibility}
           allowMultipleWins={settings.allowMultipleWins}
           initialReelDuration={settings.preDrawDuration || 3}
+          onExportBackup={onExportBackup}
+          onCreateSnapshot={onCreateSnapshot}
         />
       )}
 
@@ -291,6 +303,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onPrepareNewEvent={onPrepareNewEvent}
           totalParticipants={participants.length}
           totalWinners={winners.length}
+          participants={participants}
+          winners={winners}
+          prizes={prizes}
+          logs={logs}
+          onExportBackup={onExportBackup}
+          onCreateSnapshot={onCreateSnapshot}
+          onRestoreSnapshot={onRestoreSnapshot}
+          onRestoreFromBackupFile={onRestoreFromBackupFile}
+          onResetDryRunOnly={onResetDryRunOnly}
         />
       )}
     </div>

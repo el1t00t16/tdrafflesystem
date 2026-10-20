@@ -55,7 +55,7 @@ export interface AttendanceRecord {
   method: 'CAMERA_QR' | 'BARCODE_GUN' | 'MANUAL_ENTRY';
 }
 
-export type DrawType = 'LIVE' | 'PRE_DRAW';
+export type DrawType = 'LIVE' | 'LIVE_STAGE' | 'PRE_DRAW';
 
 export type PrizeCategory = 'GRAND' | 'MINOR';
 
@@ -179,3 +179,24 @@ export interface ClaimStationSession {
   isLoggedIn: boolean;
 }
 
+
+export interface SystemBackupPayload {
+  version: string;
+  system: string;
+  backupDate: string;
+  backupNote?: string;
+  summary: {
+    totalParticipants: number;
+    totalWinners: number;
+    preDrawWinnersCount: number;
+    liveStageWinnersCount: number;
+    totalPrizes: number;
+    totalLogs: number;
+  };
+  participants: Participant[];
+  winners: Winner[];
+  prizes: Prize[];
+  logs: RaffleLog[];
+  attendanceRecords: AttendanceRecord[];
+  settings: SystemSettings;
+}

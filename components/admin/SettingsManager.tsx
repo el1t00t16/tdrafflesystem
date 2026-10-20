@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SystemSettings, Participant } from '../../lib/types';
+import { SystemSettings, Participant, Winner, Prize, RaffleLog, SystemBackupPayload } from '../../lib/types';
 import {
   Settings,
   ShieldCheck,
@@ -20,7 +20,14 @@ import {
   Smartphone,
   X,
   Sun,
-  Moon
+  Moon,
+  Download,
+  Save,
+  FileUp,
+  Archive,
+  PlayCircle,
+  HardDrive,
+  RotateCcw
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import {
@@ -38,6 +45,14 @@ interface SettingsManagerProps {
   totalParticipants: number;
   totalWinners: number;
   participants?: Participant[];
+  winners?: Winner[];
+  prizes?: Prize[];
+  logs?: RaffleLog[];
+  onExportBackup?: (note?: string) => void;
+  onCreateSnapshot?: (note?: string) => { success: boolean; message: string; timestamp?: string };
+  onRestoreSnapshot?: () => Promise<{ success: boolean; message: string }>;
+  onRestoreFromBackupFile?: (jsonString: string) => Promise<{ success: boolean; message: string }>;
+  onResetDryRunOnly?: () => Promise<{ success: boolean; message: string; liveStageRemoved?: number; preDrawKept?: number }>;
 }
 
 export const SettingsManager: React.FC<SettingsManagerProps> = ({
@@ -46,7 +61,15 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   onPrepareNewEvent,
   totalParticipants,
   totalWinners,
-  participants = []
+  participants = [],
+  winners = [],
+  prizes = [],
+  logs = [],
+  onExportBackup,
+  onCreateSnapshot,
+  onRestoreSnapshot,
+  onRestoreFromBackupFile,
+  onResetDryRunOnly
 }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -98,6 +121,174 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   const [quickSetupQrUrl, setQuickSetupQrUrl] = useState<string | null>(null);
   const [copiedQuickSetupUrl, setCopiedQuickSetupUrl] = useState(false);
   const [pinSavedFeedback, setPinSavedFeedback] = useState(false);
+
+  // Backup & Dry Run Recovery state
+  const preDrawWinnersCount = React.useMemo(() => {
+    return (winners || []).filter((w) => w.drawType === 'PRE_DRAW').length;
+  }, [winners]);
+
+  const liveStageWinnersCount = React.useMemo(() => {
+    return (winners || []).filter((w) => w.drawType === 'LIVE_STAGE').length;
+  }, [winners]);
+
+  const [snapshotInfo, setSnapshotInfo] = useState<{
+    exists: boolean;
+    timestamp?: string;
+    note?: string;
+    preDrawCount?: number;
+    totalParticipants?: number;
+  }>(() => {
+    if (typeof window === 'undefined') return { exists: false };
+    try {
+      const raw = localStorage.getItem('td26_golden_snapshot');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          exists: true,
+          timestamp: parsed.backupDate,
+          note: parsed.backupNote,
+          preDrawCount: parsed.summary?.preDrawWinnersCount ?? 0,
+          totalParticipants: parsed.summary?.totalParticipants ?? 0
+        };
+      }
+    } catch (e) {}
+    return { exists: false };
+  });
+
+  const refreshSnapshotInfo = () => {
+    try {
+      const raw = localStorage.getItem('td26_golden_snapshot');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setSnapshotInfo({
+          exists: true,
+          timestamp: parsed.backupDate,
+          note: parsed.backupNote,
+          preDrawCount: parsed.summary?.preDrawWinnersCount ?? 0,
+          totalParticipants: parsed.summary?.totalParticipants ?? 0
+        });
+      } else {
+        setSnapshotInfo({ exists: false });
+      }
+    } catch (e) {
+      setSnapshotInfo({ exists: false });
+    }
+  };
+
+  const [backupFeedback, setBackupFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [isOperating, setIsOperating] = useState(false);
+  const [showConfirmRestoreSnapshot, setShowConfirmRestoreSnapshot] = useState(false);
+  const [showConfirmDryRunReset, setShowConfirmDryRunReset] = useState(false);
+  const [showConfirmRestoreFile, setShowConfirmRestoreFile] = useState(false);
+  const [fileToRestoreContent, setFileToRestoreContent] = useState<string>('');
+  const [fileRestorePreview, setFileRestorePreview] = useState<any>(null);
+
+  const handleDownloadBackup = () => {
+    if (onExportBackup) {
+      onExportBackup('Full System Backup');
+      setBackupFeedback({
+        success: true,
+        message: 'System backup JSON file successfully generated and downloaded!'
+      });
+    }
+  };
+
+  const handleSaveSnapshot = () => {
+    if (onCreateSnapshot) {
+      const res = onCreateSnapshot('Post-Pre-Draw Official Snapshot');
+      setBackupFeedback(res);
+      refreshSnapshotInfo();
+    }
+  };
+
+  const handleExecuteRestoreSnapshot = async () => {
+    if (!onRestoreSnapshot) return;
+    setIsOperating(true);
+    setBackupFeedback(null);
+    try {
+      const res = await onRestoreSnapshot();
+      setBackupFeedback(res);
+      setShowConfirmRestoreSnapshot(false);
+      refreshSnapshotInfo();
+    } catch (err: any) {
+      setBackupFeedback({
+        success: false,
+        message: `Restore failed: ${err?.message || err}`
+      });
+    } finally {
+      setIsOperating(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const contentStr = event.target?.result as string;
+        const parsed = JSON.parse(contentStr);
+        if (!parsed.summary || !Array.isArray(parsed.participants)) {
+          setBackupFeedback({
+            success: false,
+            message: 'Invalid file format: selected file does not appear to be a valid Teachers Day raffle backup.'
+          });
+          return;
+        }
+        setFileToRestoreContent(contentStr);
+        setFileRestorePreview(parsed);
+        setShowConfirmRestoreFile(true);
+      } catch (err) {
+        setBackupFeedback({
+          success: false,
+          message: 'Failed to read backup file. Please select a valid JSON backup.'
+        });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleExecuteRestoreFile = async () => {
+    if (!onRestoreFromBackupFile || !fileToRestoreContent) return;
+    setIsOperating(true);
+    setBackupFeedback(null);
+    try {
+      const res = await onRestoreFromBackupFile(fileToRestoreContent);
+      setBackupFeedback(res);
+      setShowConfirmRestoreFile(false);
+      setFileToRestoreContent('');
+      setFileRestorePreview(null);
+      refreshSnapshotInfo();
+    } catch (err: any) {
+      setBackupFeedback({
+        success: false,
+        message: `File restore failed: ${err?.message || err}`
+      });
+    } finally {
+      setIsOperating(false);
+    }
+  };
+
+  const handleExecuteDryRunReset = async () => {
+    if (!onResetDryRunOnly) return;
+    setIsOperating(true);
+    setBackupFeedback(null);
+    try {
+      const res = await onResetDryRunOnly();
+      setBackupFeedback(res);
+      setShowConfirmDryRunReset(false);
+      refreshSnapshotInfo();
+    } catch (err: any) {
+      setBackupFeedback({
+        success: false,
+        message: `Dry run reset failed: ${err?.message || err}`
+      });
+    } finally {
+      setIsOperating(false);
+    }
+  };
 
   // Supabase State initialized lazily
   const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseCredentials().url);
@@ -489,6 +680,368 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
           </button>
         </form>
       </div>
+
+      {/* EVENT BACKUP, SNAPSHOT & DRY RUN RECOVERY PANEL */}
+      <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm space-y-5 relative border-t-4 border-t-[#38bdf8]">
+        <div className="flex items-center justify-between border-b border-[#1a1a1a]/15 dark:border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <Archive className="w-6 h-6 text-[#38bdf8]" />
+            <div>
+              <h4 className="text-xl sm:text-2xl font-black text-[#1a1a1a] dark:text-white uppercase tracking-tight leading-none">
+                EVENT BACKUP &amp; DRY RUN RECOVERY
+              </h4>
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-[0.2em] mt-1">
+                Thursday Pre-Draw Protection &amp; Friday Morning Rehearsal Management
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 px-2 py-0.5 font-bold uppercase border border-indigo-300 dark:border-indigo-800">
+              {preDrawWinnersCount} Pre-Draw Winners Locked
+            </span>
+          </div>
+        </div>
+
+        {/* Snapshot Status Info Banner */}
+        <div className="bg-[#f8f7f4] dark:bg-neutral-950 border border-[#1a1a1a]/15 dark:border-white/10 p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs font-bold text-[#1a1a1a] dark:text-white uppercase flex items-center gap-1.5">
+              <HardDrive className="w-4 h-4 text-amber-500" />
+              <span>In-Browser Official Snapshot Slot:</span>
+            </span>
+            <span className={`px-2 py-0.5 text-[10px] font-mono font-bold uppercase border ${
+              snapshotInfo.exists
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-400'
+                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-300'
+            }`}>
+              {snapshotInfo.exists ? 'SNAPSHOT ACTIVE' : 'NO SNAPSHOT SAVED'}
+            </span>
+          </div>
+
+          {snapshotInfo.exists ? (
+            <div className="text-xs text-neutral-600 dark:text-neutral-300 space-y-1 font-mono">
+              <div className="flex flex-wrap items-center gap-3">
+                <span>Saved: <strong>{new Date(snapshotInfo.timestamp || '').toLocaleString()}</strong></span>
+                <span>Pre-Draw Winners: <strong className="text-indigo-600 dark:text-indigo-400">{snapshotInfo.preDrawCount}</strong></span>
+                <span>Roster: <strong>{snapshotInfo.totalParticipants?.toLocaleString()}</strong></span>
+              </div>
+              {snapshotInfo.note && (
+                <div className="text-[11px] text-neutral-500 italic">
+                  Note: {snapshotInfo.note}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+              After finishing Thursday&apos;s Pre-Draw and resetting non-winners for gate check-in, click <strong>&quot;Save Post-Pre-Draw Snapshot&quot;</strong> to lock your official pre-draw state before Friday morning&apos;s rehearsal.
+            </p>
+          )}
+        </div>
+
+        {/* Feedback message banner */}
+        {backupFeedback && (
+          <div
+            className={`p-3.5 border text-xs font-mono flex items-start gap-2.5 animate-fade-in ${
+              backupFeedback.success
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-800 dark:text-emerald-200'
+                : 'bg-red-50 dark:bg-red-950/60 border-red-500 text-red-800 dark:text-red-200'
+            }`}
+          >
+            {backupFeedback.success ? (
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 leading-relaxed">
+              <span className="font-bold block uppercase text-[10px] tracking-wider mb-0.5">
+                {backupFeedback.success ? 'OPERATION SUCCESSFUL' : 'NOTICE'}
+              </span>
+              {backupFeedback.message}
+            </div>
+            <button
+              onClick={() => setBackupFeedback(null)}
+              className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Action Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+          {/* Action 1: Download Full Backup File */}
+          <div className="p-3.5 bg-[#f8f7f4] dark:bg-neutral-950 border border-emerald-500/30 flex flex-col justify-between gap-3">
+            <div>
+              <div className="font-black text-[#1a1a1a] dark:text-white uppercase flex items-center gap-1.5 text-xs">
+                <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>1. Download Full Backup (.json)</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-normal">
+                Exports all participants, confirmed pre-draw winners, remaining prize counts, logs, and settings into a JSON file. Save to flash drive or Google Drive.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDownloadBackup}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Backup File</span>
+            </button>
+          </div>
+
+          {/* Action 2: Save Post-Pre-Draw Snapshot */}
+          <div className="p-3.5 bg-[#f8f7f4] dark:bg-neutral-950 border border-amber-500/30 flex flex-col justify-between gap-3">
+            <div>
+              <div className="font-black text-[#1a1a1a] dark:text-white uppercase flex items-center gap-1.5 text-xs">
+                <Save className="w-4 h-4 text-amber-500" />
+                <span>2. Save Post-Pre-Draw Snapshot</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-normal">
+                Instantly snapshots current state inside browser storage. Locks {preDrawWinnersCount} pre-draw winners and roster before running tests on Friday morning.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveSnapshot}
+              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+            >
+              <Save className="w-4 h-4 text-black" />
+              <span>Save Browser Snapshot</span>
+            </button>
+          </div>
+
+          {/* Action 3: Restore Saved Snapshot */}
+          <div className="p-3.5 bg-[#f8f7f4] dark:bg-neutral-950 border border-indigo-500/30 flex flex-col justify-between gap-3">
+            <div>
+              <div className="font-black text-[#1a1a1a] dark:text-white uppercase flex items-center gap-1.5 text-xs">
+                <RotateCcw className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>3. Restore Saved Snapshot (1-Click)</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-normal">
+                Restores the locked Thursday post-pre-draw state. Replaces local cache and syncs to Supabase Cloud before the real event begins.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={!snapshotInfo.exists || isOperating}
+              onClick={() => setShowConfirmRestoreSnapshot(true)}
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Restore Official Snapshot</span>
+            </button>
+          </div>
+
+          {/* Action 4: Restore from Backup File */}
+          <div className="p-3.5 bg-[#f8f7f4] dark:bg-neutral-950 border border-sky-500/30 flex flex-col justify-between gap-3">
+            <div>
+              <div className="font-black text-[#1a1a1a] dark:text-white uppercase flex items-center gap-1.5 text-xs">
+                <FileUp className="w-4 h-4 text-sky-500" />
+                <span>4. Restore from Backup File (.json)</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-normal">
+                Upload a previously downloaded `.json` backup file. Useful if switching computers or recovering after a complete browser wipe.
+              </p>
+            </div>
+            <label className="w-full py-2.5 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-[#1a1a1a]/30 dark:border-white/20 text-[#1a1a1a] dark:text-white font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer">
+              <FileUp className="w-4 h-4 text-sky-500" />
+              <span>Upload Backup File</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isOperating}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Action 5: Dedicated Friday Morning Dry Run Cleanup Tool */}
+        <div className="p-4 bg-gradient-to-r from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/30 border-2 border-rose-500/40 space-y-2 font-mono">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <PlayCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              <span className="font-black text-xs uppercase text-rose-950 dark:text-rose-200">
+                FRIDAY MORNING DRY RUN REHEARSAL CLEANUP
+              </span>
+            </div>
+            <span className="text-[10px] bg-rose-600 text-white font-bold px-2 py-0.5 uppercase">
+              RECOMMENDED POST-REHEARSAL ACTION
+            </span>
+          </div>
+          <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+            Tested the Live Stage raffle and gate attendance during rehearsal? This button <strong>purges ONLY the {liveStageWinnersCount} live stage test winners and test gate check-ins</strong>, restores drawn prize quantities, and keeps all <strong>{preDrawWinnersCount} Thursday Pre-Draw Winners 100% locked and safe</strong>!
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              disabled={isOperating}
+              onClick={() => setShowConfirmDryRunReset(true)}
+              className="w-full py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset Friday Dry Run (Keep Pre-Draw Winners Intact)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL: Confirm Restore Snapshot */}
+      {showConfirmRestoreSnapshot && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#121212] border-2 border-indigo-600 max-w-md w-full p-6 space-y-4 shadow-xl font-mono text-xs">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black text-sm uppercase">
+                <RotateCcw className="w-5 h-5" />
+                <span>Restore Saved Snapshot?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmRestoreSnapshot(false)}
+                className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+              This will restore your official state saved on <strong>{new Date(snapshotInfo.timestamp || '').toLocaleString()}</strong>.
+            </p>
+            <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 p-3 space-y-1">
+              <div className="font-bold text-indigo-900 dark:text-indigo-200 uppercase">Snapshot Contents:</div>
+              <div>• {snapshotInfo.preDrawCount} Pre-Draw Winners locked</div>
+              <div>• {snapshotInfo.totalParticipants?.toLocaleString()} Participants roster</div>
+              <div>• Cloud database (Supabase) will be synchronized</div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowConfirmRestoreSnapshot(false)}
+                className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-bold uppercase cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isOperating}
+                onClick={handleExecuteRestoreSnapshot}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold uppercase flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                {isOperating && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>Confirm &amp; Restore</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Confirm Restore from File */}
+      {showConfirmRestoreFile && fileRestorePreview && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#121212] border-2 border-sky-600 max-w-md w-full p-6 space-y-4 shadow-xl font-mono text-xs">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-black text-sm uppercase">
+                <FileUp className="w-5 h-5" />
+                <span>Restore Backup File?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmRestoreFile(false);
+                  setFileToRestoreContent('');
+                  setFileRestorePreview(null);
+                }}
+                className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+              Backup created on: <strong>{new Date(fileRestorePreview.backupDate || '').toLocaleString()}</strong>
+            </p>
+            <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-3 space-y-1">
+              <div className="font-bold text-sky-900 dark:text-sky-200 uppercase">Backup File Details:</div>
+              <div>• {fileRestorePreview.summary?.totalParticipants?.toLocaleString()} Participants</div>
+              <div>• {fileRestorePreview.summary?.preDrawWinnersCount ?? fileRestorePreview.summary?.totalWinners} Confirmed Pre-Draw Winners</div>
+              <div>• {fileRestorePreview.summary?.totalPrizes} Prizes configured</div>
+              <div>• Cloud database (Supabase) will be overwritten with backup state</div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmRestoreFile(false);
+                  setFileToRestoreContent('');
+                  setFileRestorePreview(null);
+                }}
+                className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-bold uppercase cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isOperating}
+                onClick={handleExecuteRestoreFile}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold uppercase flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                {isOperating && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>Confirm &amp; Restore File</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Confirm Reset Friday Dry Run */}
+      {showConfirmDryRunReset && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#121212] border-2 border-rose-600 max-w-md w-full p-6 space-y-4 shadow-xl font-mono text-xs">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-black text-sm uppercase">
+                <PlayCircle className="w-5 h-5" />
+                <span>Reset Dry Run Rehearsal?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfirmDryRunReset(false)}
+                className="text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+              This cleans up all practice tests performed during Friday morning rehearsal:
+            </p>
+            <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 p-3 space-y-1.5">
+              <div className="font-bold text-rose-900 dark:text-rose-200 uppercase">Cleanup Summary:</div>
+              <div className="text-emerald-700 dark:text-emerald-300 font-bold">• Keeps all {preDrawWinnersCount} Thursday Pre-Draw Winners 100% SAFE</div>
+              <div>• Removes {liveStageWinnersCount} Live Stage test winners from rehearsal</div>
+              <div>• Restores drawn prize quantities back to available</div>
+              <div>• Clears test entrance gate scans (fresh gate start)</div>
+              <div>• Resets non-winners to Ineligible (ready for QR scan)</div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDryRunReset(false)}
+                className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-bold uppercase cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isOperating}
+                onClick={handleExecuteDryRunReset}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                {isOperating && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>Clean Dry Run Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Controlled Event Preparation / Reset Panel */}
       <div className="bg-white dark:bg-[#121212] border-2 border-[#1a1a1a] dark:border-white/10 p-6 shadow-sm space-y-4 relative border-t-4 border-t-[#1a1a1a] dark:border-t-white">

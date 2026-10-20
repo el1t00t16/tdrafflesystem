@@ -893,6 +893,253 @@ export async function batchSyncAttendanceToSupabase(
 }
 
 // =========================================================================
+// Helper: Batch upload winners to Supabase
+export async function batchSyncWinnersToSupabase(
+  winners: Winner[],
+  onProgress?: (processed: number, total: number) => void
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabase();
+  if (!client) return { success: false, count: 0, error: 'Supabase client is in Offline Mode.' };
+
+  try {
+    const batchSize = 100;
+    let processed = 0;
+
+    for (let i = 0; i < winners.length; i += batchSize) {
+      const batch = winners.slice(i, i + batchSize).map((w) => {
+        const payload: Record<string, any> = {
+          winner_id: String(w.winnerId).trim(),
+          participant_id: String(w.participantId).trim(),
+          deped_id: w.depedId ? String(w.depedId).trim() : null,
+          name: String(w.name || '').trim(),
+          district: String(w.district || 'SOUTH').trim(),
+          original_district: w.originalDistrict ? String(w.originalDistrict).trim() : null,
+          personnel_type: w.personnelType ? String(w.personnelType).trim() : null,
+          school: String(w.school || '').trim(),
+          position: String(w.position || '').trim(),
+          contact_number: w.contactNumber ? String(w.contactNumber).trim() : null,
+          email: w.email ? String(w.email).trim() : null,
+          sex: w.sex ? String(w.sex).trim() : null,
+          prize_id: String(w.prizeId).trim(),
+          prize_name: String(w.prizeName || '').trim(),
+          unit_value: Number(w.unitValue) || 0,
+          draw_number: String(w.drawNumber || 'DRAW-0001').trim(),
+          drawn_at: w.date && w.time ? `${w.date} ${w.time}` : new Date().toISOString(),
+          date: w.date || new Date().toISOString().slice(0, 10),
+          time: w.time || new Date().toLocaleTimeString('en-US', { hour12: false }),
+          claim_status: String(w.claimStatus || 'UNCLAIMED'),
+          claimed_at: w.claimedAt || null,
+          claimed_by: w.claimedBy || null,
+          id_presented: w.idPresented || null,
+          is_proxy_claim: Boolean(w.isProxyClaim),
+          proxy_name: w.proxyName || null,
+          proxy_relationship: w.proxyRelationship || null,
+          claim_notes: w.claimNotes || null,
+          forfeited_at: w.forfeitedAt || null,
+          forfeit_reason: w.forfeitReason || null,
+          draw_type: w.drawType || 'LIVE_STAGE',
+          is_printed: Boolean(w.isPrinted),
+          printed_at: w.printedAt || null,
+          printed_by: w.printedBy || null
+        };
+        return payload;
+      });
+
+      let { error } = await client.from('winners').upsert(batch, { onConflict: 'winner_id' });
+      if (
+        error &&
+        (error.message?.includes('forfeited_at') ||
+          error.message?.includes('draw_type') ||
+          error.message?.includes('is_printed') ||
+          (error as any).code === '42703' ||
+          (error as any).code === 'PGRST204')
+      ) {
+        const strippedBatch = batch.map(({ forfeited_at, forfeit_reason, draw_type, is_printed, printed_at, printed_by, ...rest }: any) => rest);
+        const retry = await client.from('winners').upsert(strippedBatch, { onConflict: 'winner_id' });
+        error = retry.error;
+      }
+
+      if (error) {
+        const msg = formatSupabaseError(error);
+        console.error('Supabase winners batch upload error:', msg, error);
+        throw new Error(msg);
+      }
+
+      processed += batch.length;
+      if (onProgress) onProgress(processed, winners.length);
+    }
+
+    return { success: true, count: processed };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Supabase winners batch upload error:', msg, err);
+    return { success: false, count: 0, error: msg };
+  }
+}
+
+// Helper: Batch upload logs to Supabase
+export async function batchSyncLogsToSupabase(
+  logs: RaffleLog[],
+  onProgress?: (processed: number, total: number) => void
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabase();
+  if (!client) return { success: false, count: 0, error: 'Supabase client is in Offline Mode.' };
+
+  try {
+    const batchSize = 100;
+    let processed = 0;
+
+    for (let i = 0; i < logs.length; i += batchSize) {
+      const batch = logs.slice(i, i + batchSize).map((log) => ({
+        log_id: String(log.logId).trim(),
+        draw_number: String(log.drawNumber).trim(),
+        timestamp: String(log.timestamp).trim(),
+        prize_id: String(log.prizeId).trim(),
+        prize_name: String(log.prizeName || '').trim(),
+        number_of_winners: Number(log.numberOfWinners) || 1,
+        eligible_pool_size: Number(log.eligiblePoolSize) || 0,
+        winner_ids: log.winnerIds || [],
+        winner_names: log.winnerNames || [],
+        status: String(log.status || 'CONFIRMED'),
+        admin: String(log.admin || 'Admin'),
+        distribution_mode: log.distributionMode || null,
+        winners_per_district: log.winnersPerDistrict || null,
+        draw_type: log.drawType || 'LIVE_STAGE'
+      }));
+
+      const { error } = await client.from('raffle_logs').upsert(batch, { onConflict: 'log_id' });
+      if (error) {
+        const msg = formatSupabaseError(error);
+        console.error('Supabase logs batch upload error:', msg, error);
+        throw new Error(msg);
+      }
+
+      processed += batch.length;
+      if (onProgress) onProgress(processed, logs.length);
+    }
+
+    return { success: true, count: processed };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Supabase logs batch upload error:', msg, err);
+    return { success: false, count: 0, error: msg };
+  }
+}
+
+// Helper: Full System Restore in Supabase Cloud
+export async function restoreFullSystemSnapshotInSupabase(
+  backup: {
+    participants: Participant[];
+    winners: Winner[];
+    prizes: Prize[];
+    logs: RaffleLog[];
+    attendanceRecords?: AttendanceRecord[];
+  },
+  onProgress?: (step: string) => void
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode.' };
+  }
+
+  try {
+    onProgress?.('Clearing existing winners and logs...');
+    const clearWinRes = await clearWinnersFromSupabase();
+    if (!clearWinRes.success) throw new Error(`Clear winners failed: ${clearWinRes.error}`);
+
+    const clearLogRes = await clearRaffleLogsFromSupabase();
+    if (!clearLogRes.success) throw new Error(`Clear logs failed: ${clearLogRes.error}`);
+
+    const clearAttRes = await clearAttendanceRecordsFromSupabase();
+    if (!clearAttRes.success) throw new Error(`Clear attendance failed: ${clearAttRes.error}`);
+
+    if (backup.winners && backup.winners.length > 0) {
+      onProgress?.(`Restoring ${backup.winners.length} winners to Cloud...`);
+      const winRes = await batchSyncWinnersToSupabase(backup.winners);
+      if (!winRes.success) throw new Error(`Restore winners failed: ${winRes.error}`);
+    }
+
+    if (backup.logs && backup.logs.length > 0) {
+      onProgress?.(`Restoring ${backup.logs.length} raffle logs to Cloud...`);
+      const logRes = await batchSyncLogsToSupabase(backup.logs);
+      if (!logRes.success) throw new Error(`Restore logs failed: ${logRes.error}`);
+    }
+
+    if (backup.attendanceRecords && backup.attendanceRecords.length > 0) {
+      onProgress?.(`Restoring ${backup.attendanceRecords.length} attendance records...`);
+      const attRes = await batchSyncAttendanceToSupabase(backup.attendanceRecords);
+      if (!attRes.success) throw new Error(`Restore attendance failed: ${attRes.error}`);
+    }
+
+    if (backup.prizes && backup.prizes.length > 0) {
+      onProgress?.(`Restoring ${backup.prizes.length} prizes inventory...`);
+      const prizeRes = await syncPrizesToSupabase(backup.prizes);
+      if (!prizeRes.success) throw new Error(`Restore prizes failed: ${prizeRes.error}`);
+    }
+
+    if (backup.participants && backup.participants.length > 0) {
+      onProgress?.(`Restoring ${backup.participants.length.toLocaleString()} participants...`);
+      const partRes = await batchSyncParticipantsToSupabase(backup.participants);
+      if (!partRes.success) throw new Error(`Restore participants failed: ${partRes.error}`);
+    }
+
+    onProgress?.('Full system snapshot restored successfully!');
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Supabase restore full snapshot error:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
+// Helper: Purge Live Stage Dry Run from Supabase while keeping Pre-Draw winners intact
+export async function purgeLiveStageDryRunFromSupabase(params: {
+  liveStageWinnerIds: string[];
+  revertedPrizes: Prize[];
+  updatedParticipants: Participant[];
+}): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, error: 'Supabase client is in Offline Mode.' };
+  }
+
+  try {
+    if (params.liveStageWinnerIds.length > 0) {
+      const { error: winErr } = await client
+        .from('winners')
+        .delete()
+        .in('winner_id', params.liveStageWinnerIds);
+      if (winErr) {
+        console.warn('Delete live stage winners notice:', winErr);
+      }
+    }
+
+    await clearAttendanceRecordsFromSupabase();
+
+    const { error: logErr } = await client
+      .from('raffle_logs')
+      .delete()
+      .eq('draw_type', 'LIVE_STAGE');
+    if (logErr) {
+      console.warn('Delete live stage logs notice:', logErr);
+    }
+
+    if (params.revertedPrizes.length > 0) {
+      await syncPrizesToSupabase(params.revertedPrizes);
+    }
+
+    if (params.updatedParticipants.length > 0) {
+      await batchSyncParticipantsToSupabase(params.updatedParticipants);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    const msg = formatSupabaseError(err);
+    console.error('Purge live stage dry run error:', msg, err);
+    return { success: false, error: msg };
+  }
+}
+
 // PULL / FETCH HELPERS (Supabase -> Client State)
 // =========================================================================
 
