@@ -115,7 +115,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 <Sparkles className="w-3 h-3 text-emerald-400" />
                 <span>
                   {printMode === '1_BY_1_LANDSCAPE'
-                    ? '1 by 1 Pre-Cut (10cm × 6cm)'
+                    ? '1 by 1 Pre-Cut (10.5cm × 6cm)'
                     : printMode === '8_UP_LETTER'
                     ? '8-Up Letter (10cm × 6cm)'
                     : printMode === '2_UP_QUARTER'
@@ -127,7 +127,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             <p className="text-[11px] text-neutral-400 truncate max-w-xl font-sans mt-0.5">
               {prizeName} •{' '}
               {printMode === '1_BY_1_LANDSCAPE'
-                ? `1 Stub per Page for Pre-Cut 10cm × 6cm Paper (${trayPosition === 'UPPER_LEFT' ? 'Upper-Left' : trayPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Centered'})`
+                ? `1 Stub per Page for Pre-Cut 10.5cm × 6cm Paper (${trayPosition === 'UPPER_LEFT' ? 'Upper-Left' : trayPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Centered'})`
                 : printMode === '8_UP_LETTER'
                 ? '8 Stubs per standard Letter Sheet'
                 : printMode === '2_UP_QUARTER'
@@ -149,10 +149,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Prints 1 stub per pre-cut 10cm x 6cm sheet (1 by 1 feeding, no clipped edges)"
+              title="Prints 1 stub per pre-cut 10.5cm x 6cm sheet (1 by 1 feeding, no clipped edges)"
             >
               <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-              <span>1 by 1 Pre-Cut (10×6cm)</span>
+              <span>1 by 1 Pre-Cut (10.5×6cm)</span>
             </button>
             <button
               type="button"
@@ -312,11 +312,11 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
                 break-after: auto !important;
               }
               .batch-page-1by1 .winner-stub-landscape-printable {
-                width: 10cm !important;
+                width: 10.5cm !important;
                 height: 6cm !important;
-                max-width: 10cm !important;
+                max-width: 10.5cm !important;
                 max-height: 6cm !important;
-                min-width: 10cm !important;
+                min-width: 10.5cm !important;
                 min-height: 6cm !important;
                 box-sizing: border-box !important;
                 background: white !important;
@@ -400,17 +400,17 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
           `
         }} />
 
-        {/* 1. 1 BY 1 PRE-CUT MODE (1 STUB PER PAGE ON PRE-CUT 10cm x 6cm PAPER) */}
+        {/* 1. 1 BY 1 PRE-CUT MODE (1 STUB PER PAGE ON PRE-CUT 10.5cm x 6cm PAPER) */}
         {printMode === '1_BY_1_LANDSCAPE' && sortedWinners.map((winner, idx) => (
           <div
             key={`page-1by1-${winner.winnerId}`}
             className="batch-page-1by1 bg-white shadow-xl border border-neutral-300 print:shadow-none print:border-0 rounded-none overflow-hidden mx-auto p-4 box-border flex flex-col justify-start print:m-0 print:p-0 print:block"
           >
             {/* Screen Page Header Indicator */}
-            <div className="w-full max-w-[12.5cm] pb-1 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
+            <div className="w-full max-w-[13.5cm] pb-1 mb-2 border-b border-neutral-200 text-neutral-500 font-mono text-[11px] uppercase flex justify-between items-center print:hidden">
               <span className="font-bold text-indigo-900 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Page {idx + 1} of {sortedWinners.length} • Pre-Cut (10cm × 6cm)</span>
+                <span>Page {idx + 1} of {sortedWinners.length} • Pre-Cut (10.5cm × 6cm)</span>
               </span>
               <span className="text-neutral-500">
                 Ticket: {winner.winnerId} ({winner.district})
@@ -418,7 +418,7 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
             </div>
 
             {/* Virtual Paper Sheet with selected Tray Alignment */}
-            <div className={`w-full max-w-[12.5cm] bg-white p-2 border border-neutral-200 shadow-inner flex ${
+            <div className={`w-full max-w-[13.5cm] bg-white p-2 border border-neutral-200 shadow-inner flex ${
               trayPosition === 'UPPER_LEFT' ? 'justify-start' : trayPosition === 'UPPER_RIGHT' ? 'justify-end' : 'justify-center'
             } print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}>
               <WinnerVerificationStub

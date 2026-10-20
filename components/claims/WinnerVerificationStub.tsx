@@ -87,7 +87,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
     window.print();
   };
 
-  // 1. Half Landscape Stub (10cm in width by 6cm in height — Balanced Official UI)
+  // 1. Half Landscape Stub (10.5cm in width by 6cm in height — Balanced Official UI)
   const landscapeContent = (
     <>
       {!isBatchChild && (
@@ -109,11 +109,11 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 display: none !important;
               }
               .winner-stub-landscape-printable {
-                width: 10cm !important;
+                width: 10.5cm !important;
                 height: 6cm !important;
-                max-width: 10cm !important;
+                max-width: 10.5cm !important;
                 max-height: 6cm !important;
-                min-width: 10cm !important;
+                min-width: 10.5cm !important;
                 min-height: 6cm !important;
                 box-sizing: border-box !important;
                 background: white !important;
@@ -137,9 +137,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         className={`bg-white text-black border-2 border-black flex flex-col justify-between text-[10px] leading-tight font-sans relative overflow-hidden select-none box-border ${
           isBatchChild && isGrid
             ? 'w-full h-full max-w-[9.6cm] max-h-[5.85cm] p-1.5'
-            : 'w-[10cm] max-w-[10cm] h-[6cm] max-h-[6cm] min-h-[6cm] p-1.5 winner-stub-landscape-printable'
+            : 'w-[10.5cm] max-w-[10.5cm] h-[6cm] max-h-[6cm] min-h-[6cm] p-1.5 winner-stub-landscape-printable'
         } print:border-black print:border-solid print:m-0`}
-        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '9.6cm', maxHeight: '5.85cm' } : { width: '10cm', height: '6cm' }}
+        style={isBatchChild && isGrid ? { width: '100%', height: '100%', maxWidth: '9.6cm', maxHeight: '5.85cm' } : { width: '10.5cm', height: '6cm' }}
       >
         {/* Top Government & Event Header */}
         <div className="border-b-2 border-black pb-1 mb-1 flex items-center justify-between gap-1.5 shrink-0 bg-white">
@@ -505,7 +505,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
             <ShieldCheck className="w-5 h-5 text-indigo-400" />
             <div>
               <span className="font-mono text-xs font-bold uppercase tracking-wider block">
-                {activeFormat === 'HALF_LANDSCAPE' ? 'Pre-Cut Stub (10cm × 6cm)' : '1/4 Letter (Portrait) Stub'}
+                {activeFormat === 'HALF_LANDSCAPE' ? 'Pre-Cut Stub (10.5cm × 6cm)' : '1/4 Letter (Portrait) Stub'}
               </span>
               <span className="font-mono text-[10px] text-neutral-400 block">
                 {activeFormat === 'HALF_LANDSCAPE' ? 'Position: ' + (printPosition === 'UPPER_LEFT' ? 'Upper-Left' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right' : 'Center') : 'Legacy 1/4 Sheet Format'}
@@ -562,9 +562,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 className={`px-2 py-1 uppercase font-bold transition-all cursor-pointer ${
                   activeFormat === 'HALF_LANDSCAPE' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'
                 }`}
-                title="10cm width by 6cm height (Safe for pre-cut slips, no clipped edges)"
+                title="10.5cm width by 6cm height (Safe for pre-cut slips, no clipped edges)"
               >
-                10cm × 6cm
+                10.5cm × 6cm
               </button>
               <button
                 type="button"
@@ -602,14 +602,14 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         {/* Stub Display with realistic placement preview */}
         <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block overflow-x-auto">
           {/* Virtual Sheet simulation */}
-          <div className={`w-full max-w-[12cm] bg-white p-3 border border-neutral-300 shadow-inner flex ${
+          <div className={`w-full max-w-[13cm] bg-white p-3 border border-neutral-300 shadow-inner flex ${
             printPosition === 'UPPER_LEFT' ? 'justify-start' : printPosition === 'UPPER_RIGHT' ? 'justify-end' : 'justify-center'
           } print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto`}>
             {stubContent}
           </div>
 
           <div className="mt-3 flex items-center gap-2 text-[10px] font-mono text-neutral-600 uppercase tracking-wider print:hidden">
-            <span>Size: 10cm × 6cm</span>
+            <span>Size: 10.5cm × 6cm</span>
             <span>•</span>
             <span className="font-bold text-indigo-900">
               Tray Feed: {printPosition === 'UPPER_LEFT' ? 'Upper-Left Corner' : printPosition === 'UPPER_RIGHT' ? 'Upper-Right Corner (Right Guide)' : 'Centered'}

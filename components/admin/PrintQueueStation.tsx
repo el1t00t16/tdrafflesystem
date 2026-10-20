@@ -233,7 +233,7 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
                   WINNER PRINT QUEUE &amp; STUB DISPATCH
                 </h2>
                 <span className="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[10px] font-mono font-bold px-2 py-0.5 border border-indigo-300 dark:border-indigo-800 uppercase">
-                  10cm × 6cm Pre-Cut (1 by 1)
+                  10.5cm × 6cm Pre-Cut (1 by 1)
                 </span>
               </div>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5 font-sans">
