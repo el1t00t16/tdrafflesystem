@@ -1105,7 +1105,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                       </div>
 
                       {/* Winner Names - Maximum Size for LED Readability (Single Stack Optimized to Show All Names) */}
-                      <div className="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 overflow-y-auto min-h-0 w-full scrollbar-none">
+                      <div className="flex-1 flex flex-col justify-center items-center py-2 sm:py-3 overflow-y-auto min-h-0 w-full scrollbar-none">
                         {hasWinners ? (
                           <div
                             className={`flex flex-col justify-center items-center w-full ${
@@ -1118,8 +1118,8 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                 : winners.length <= 8
                                 ? 'space-y-1.5 sm:space-y-2 lg:space-y-2.5'
                                 : winners.length <= 10
-                                ? 'space-y-1 sm:space-y-1.5 lg:space-y-2'
-                                : 'space-y-0.5 sm:space-y-1 lg:space-y-1.5'
+                                ? 'space-y-0.5 sm:space-y-1 lg:space-y-1.5'
+                                : 'space-y-0.5 sm:space-y-0.5 lg:space-y-1'
                             }`}
                           >
                             {winners.map((w, idx) => (
@@ -1137,7 +1137,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                       : winners.length <= 8
                                       ? 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-[2.4rem] 2xl:text-[2.85rem]'
                                       : winners.length <= 10
-                                      ? 'text-base sm:text-lg md:text-xl lg:text-[1.85rem] xl:text-[2.25rem] 2xl:text-[2.55rem]'
+                                      ? 'text-base sm:text-lg md:text-xl lg:text-[1.75rem] xl:text-[2.1rem] 2xl:text-[2.35rem]'
                                       : 'text-sm sm:text-base md:text-lg lg:text-xl xl:text-[1.85rem]'
                                   }`}
                                   title={w.fullName}
@@ -1152,14 +1152,6 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                             No winners in this district
                           </div>
                         )}
-                      </div>
-
-                      {/* Footer */}
-                      <div className="shrink-0 text-center pt-1.5 sm:pt-2 flex flex-col items-center">
-                        <div className="w-28 sm:w-44 h-0.5 bg-gradient-to-r from-transparent via-neutral-300 to-transparent mb-1 rounded-full" />
-                        <span className="font-mono text-[10px] sm:text-xs text-neutral-400 font-bold uppercase tracking-[0.25em]">
-                          MALUNGON MUNICIPAL TEACHERS&apos; DAY 2026
-                        </span>
                       </div>
                     </div>
 
