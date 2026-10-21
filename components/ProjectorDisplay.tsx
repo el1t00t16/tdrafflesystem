@@ -1104,79 +1104,49 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                         </div>
                       </div>
 
-                      {/* Winner Names - Maximum Size for LED Readability */}
+                      {/* Winner Names - Maximum Size for LED Readability (Single Stack Optimized to Show All Names) */}
                       <div className="flex-1 flex flex-col justify-center items-center py-1 sm:py-2 overflow-y-auto min-h-0 w-full scrollbar-none">
                         {hasWinners ? (
-                          winners.length <= 5 ? (
-                            /* 1 to 5 Winners: Single Column Dramatic Stack */
-                            <div className={`flex flex-col justify-center items-center w-full ${
+                          <div
+                            className={`flex flex-col justify-center items-center w-full ${
                               winners.length === 1
                                 ? 'space-y-0'
                                 : winners.length <= 3
                                 ? 'space-y-3 sm:space-y-5 lg:space-y-6'
-                                : 'space-y-2 sm:space-y-3 lg:space-y-4'
-                            }`}>
-                              {winners.map((w, idx) => (
-                                <div key={idx} className="text-center w-full animate-fade-in">
-                                  <div
-                                    className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-[1.12] drop-shadow-sm ${
-                                      winners.length === 1
-                                        ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl'
-                                        : winners.length <= 3
-                                        ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
-                                        : 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl'
-                                    }`}
-                                  >
-                                    {w.fullName}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : winners.length <= 12 ? (
-                            /* 6 to 12 Winners (e.g. 10 Winners per District): 2-Column Balanced Grid */
-                            <div className="w-full max-w-[98%] 2xl:max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-8 lg:gap-x-12 gap-y-1.5 sm:gap-y-2 lg:gap-y-2.5 items-center justify-center">
-                              {winners.map((w, idx) => (
+                                : winners.length <= 5
+                                ? 'space-y-2 sm:space-y-3 lg:space-y-4'
+                                : winners.length <= 8
+                                ? 'space-y-1 sm:space-y-1.5 lg:space-y-2'
+                                : winners.length <= 10
+                                ? 'space-y-0.5 sm:space-y-1 lg:space-y-1.5'
+                                : 'space-y-0.5 sm:space-y-0.5 lg:space-y-1'
+                            }`}
+                          >
+                            {winners.map((w, idx) => (
+                              <div key={idx} className="text-center w-full animate-fade-in">
                                 <div
-                                  key={idx}
-                                  className="text-center w-full animate-fade-in flex items-center justify-center gap-2 sm:gap-3 px-3 py-1 sm:py-1.5 rounded-lg bg-neutral-50/80 border border-neutral-200/80 shadow-2xs hover:bg-orange-50/40 transition-colors"
+                                  className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-[1.12] drop-shadow-sm truncate ${
+                                    winners.length === 1
+                                      ? 'text-5xl sm:text-7xl md:text-8xl lg:text-9xl'
+                                      : winners.length <= 3
+                                      ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
+                                      : winners.length <= 5
+                                      ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl'
+                                      : winners.length <= 7
+                                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                                      : winners.length <= 8
+                                      ? 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-[2rem]'
+                                      : winners.length <= 10
+                                      ? 'text-base sm:text-lg md:text-xl lg:text-2xl xl:text-[1.85rem]'
+                                      : 'text-sm sm:text-base md:text-lg lg:text-xl'
+                                  }`}
+                                  title={w.fullName}
                                 >
-                                  <span className="font-mono text-xs sm:text-sm lg:text-base font-black text-[#ff6a00] bg-[#ff6a00]/10 px-2 py-0.5 rounded-md shrink-0">
-                                    #{idx + 1}
-                                  </span>
-                                  <div
-                                    className={`font-winner font-black text-[#111827] uppercase tracking-wide leading-tight drop-shadow-sm truncate ${
-                                      winners.length <= 8
-                                        ? 'text-lg sm:text-xl md:text-2xl lg:text-3xl'
-                                        : 'text-base sm:text-lg md:text-xl lg:text-2xl xl:text-[1.65rem]'
-                                    }`}
-                                    title={w.fullName}
-                                  >
-                                    {w.fullName}
-                                  </div>
+                                  {w.fullName}
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            /* 13+ Winners: 3-Column Compact Grid */
-                            <div className="w-full max-w-[99%] mx-auto grid grid-cols-2 sm:grid-cols-3 gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-1.5 items-center justify-center">
-                              {winners.map((w, idx) => (
-                                <div
-                                  key={idx}
-                                  className="text-center w-full animate-fade-in flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-0.5 sm:py-1 rounded-md bg-neutral-50/80 border border-neutral-200/70"
-                                >
-                                  <span className="font-mono text-[10px] sm:text-xs font-black text-[#ff6a00] shrink-0">
-                                    #{idx + 1}
-                                  </span>
-                                  <div
-                                    className="font-winner font-black text-[#111827] uppercase tracking-wide leading-tight drop-shadow-sm truncate text-xs sm:text-sm md:text-base lg:text-lg"
-                                    title={w.fullName}
-                                  >
-                                    {w.fullName}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )
+                              </div>
+                            ))}
+                          </div>
                         ) : (
                           <div className="font-mono text-lg sm:text-2xl text-[#1a1a1a]/30 text-center font-semibold tracking-wider uppercase">
                             No winners in this district
@@ -1312,7 +1282,7 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                     : 'text-xs sm:text-xs md:text-sm lg:text-base'
                                 }`}
                               >
-                                {winners.length > 3 ? `${idx + 1}. ${w.fullName}` : w.fullName}
+                                {w.fullName}
                               </div>
                               {w.school && winners.length <= 5 && (
                                 <div className="font-mono text-[10px] sm:text-xs md:text-sm text-[#ff6a00] font-bold uppercase tracking-wider truncate mt-0.5">
