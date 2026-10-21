@@ -1116,10 +1116,10 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                 : winners.length <= 5
                                 ? 'space-y-2 sm:space-y-3 lg:space-y-4'
                                 : winners.length <= 8
-                                ? 'space-y-1 sm:space-y-1.5 lg:space-y-2'
+                                ? 'space-y-1.5 sm:space-y-2 lg:space-y-2.5'
                                 : winners.length <= 10
-                                ? 'space-y-0.5 sm:space-y-1 lg:space-y-1.5'
-                                : 'space-y-0.5 sm:space-y-0.5 lg:space-y-1'
+                                ? 'space-y-1 sm:space-y-1.5 lg:space-y-2'
+                                : 'space-y-0.5 sm:space-y-1 lg:space-y-1.5'
                             }`}
                           >
                             {winners.map((w, idx) => (
@@ -1131,14 +1131,14 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                                       : winners.length <= 3
                                       ? 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl'
                                       : winners.length <= 5
-                                      ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl'
+                                      ? 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-[4.5rem]'
                                       : winners.length <= 7
-                                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl'
+                                      ? 'text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.75rem] 2xl:text-[3.2rem]'
                                       : winners.length <= 8
-                                      ? 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-[2rem]'
+                                      ? 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-[2.4rem] 2xl:text-[2.85rem]'
                                       : winners.length <= 10
-                                      ? 'text-base sm:text-lg md:text-xl lg:text-2xl xl:text-[1.85rem]'
-                                      : 'text-sm sm:text-base md:text-lg lg:text-xl'
+                                      ? 'text-base sm:text-lg md:text-xl lg:text-[1.85rem] xl:text-[2.25rem] 2xl:text-[2.55rem]'
+                                      : 'text-sm sm:text-base md:text-lg lg:text-xl xl:text-[1.85rem]'
                                   }`}
                                   title={w.fullName}
                                 >
