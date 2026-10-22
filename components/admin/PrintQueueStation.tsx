@@ -976,7 +976,9 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
           onClose={() => setActiveBatchPrint(null)}
           onMarkBatchPrinted={(winnerIds) => {
             onMarkBatchAsPrinted(winnerIds);
-            setActiveBatchPrint(null);
+            setTimeout(() => {
+              setActiveBatchPrint(null);
+            }, 300);
           }}
         />
       )}
@@ -989,7 +991,9 @@ export const PrintQueueStation: React.FC<PrintQueueStationProps> = ({
           onClose={() => setActiveSinglePrint(null)}
           onMarkPrinted={(id) => {
             onMarkAsPrinted(id);
-            setActiveSinglePrint(null);
+            setTimeout(() => {
+              setActiveSinglePrint(null);
+            }, 300);
           }}
         />
       )}

@@ -76,10 +76,10 @@ export const BatchPrintDocument: React.FC<BatchPrintDocumentProps> = ({
   }, [onClose]);
 
   const handlePrintAll = () => {
+    window.print();
     if (onMarkBatchPrinted && sortedWinners.length > 0) {
       onMarkBatchPrinted(sortedWinners.map((w) => w.winnerId));
     }
-    window.print();
   };
 
   const totalPages =

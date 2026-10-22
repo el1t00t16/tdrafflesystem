@@ -81,10 +81,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
   }, [isModal, onClose]);
 
   const handlePrint = () => {
+    window.print();
     if (onMarkPrinted) {
       onMarkPrinted(winner.winnerId);
     }
-    window.print();
   };
 
   // 1. Half Landscape Stub (Exact 10cm in width by 6cm in height inside 11cm x 7cm pre-cut paper / 1/8 Letter)
@@ -103,12 +103,55 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 color: black !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                height: 100% !important;
-                width: 100% !important;
-                position: relative !important;
+                display: block !important;
+                position: static !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
               }
               .print\\:hidden {
                 display: none !important;
+              }
+              .single-stub-modal-backdrop {
+                position: static !important;
+                display: block !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                width: 100% !important;
+                height: auto !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+              }
+              .single-stub-modal-dialog {
+                border: none !important;
+                box-shadow: none !important;
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                display: block !important;
+                background: white !important;
+              }
+              .single-stub-page-wrapper {
+                position: relative !important;
+                width: ${printPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
+                height: ${printPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
+                max-width: ${printPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
+                max-height: ${printPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
+                min-width: ${printPosition === 'EXACT_11X7' ? '11cm' : '8.5in'} !important;
+                min-height: ${printPosition === 'EXACT_11X7' ? '7cm' : '11in'} !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                display: block !important;
+                clear: both !important;
+                overflow: visible !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
               }
               .winner-stub-landscape-printable {
                 width: 10cm !important;
@@ -308,9 +351,47 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 margin: 0 !important;
                 padding: 0 !important;
                 height: auto !important;
+                display: block !important;
+                position: static !important;
+                overflow: visible !important;
               }
               .print\\:hidden {
                 display: none !important;
+              }
+              .single-stub-modal-backdrop {
+                position: static !important;
+                display: block !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                width: 100% !important;
+                height: auto !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+              }
+              .single-stub-modal-dialog {
+                border: none !important;
+                box-shadow: none !important;
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                display: block !important;
+                background: white !important;
+              }
+              .single-stub-page-wrapper {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                display: block !important;
+                clear: both !important;
+                overflow: visible !important;
               }
               .winner-stub-printable {
                 width: 4.0in !important;
@@ -501,9 +582,9 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) onClose();
       }}
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex justify-center items-center print:p-0 print:m-0 print:bg-white print:static print:block"
+      className="single-stub-modal-backdrop fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex justify-center items-center print:p-0 print:m-0 print:bg-white print:static print:block print:overflow-visible print:backdrop-blur-none"
     >
-      <div className={`bg-white text-black w-full ${activeFormat === 'HALF_LANDSCAPE' ? 'max-w-2xl' : 'max-w-md'} shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none print:w-auto print:block print:m-0 print:p-0 transition-all`}>
+      <div className={`single-stub-modal-dialog bg-white text-black w-full ${activeFormat === 'HALF_LANDSCAPE' ? 'max-w-2xl' : 'max-w-md'} shadow-2xl border-2 border-black overflow-hidden print:border-0 print:shadow-none print:max-w-none print:w-auto print:block print:m-0 print:p-0 print:overflow-visible transition-all`}>
         {/* Top Control Bar (Screen only) */}
         <div className="bg-[#1a1a1a] text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2 border-b-2 border-black print:hidden">
           <div className="flex items-center gap-2">
@@ -625,10 +706,10 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
         </div>
 
         {/* Stub Display with realistic placement preview */}
-        <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block overflow-x-auto">
+        <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-neutral-200 print:bg-white print:p-0 print:m-0 print:block print:overflow-visible overflow-x-auto">
           {activeFormat === 'HALF_LANDSCAPE' ? (
             /* Virtual Pre-cut Paper (11cm x 7cm) Simulation */
-            <div className="flex flex-col items-center print:block print:w-full print:m-0 print:p-0">
+            <div className="single-stub-page-wrapper flex flex-col items-center print:block print:m-0 print:p-0 print:overflow-visible">
               <div className="mb-2 flex items-center gap-2 text-[10px] font-mono uppercase text-neutral-600 print:hidden">
                 <span className="font-bold text-neutral-800 bg-white px-2 py-0.5 border border-neutral-300">
                   Pre-Cut Paper: 11cm × 7cm
@@ -645,7 +726,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                     : printPosition === 'UPPER_RIGHT'
                     ? 'justify-end'
                     : 'justify-center'
-                } items-center relative box-border print:border-0 print:shadow-none print:!p-0 print:!m-0 print:!w-full print:!min-h-0 print:block print:static`}
+                } items-center relative box-border print:border-0 print:shadow-none print:!p-0 print:!m-0 print:!w-full print:!min-h-0 print:block print:static print:overflow-visible`}
                 style={{ width: '11cm', minHeight: '7cm', padding: '0.5cm' }}
               >
                 <div className="absolute -top-3 left-2 bg-neutral-800 text-white text-[8px] font-mono px-1.5 py-0.5 uppercase tracking-wider print:hidden">
@@ -655,7 +736,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
               </div>
             </div>
           ) : (
-            <div className="w-full max-w-[13cm] bg-white p-3 border border-neutral-300 shadow-inner flex justify-center print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto">
+            <div className="single-stub-page-wrapper w-full max-w-[13cm] bg-white p-3 border border-neutral-300 shadow-inner flex justify-center print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-auto print:overflow-visible">
               {stubContent}
             </div>
           )}

@@ -1663,7 +1663,9 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
           onClose={() => setVerifyingStubWinner(null)}
           onMarkPrinted={(id) => {
             if (onMarkAsPrinted) onMarkAsPrinted(id);
-            setVerifyingStubWinner(null);
+            setTimeout(() => {
+              setVerifyingStubWinner(null);
+            }, 300);
           }}
         />
       )}
