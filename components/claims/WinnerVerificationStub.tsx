@@ -254,11 +254,11 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 pt-0.5 text-[7.5px]">
-                <span className="font-black font-mono text-[7px] text-white uppercase bg-black px-1.5 py-0.5 shrink-0 tracking-wide leading-none">
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="font-black font-mono text-[11px] sm:text-[11.5px] text-white uppercase bg-black px-2 py-0.5 shrink-0 tracking-wider leading-none">
                   {winner.district}
                 </span>
-                <span className="font-bold text-neutral-900 truncate">
+                <span className="font-bold text-neutral-900 truncate text-[8px] sm:text-[8.5px]">
                   {winner.position}
                 </span>
               </div>
@@ -469,7 +469,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
                 <span className="text-[7px] font-mono uppercase text-neutral-500 font-bold block">
                   DISTRICT
                 </span>
-                <span className="font-black font-mono text-black uppercase">{winner.district}</span>
+                <span className="font-black font-mono text-[11.5px] text-white uppercase bg-black px-1.5 py-0.5 inline-block leading-none mt-0.5">{winner.district}</span>
               </div>
               <div>
                 <span className="text-[7px] font-mono uppercase text-neutral-500 font-bold block">
@@ -526,7 +526,7 @@ export const WinnerVerificationStub: React.FC<WinnerVerificationStubProps> = ({
               <span className="text-[7px] text-neutral-600 uppercase font-black tracking-wider">
                 DISTRICT:
               </span>
-              <span className="px-1.5 py-0.5 bg-black text-white font-mono font-black text-[9px] uppercase tracking-widest leading-none">
+              <span className="px-2 py-0.5 bg-black text-white font-mono font-black text-[11px] uppercase tracking-wider leading-none">
                 {winner.district}
               </span>
             </div>
