@@ -969,13 +969,13 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
             </div>
 
             {/* Massive Cinema-Scale Hero Card (Guaranteed Uniform & Balanced UI) */}
-            <div className={`my-2 sm:my-3 flex-1 rounded-3xl p-5 sm:p-8 lg:p-10 flex flex-col justify-between text-center min-h-0 overflow-hidden transition-all duration-300 ${
+            <div className={`my-2 sm:my-3 flex-1 rounded-3xl p-5 sm:p-8 lg:p-10 flex flex-col justify-center items-center text-center min-h-0 overflow-hidden transition-all duration-300 ${
               isDarkMode
                 ? 'bg-gradient-to-b from-[#16171d] via-[#101115] to-[#0a0a0d] border-3 sm:border-4 border-[#ff6a00] shadow-[0_0_80px_rgba(255,106,0,0.28)]'
                 : 'bg-gradient-to-b from-[#ffffff] via-[#faf8f5] to-[#f4f0e8] border-3 sm:border-4 border-[#ff6a00] shadow-[0_12px_60px_rgba(255,106,0,0.18)]'
             } ${fadeCardClasses}`}>
               {/* Top Tier: Clean Award Pill */}
-              <div className="shrink-0 flex items-center justify-center gap-2.5 flex-wrap">
+              <div className="shrink-0 flex items-center justify-center gap-2.5 flex-wrap mb-2 sm:mb-3">
                 <div className={`inline-flex items-center gap-2 px-4 py-1.5 font-mono font-black text-xs sm:text-sm uppercase tracking-widest rounded-full shadow-md ${
                   isLiveWinner(currentSpotlightWinner) ? 'bg-amber-400 text-black' : 'bg-[#ff6a00] text-black'
                 }`}>
@@ -990,37 +990,13 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 )}
               </div>
 
-              {/* Middle Tier: Huge Name with Dynamic Proportional Typography & Balanced Spacing */}
-              <div className="my-auto py-3 sm:py-5 flex-1 flex flex-col justify-center items-center min-h-0 overflow-hidden">
-                <h2 className={`font-winner font-black uppercase tracking-tight max-w-full break-words px-2 ${
-                  isDarkMode ? 'text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]' : 'text-neutral-950 drop-shadow-sm'
-                } ${getHeroNameFontClass(currentSpotlightWinner.name)}`}>
-                  {currentSpotlightWinner.name}
-                </h2>
-                <div className={`text-lg sm:text-2xl lg:text-3xl xl:text-4xl font-semibold mt-2 sm:mt-3 font-mono truncate max-w-full flex items-center justify-center gap-2 ${
-                  isDarkMode ? 'text-amber-300' : 'text-amber-700 font-bold'
-                }`}>
-                  <School className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 opacity-80" />
-                  <span>{currentSpotlightWinner.school}</span>
-                </div>
-                {currentSpotlightWinner.position && (
-                  <div className={`mt-2 sm:mt-3 inline-flex items-center gap-2 px-3.5 py-1 rounded-full font-mono text-xs sm:text-sm uppercase tracking-wider ${
-                    isDarkMode ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-black/5 border border-black/10 text-neutral-700'
-                  }`}>
-                    <span>{currentSpotlightWinner.position}</span>
-                    <span className="opacity-40">•</span>
-                    <span>ID: <strong className={isDarkMode ? 'text-indigo-400 font-bold' : 'text-indigo-600 font-bold'}>{currentSpotlightWinner.winnerId || currentSpotlightWinner.depedId}</strong></span>
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom Tier: Balanced Grand Awarded Prize Box (No Redundant Cash Value) */}
-              <div className={`shrink-0 max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full mx-auto p-4 sm:p-5 rounded-2xl shadow-xl transition-colors ${
+              {/* Awarded Prize Box (Positioned directly above Winner Name with close, tight spacing) */}
+              <div className={`shrink-0 max-w-2xl sm:max-w-3xl lg:max-w-4xl w-full mx-auto p-3 sm:p-4 rounded-2xl shadow-xl transition-colors mb-3 sm:mb-4 ${
                 isDarkMode 
                   ? 'bg-black/70 border-2 border-amber-500/70 shadow-[0_0_40px_rgba(255,106,0,0.18)] text-white' 
                   : 'bg-white/95 border-2 border-amber-500/60 shadow-lg text-neutral-900'
               }`}>
-                <span className={`text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] block mb-1 font-bold ${
+                <span className={`text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] block mb-0.5 font-bold ${
                   isDarkMode ? 'text-neutral-400' : 'text-neutral-600'
                 }`}>
                   {isLiveWinner(currentSpotlightWinner) ? 'LIVE STAGE RAFFLE AWARD' : 'OFFICIAL PRE-DRAW AWARD'}
@@ -1028,6 +1004,30 @@ export const PreDrawWinnerViewer: React.FC<PreDrawWinnerViewerProps> = ({
                 <span className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black uppercase text-[#ff6a00] block tracking-wide truncate">
                   {currentSpotlightWinner.prizeName}
                 </span>
+              </div>
+
+              {/* Middle Tier: Huge Name with Dynamic Proportional Typography & Balanced Spacing */}
+              <div className="py-1 sm:py-2 flex flex-col justify-center items-center min-h-0 overflow-hidden max-w-full">
+                <h2 className={`font-winner font-black uppercase tracking-tight max-w-full break-words px-2 ${
+                  isDarkMode ? 'text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]' : 'text-neutral-950 drop-shadow-sm'
+                } ${getHeroNameFontClass(currentSpotlightWinner.name)}`}>
+                  {currentSpotlightWinner.name}
+                </h2>
+                <div className={`text-lg sm:text-2xl lg:text-3xl xl:text-4xl font-semibold mt-1.5 sm:mt-2.5 font-mono truncate max-w-full flex items-center justify-center gap-2 ${
+                  isDarkMode ? 'text-amber-300' : 'text-amber-700 font-bold'
+                }`}>
+                  <School className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 opacity-80" />
+                  <span>{currentSpotlightWinner.school}</span>
+                </div>
+                {currentSpotlightWinner.position && (
+                  <div className={`mt-2 sm:mt-2.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full font-mono text-xs sm:text-sm uppercase tracking-wider ${
+                    isDarkMode ? 'bg-white/5 border border-white/10 text-neutral-300' : 'bg-black/5 border border-black/10 text-neutral-700'
+                  }`}>
+                    <span>{currentSpotlightWinner.position}</span>
+                    <span className="opacity-40">•</span>
+                    <span>ID: <strong className={isDarkMode ? 'text-indigo-400 font-bold' : 'text-indigo-600 font-bold'}>{currentSpotlightWinner.winnerId || currentSpotlightWinner.depedId}</strong></span>
+                  </div>
+                )}
               </div>
             </div>
 
