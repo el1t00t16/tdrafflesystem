@@ -5,6 +5,7 @@ import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, S
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
 import { RealtimeClaimsWorkstation } from '../../components/claims/RealtimeClaimsWorkstation';
 import { PrintQueueStation } from '../../components/admin/PrintQueueStation';
+import { ForfeitCountdownModal } from '../../components/ForfeitCountdownModal';
 import { Winner, ClaimStationSession, RaffleLog } from '../../lib/types';
 import {
   isSupabaseConfigured,
@@ -86,6 +87,7 @@ export default function ClaimsPage() {
     }
   });
   const [activeStationTab, setActiveStationTab] = useState<'claims' | 'print-queue'>('claims');
+  const [showForfeitModal, setShowForfeitModal] = useState(false);
 
   const toggleDarkMode = () => {
     const nextDark = !isDarkMode;
@@ -416,39 +418,7 @@ export default function ClaimsPage() {
       }
     }
 
-    // Restore local prize quantity if cached in localStorage on this device (+1 remaining, -1 drawn)
-    let didSyncPrizes = false;
-    if (targetWinner?.prizeId || targetWinner?.prizeName) {
-      try {
-        const cachedPrizes = localStorage.getItem('td26_prizes');
-        if (cachedPrizes) {
-          const parsed = JSON.parse(cachedPrizes);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const updated = parsed.map((p: any) => {
-              if (
-                (targetWinner.prizeId && p.id === targetWinner.prizeId) ||
-                (targetWinner.prizeName && (p.name || '').trim().toLowerCase() === targetWinner.prizeName.trim().toLowerCase())
-              ) {
-                const newDrawn = Math.max(0, (p.drawnQuantity || 0) - 1);
-                const newRemaining = Math.max(0, (p.quantity || 1) - newDrawn);
-                return {
-                  ...p,
-                  drawnQuantity: newDrawn,
-                  remainingQuantity: newRemaining,
-                  status: newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED'
-                };
-              }
-              return p;
-            });
-            localStorage.setItem('td26_prizes', JSON.stringify(updated));
-            syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on claims forfeit:', err));
-            didSyncPrizes = true;
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    // Note: Prize inventory is intentionally NOT auto-replenished. Physical table inventory dictates replacement draws.
 
     // Push Forfeiture Audit Log
     const forfeitLog: RaffleLog = {
@@ -475,8 +445,85 @@ export default function ClaimsPage() {
       participantId: targetWinner?.participantId,
       prizeId: targetWinner?.prizeId,
       prizeName: targetWinner?.prizeName,
-      autoAdjustInventory: !didSyncPrizes
+      autoAdjustInventory: false
     }).catch((err) => console.warn('Supabase forfeit update failed:', err));
+  };
+
+  // Batch Forfeit Unclaimed Tickets from Claims Station
+  const handleBatchForfeitWinners = async (winnerIds: string[], reason?: string) => {
+    soundSynthesizer.playBuzzer();
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const forfeitSet = new Set(winnerIds);
+    const targetParticipantIds: string[] = [];
+    const prizeSummaryMap = new Map<string, number>();
+
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (forfeitSet.has(w.winnerId)) {
+          if (w.participantId) targetParticipantIds.push(w.participantId);
+          const pName = w.prizeName || 'Prize';
+          prizeSummaryMap.set(pName, (prizeSummaryMap.get(pName) || 0) + 1);
+          return {
+            ...w,
+            claimStatus: 'FORFEITED' as const,
+            forfeitedAt: timestamp,
+            forfeitReason: reason || 'Unclaimed by deadline / Absent on stage'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    for (const wId of winnerIds) {
+      updateClaimInSupabase(wId, {
+        claimStatus: 'FORFEITED',
+        forfeitedAt: timestamp,
+        forfeitReason: reason || 'Unclaimed by deadline / Absent on stage',
+        autoAdjustInventory: false
+      }).catch((err) => console.warn(`Supabase batch forfeit update error for ${wId}:`, err));
+    }
+
+    if (targetParticipantIds.length > 0) {
+      const pSet = new Set(targetParticipantIds);
+      try {
+        const cached = localStorage.getItem('td26_profiling_participants');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const up = parsed.map((p: any) => (pSet.has(p.id) ? { ...p, winner: 'NO', claimed: 'NO' } : p));
+            localStorage.setItem('td26_profiling_participants', JSON.stringify(up));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const summaryStr = Array.from(prizeSummaryMap.entries())
+      .map(([name, count]) => `${count}x ${name}`)
+      .join(', ');
+
+    const batchLog: RaffleLog = {
+      logId: `LOG-${Date.now().toString(36).toUpperCase()}`,
+      drawNumber: `BATCH-FORFEIT-${Date.now().toString().slice(-4)}`,
+      timestamp: timestamp,
+      prizeId: 'BATCH_FORFEIT',
+      prizeName: `Forfeited: ${summaryStr}`.slice(0, 90),
+      numberOfWinners: winnerIds.length,
+      eligiblePoolSize: 0,
+      winnerIds: targetParticipantIds,
+      winnerNames: [],
+      status: 'FORFEITED',
+      admin: `Claims Desk (${claimSession?.officerName || 'Claims Officer'})`,
+      distributionMode: 'COMBINED_POOL'
+    };
+    pushLogToSupabase(batchLog).catch((err) => console.warn('Supabase claims batch forfeit log push:', err));
   };
 
   // Logout / Lock Station
@@ -805,6 +852,7 @@ export default function ClaimsPage() {
             isCloudConfigured={isCloudConfigured}
             onOpenPrintQueue={() => setActiveStationTab('print-queue')}
             onMarkAsPrinted={handleMarkAsPrinted}
+            onOpenForfeitModal={() => setShowForfeitModal(true)}
           />
         ) : (
           <PrintQueueStation
@@ -818,6 +866,14 @@ export default function ClaimsPage() {
           />
         )}
       </main>
+
+      <ForfeitCountdownModal
+        isOpen={showForfeitModal}
+        onClose={() => setShowForfeitModal(false)}
+        winners={winners}
+        onConfirmForfeitBatch={handleBatchForfeitWinners}
+        soundEnabled={true}
+      />
 
       {/* Footer */}
       <footer className="bg-[#121215] border-t border-white/10 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2 print:hidden">

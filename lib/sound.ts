@@ -173,6 +173,27 @@ class SoundEngine {
     this.playWarning();
   }
 
+  playBuzzer() {
+    if (!this.enabled) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(120, this.ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.8);
+    } catch {
+      // Guarded
+    }
+  }
+
   // Countdown beep (3, 2, 1)
   playCountdown(count: number) {
     if (!this.enabled) return;

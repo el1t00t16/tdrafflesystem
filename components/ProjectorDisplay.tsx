@@ -37,6 +37,8 @@ interface ProjectorDisplayProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   eventName?: string;
+  unclaimedCount?: number;
+  onOpenForfeitModal?: () => void;
 }
 
 const DISTRICT_CONFIG: { id: District; number: string; title: string; isPrivate?: boolean }[] = [
@@ -79,7 +81,9 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
   onToggleSound,
   isFullscreen,
   onToggleFullscreen,
-  eventName
+  eventName,
+  unclaimedCount = 0,
+  onOpenForfeitModal
 }) => {
   const [internalFullStage, setInternalFullStage] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -483,6 +487,30 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   </div>
                 )}
 
+                {/* Section 2.5: Stage Final Call & Forfeit */}
+                {onOpenForfeitModal && unclaimedCount > 0 && (
+                  <div className="pb-2 mb-2 border-b border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsHovered(false);
+                        onOpenForfeitModal();
+                      }}
+                      className="w-full px-2.5 py-2 text-left font-mono text-xs font-bold uppercase tracking-wide text-red-400 hover:text-white bg-red-950/40 hover:bg-red-900/70 border border-red-700/60 rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                      title="Launch Stage Final Call & Forfeit Countdown"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-400">⚠️</span>
+                        <span>Stage Final Call</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-red-800 text-white font-mono rounded font-bold">
+                        {unclaimedCount} Unclaimed
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Section 3: Audio & Screen Quick Toggles */}
                 <div className="pb-2 mb-2 border-b border-white/10 space-y-1">
                   <div className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold px-1.5 pb-0.5">
@@ -586,15 +614,28 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
                   ? '[ Status: Winners Announced ]'
                   : '[ Status: Ready ]'}
               </div>
-              <button
-                type="button"
-                onClick={() => setFullStage(true)}
-                className="font-mono text-[11px] font-bold uppercase text-[#1a1a1a]/70 hover:text-[#ff6a00] border border-[#1a1a1a]/20 hover:border-[#ff6a00] px-2.5 py-1 transition-colors flex items-center gap-1.5 rounded-sm"
-                title="Hide navigation and sidebar for clean full screen stage (or press Esc to exit)"
-              >
-                <span>Full Stage</span>
-                <span>⛶</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                {onOpenForfeitModal && unclaimedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={onOpenForfeitModal}
+                    className="font-mono text-[11px] font-bold uppercase text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-300 hover:border-red-600 px-2 py-1 transition-colors flex items-center gap-1 rounded-sm shadow-xs"
+                    title="Launch Stage Final Call & Forfeit Countdown"
+                  >
+                    <span>⚠️</span>
+                    <span>Final Call ({unclaimedCount})</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setFullStage(true)}
+                  className="font-mono text-[11px] font-bold uppercase text-[#1a1a1a]/70 hover:text-[#ff6a00] border border-[#1a1a1a]/20 hover:border-[#ff6a00] px-2.5 py-1 transition-colors flex items-center gap-1.5 rounded-sm"
+                  title="Hide navigation and sidebar for clean full screen stage (or press Esc to exit)"
+                >
+                  <span>Full Stage</span>
+                  <span>⛶</span>
+                </button>
+              </div>
             </div>
 
             {/* Carousel Mode Toggle (visible when winners revealed for multi-district draws) */}

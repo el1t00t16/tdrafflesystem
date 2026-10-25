@@ -62,6 +62,7 @@ interface AdminDashboardProps {
   ) => void;
   onUnclaimPrize?: (winnerId: string) => void;
   onForfeitPrize?: (winnerId: string, reason?: string) => void;
+  onOpenForfeitModal?: () => void;
   onUpdateSettings: (settings: SystemSettings) => void;
   onPrepareNewEvent: (options?: { resetAttendance?: boolean; deleteParticipants?: boolean }) => Promise<{ success: boolean; message: string }> | void;
   onExportBackup?: (note?: string) => void;
@@ -111,6 +112,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onClaimPrize,
   onUnclaimPrize,
   onForfeitPrize,
+  onOpenForfeitModal,
   onUpdateSettings,
   onPrepareNewEvent,
   onExportBackup,
@@ -292,6 +294,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onMarkAsPrinted={onMarkAsPrinted}
           onMarkBatchAsPrinted={onMarkBatchAsPrinted}
           onRequeueWinner={onRequeueWinner}
+          onOpenForfeitModal={onOpenForfeitModal}
         />
       )}
 

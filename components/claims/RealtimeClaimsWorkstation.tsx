@@ -57,6 +57,7 @@ interface RealtimeClaimsWorkstationProps {
   isCloudConfigured?: boolean;
   onOpenPrintQueue?: () => void;
   onMarkAsPrinted?: (winnerId: string) => void;
+  onOpenForfeitModal?: () => void;
 }
 
 export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps> = ({
@@ -70,7 +71,8 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
   onRefreshCloud,
   isCloudConfigured = false,
   onOpenPrintQueue,
-  onMarkAsPrinted
+  onMarkAsPrinted,
+  onOpenForfeitModal
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusTab, setStatusTab] = useState<'UNCLAIMED' | 'ALL' | 'CLAIMED' | 'FORFEITED' | 'PENDING_PRINT'>('UNCLAIMED');
@@ -986,6 +988,19 @@ export const RealtimeClaimsWorkstation: React.FC<RealtimeClaimsWorkstationProps>
         <div className="order-3 bg-white dark:bg-[#121215] border-2 border-[#1a1a1a] dark:border-white/10 p-4 shadow-sm dark:shadow-xl space-y-3">
           {/* Queue Tab Selectors & District Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#1a1a1a]/15 dark:border-white/10 text-xs font-mono">
+            {onOpenForfeitModal && unclaimedCount > 0 && (
+              <div className="sm:order-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={onOpenForfeitModal}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  title="Launch Stage Final Call & Forfeit Countdown"
+                >
+                  <span>⚠️</span>
+                  <span>Final Call &amp; Forfeit ({unclaimedCount})</span>
+                </button>
+              </div>
+            )}
             <div className="inline-flex border border-[#1a1a1a]/20 dark:border-white/20 divide-x divide-[#1a1a1a]/20 dark:divide-white/20 bg-[#f8f7f4] dark:bg-black overflow-x-auto max-w-full">
               <button
                 onClick={() => setStatusTab('UNCLAIMED')}

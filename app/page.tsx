@@ -21,6 +21,7 @@ import { AttendanceScannerModule } from '../components/attendance/AttendanceScan
 import { AdminLoginScreen } from '../components/admin/AdminLoginScreen';
 import { DrawPreviewModal, DrawReviewModal } from '../components/DrawModals';
 import { PreDrawWinnerViewer } from '../components/pre-draw/PreDrawWinnerViewer';
+import { ForfeitCountdownModal } from '../components/ForfeitCountdownModal';
 import { soundSynthesizer } from '../lib/sound';
 import { triggerConfetti } from '../lib/confetti';
 import {
@@ -280,6 +281,7 @@ export default function Home() {
   // Modals
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [showForfeitModal, setShowForfeitModal] = useState(false);
   const [isFullStage, setIsFullStage] = useState<boolean>(false);
 
   // Sync pending unconfirmed draw result to localStorage
@@ -1817,7 +1819,7 @@ export default function Home() {
       prizeName: targetPrizeName
     }).catch((err) => console.warn('Supabase forfeit update:', err));
 
-    // 3. Reset Participant winner flag to 'NO' so they don't block inventory
+    // 3. Reset Participant winner flag to 'NO' so they are eligible for future redraws
     if (targetParticipantId) {
       setParticipants((prev) => {
         const updated = prev.map((p) => {
@@ -1835,47 +1837,7 @@ export default function Home() {
       });
     }
 
-    // 4. Return 1 Unit of Prize back to Active Inventory (+1 remaining, -1 drawn)
-    if (targetPrizeId || targetPrizeName) {
-      let prizeToSelect: string | null = null;
-      setPrizes((prev) => {
-        const updated = prev.map((p) => {
-          if (
-            (targetPrizeId && p.id === targetPrizeId) ||
-            (targetPrizeName && p.name.trim().toLowerCase() === targetPrizeName.trim().toLowerCase())
-          ) {
-            const newDrawn = Math.max(0, p.drawnQuantity - 1);
-            const newRemaining = Math.max(0, p.quantity - newDrawn);
-            prizeToSelect = p.id;
-            return {
-              ...p,
-              drawnQuantity: newDrawn,
-              remainingQuantity: newRemaining,
-              status: (newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED') as PrizeStatus
-            };
-          }
-          return p;
-        });
-        try {
-          localStorage.setItem('td26_prizes', JSON.stringify(updated));
-        } catch (e) {
-          console.error(e);
-        }
-        const forfeitedPrize = prizeToSelect ? updated.find((p) => p.id === prizeToSelect) : null;
-        if (forfeitedPrize) {
-          savePrizeToSupabase(forfeitedPrize).catch((err) => console.warn('Supabase single prize sync on forfeit:', err));
-        }
-        return updated;
-      });
-
-      // Select this prize so it's ready for redraw
-      if (prizeToSelect) {
-        setSelectedPrizeId(prizeToSelect);
-        setDistributionMode('COMBINED_POOL');
-        setCombinedWinnersCount(1);
-        setTargetDistrict(winnerDistrict); // Default to the forfeited winner's district!
-      }
-    }
+    // 4. Note: Prize inventory is intentionally NOT auto-replenished. Physical table inventory dictates replacement draws.
 
     // 5. Audit Log for Forfeiture
     const forfeitLog: RaffleLog = {
@@ -1899,6 +1861,88 @@ export default function Home() {
       return next;
     });
     pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase forfeit log push:', err));
+  };
+
+  // Batch Forfeit Unclaimed Tickets (e.g. from Stage Final Call Countdown) - ZERO auto-replenishment of prizes
+  const handleBatchForfeitWinners = async (winnerIds: string[], reason?: string) => {
+    soundSynthesizer.playBuzzer();
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const forfeitSet = new Set(winnerIds);
+    const targetParticipantIds: string[] = [];
+    const prizeSummaryMap = new Map<string, number>();
+
+    // 1. Update Winners state
+    setWinners((prev) => {
+      const updated = prev.map((w) => {
+        if (forfeitSet.has(w.winnerId)) {
+          if (w.participantId) targetParticipantIds.push(w.participantId);
+          const pName = w.prizeName || 'Prize';
+          prizeSummaryMap.set(pName, (prizeSummaryMap.get(pName) || 0) + 1);
+          return {
+            ...w,
+            claimStatus: 'FORFEITED' as const,
+            forfeitedAt: timestamp,
+            forfeitReason: reason || 'Unclaimed by deadline / Absent on stage'
+          };
+        }
+        return w;
+      });
+      try {
+        localStorage.setItem('td26_winners', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    // 2. Cloud Sync: Update all forfeited winners in Supabase
+    for (const wId of winnerIds) {
+      updateClaimInSupabase(wId, {
+        claimStatus: 'FORFEITED',
+        forfeitedAt: timestamp,
+        forfeitReason: reason || 'Unclaimed by deadline / Absent on stage'
+      }).catch((err) => console.warn(`Supabase batch forfeit update error for ${wId}:`, err));
+    }
+
+    // 3. Reset Participant winner flags so they can be eligible for future draws
+    if (targetParticipantIds.length > 0) {
+      const pSet = new Set(targetParticipantIds);
+      setParticipants((prev) => {
+        const updated = prev.map((p) => (pSet.has(p.id) ? { ...p, winner: 'NO' as const, claimed: 'NO' as const } : p));
+        try {
+          localStorage.setItem('td26_profiling_participants', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+        return updated;
+      });
+    }
+
+    // 4. Record Audit Log for Batch Forfeiture
+    const summaryStr = Array.from(prizeSummaryMap.entries())
+      .map(([name, count]) => `${count}x ${name}`)
+      .join(', ');
+
+    const forfeitLog: RaffleLog = {
+      logId: `LOG-${String(logs.length + 1).padStart(4, '0')}`,
+      drawNumber: `BATCH-FORFEIT-${Date.now().toString().slice(-4)}`,
+      timestamp: timestamp,
+      prizeId: 'BATCH_FORFEIT',
+      prizeName: `Forfeited: ${summaryStr}`.slice(0, 90),
+      numberOfWinners: winnerIds.length,
+      eligiblePoolSize: eligiblePool.length,
+      winnerIds: targetParticipantIds,
+      winnerNames: [],
+      status: 'FORFEITED',
+      admin: 'Claims Committee',
+      distributionMode: 'COMBINED_POOL'
+    };
+    setLogs((prev) => {
+      const next = [forfeitLog, ...prev];
+      try { localStorage.setItem('td26_raffle_logs', JSON.stringify(next)); } catch (e) { console.error(e); }
+      return next;
+    });
+    pushLogToSupabase(forfeitLog).catch((err) => console.warn('Supabase batch forfeit log push:', err));
   };
 
   // Print Queue & Verification Stub Handlers
@@ -2504,6 +2548,8 @@ export default function Home() {
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
             eventName={settings.eventName}
+            unclaimedCount={unclaimedCount}
+            onOpenForfeitModal={() => setShowForfeitModal(true)}
           />
         )}
 
@@ -2571,6 +2617,7 @@ export default function Home() {
             onClaimPrize={handleClaimPrize}
             onUnclaimPrize={handleUnclaimPrize}
             onForfeitPrize={handleForfeitPrize}
+            onOpenForfeitModal={() => setShowForfeitModal(true)}
             onUpdateSettings={handleUpdateSettings}
             onPrepareNewEvent={handlePrepareNewEvent}
             onExportBackup={handleExportSystemBackup}
@@ -2622,6 +2669,15 @@ export default function Home() {
         drawResult={temporaryDrawResult}
         onConfirmWinners={handleConfirmWinners}
         onRedraw={handleRedraw}
+      />
+
+      {/* Stage Final Call & Forfeit Countdown Modal */}
+      <ForfeitCountdownModal
+        isOpen={showForfeitModal}
+        onClose={() => setShowForfeitModal(false)}
+        winners={winners}
+        onConfirmForfeitBatch={handleBatchForfeitWinners}
+        soundEnabled={soundEnabled}
       />
     </main>
   );
