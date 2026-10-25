@@ -418,7 +418,19 @@ export default function Home() {
           }
 
           if (Array.isArray(cloudPrizes) && cloudPrizes.length > 0) {
-            setPrizes(normalizePrizeList(cloudPrizes));
+            const effectiveWinners = Array.isArray(cloudWinners) ? cloudWinners : [];
+            const reconciledPrizes = cloudPrizes.map((p) => {
+              const wonCount = effectiveWinners.filter((w) => w.prizeId === p.id).length;
+              const drawn = Math.max(p.drawnQuantity || 0, wonCount);
+              const remaining = Math.max(0, p.quantity - drawn);
+              return {
+                ...p,
+                drawnQuantity: drawn,
+                remainingQuantity: remaining,
+                status: (remaining <= 0 ? 'EXHAUSTED' : (p.status || 'AVAILABLE')) as PrizeStatus
+              };
+            });
+            setPrizes(normalizePrizeList(reconciledPrizes));
           }
 
           if (Array.isArray(cloudLogs)) {
@@ -1109,23 +1121,28 @@ export default function Home() {
       pushWinnerToSupabase(w).catch((err) => console.warn('Supabase winner push:', err));
     });
 
-    // Decrement Prize remaining quantity & sync to Supabase
+    // Decrement Prize remaining quantity & sync to Supabase (single prize row to prevent multi-device race overwrites)
+    let targetPrizeToSync: Prize | null = null;
     const updatedPrizes: Prize[] = prizes.map((p) => {
       if (p.id === temporaryDrawResult.prize.id) {
         const newDrawn = p.drawnQuantity + temporaryDrawResult.winners.length;
         const newRemaining = Math.max(0, p.quantity - newDrawn);
         const status: PrizeStatus = newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED';
-        return {
+        const updated = {
           ...p,
           drawnQuantity: newDrawn,
           remainingQuantity: newRemaining,
           status
         };
+        targetPrizeToSync = updated;
+        return updated;
       }
       return p;
     });
     setPrizes(updatedPrizes);
-    syncPrizesToSupabase(updatedPrizes).catch((err) => console.warn('Supabase prize sync:', err));
+    if (targetPrizeToSync) {
+      savePrizeToSupabase(targetPrizeToSync).catch((err) => console.warn('Supabase single prize sync:', err));
+    }
 
     // Record Log Entry
     const newLog: RaffleLog = {
@@ -1242,22 +1259,27 @@ export default function Home() {
     });
 
     // Decrement Prize remaining quantity & sync to Supabase
+    let targetPrizeToSync: Prize | null = null;
     const updatedPrizes: Prize[] = prizes.map((p) => {
       if (p.id === batch.prize.id) {
         const newDrawn = p.drawnQuantity + batch.winners.length;
         const newRemaining = Math.max(0, p.quantity - newDrawn);
         const status: PrizeStatus = newRemaining > 0 ? 'AVAILABLE' : 'EXHAUSTED';
-        return {
+        const updated = {
           ...p,
           drawnQuantity: newDrawn,
           remainingQuantity: newRemaining,
           status
         };
+        targetPrizeToSync = updated;
+        return updated;
       }
       return p;
     });
     setPrizes(updatedPrizes);
-    syncPrizesToSupabase(updatedPrizes).catch((err) => console.warn('Supabase prize sync:', err));
+    if (targetPrizeToSync) {
+      savePrizeToSupabase(targetPrizeToSync).catch((err) => console.warn('Supabase single prize sync:', err));
+    }
 
     // Record Audit Log Entry for Pre-Draw
     const newLog: RaffleLog = {
@@ -1717,7 +1739,10 @@ export default function Home() {
         } catch (e) {
           console.error(e);
         }
-        syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on reactivate:', err));
+        const reactivatedPrize = updated.find((p) => p.id === prizeId);
+        if (reactivatedPrize) {
+          savePrizeToSupabase(reactivatedPrize).catch((err) => console.warn('Supabase single prize sync on reactivate:', err));
+        }
         return updated;
       });
 
@@ -1836,7 +1861,10 @@ export default function Home() {
         } catch (e) {
           console.error(e);
         }
-        syncPrizesToSupabase(updated).catch((err) => console.warn('Supabase prize sync on forfeit:', err));
+        const forfeitedPrize = prizeToSelect ? updated.find((p) => p.id === prizeToSelect) : null;
+        if (forfeitedPrize) {
+          savePrizeToSupabase(forfeitedPrize).catch((err) => console.warn('Supabase single prize sync on forfeit:', err));
+        }
         return updated;
       });
 

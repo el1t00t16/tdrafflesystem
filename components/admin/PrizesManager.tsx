@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Prize, PrizeCategory } from '../../lib/types';
 import { Gift, Plus, CheckCircle, AlertCircle, X, Trash2, Cloud, CloudOff, UploadCloud } from 'lucide-react';
-import { isSupabaseConfigured, syncPrizesToSupabase } from '../../lib/supabase';
+import { isSupabaseConfigured, syncPrizesToSupabase, reconcilePrizesWithWinnersInSupabase } from '../../lib/supabase';
 
 interface PrizesManagerProps {
   prizes: Prize[];
@@ -27,6 +27,30 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
   const [quantity, setQuantity] = useState<number>(1);
   const [syncingCloud, setSyncingCloud] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const handleReconcileInventory = async () => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase credentials are not configured yet! Please enter your Supabase Project URL and Anon Key in the Settings tab first.');
+      return;
+    }
+    setSyncingCloud(true);
+    setCloudMsg({ text: 'Reconciling prize inventory against official winners...' });
+    const res = await reconcilePrizesWithWinnersInSupabase();
+    setSyncingCloud(false);
+    if (res.success) {
+      setCloudMsg({
+        text: res.reconciledCount > 0
+          ? `Reconciliation complete! Re-aligned ${res.reconciledCount} prizes with actual winners.`
+          : 'All prizes are already 100% matched with actual winners!'
+      });
+      setTimeout(() => {
+        setCloudMsg(null);
+        window.location.reload();
+      }, 2000);
+    } else {
+      setCloudMsg({ text: `Reconciliation error: ${res.error}`, error: true });
+    }
+  };
 
   const handleSyncToCloud = async () => {
     if (!isSupabaseConfigured()) {
@@ -201,15 +225,26 @@ export const PrizesManager: React.FC<PrizesManagerProps> = ({
 
         <div className="flex items-center gap-2 flex-wrap">
           {isSupabaseConfigured() && prizes.length > 0 && (
-            <button
-              onClick={handleSyncToCloud}
-              disabled={syncingCloud}
-              className="px-3.5 py-2.5 bg-[#1a1a1a] dark:bg-neutral-900 hover:bg-[#ff6a00] border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
-              title="Push current local prizes inventory to Supabase Cloud"
-            >
-              <UploadCloud className={`w-4 h-4 ${syncingCloud ? 'animate-bounce' : ''}`} />
-              <span>{syncingCloud ? 'Syncing...' : 'Sync to Cloud'}</span>
-            </button>
+            <>
+              <button
+                onClick={handleReconcileInventory}
+                disabled={syncingCloud}
+                className="px-3.5 py-2.5 bg-[#1a1a1a] dark:bg-neutral-900 hover:bg-blue-600 border border-blue-500/40 text-blue-300 hover:text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+                title="Audit and automatically match prize remaining counts to actual recorded winners"
+              >
+                <CheckCircle className={`w-4 h-4 ${syncingCloud ? 'animate-spin' : ''}`} />
+                <span>Reconcile Inventory</span>
+              </button>
+              <button
+                onClick={handleSyncToCloud}
+                disabled={syncingCloud}
+                className="px-3.5 py-2.5 bg-[#1a1a1a] dark:bg-neutral-900 hover:bg-[#ff6a00] border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+                title="Push current local prizes inventory to Supabase Cloud"
+              >
+                <UploadCloud className={`w-4 h-4 ${syncingCloud ? 'animate-bounce' : ''}`} />
+                <span>{syncingCloud ? 'Syncing...' : 'Sync to Cloud'}</span>
+              </button>
+            </>
           )}
 
           {prizes.length > 0 && onClearAllPrizes && (

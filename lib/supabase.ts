@@ -1480,6 +1480,63 @@ export async function syncPrizesToSupabase(prizes: Prize[]): Promise<{ success: 
   }
 }
 
+export async function reconcilePrizesWithWinnersInSupabase(): Promise<{
+  success: boolean;
+  reconciledCount: number;
+  error?: string;
+}> {
+  const client = getSupabase();
+  if (!client) {
+    return { success: false, reconciledCount: 0, error: 'Supabase not connected' };
+  }
+
+  try {
+    const [winnersRes, prizesRes] = await Promise.all([
+      client.from('winners').select('winner_id, prize_id'),
+      client.from('prizes').select('*')
+    ]);
+
+    if (winnersRes.error) throw winnersRes.error;
+    if (prizesRes.error) throw prizesRes.error;
+
+    const winners = winnersRes.data || [];
+    const prizes = prizesRes.data || [];
+
+    const counts: Record<string, number> = {};
+    winners.forEach((w: any) => {
+      counts[w.prize_id] = (counts[w.prize_id] || 0) + 1;
+    });
+
+    let updatedCount = 0;
+    for (const p of (prizes as any[])) {
+      const actualWon = counts[p.id] || 0;
+      const remaining = Math.max(0, p.quantity - actualWon);
+      const expectedStatus = remaining <= 0 ? 'EXHAUSTED' : 'AVAILABLE';
+
+      if (p.drawn_quantity !== actualWon || p.remaining_quantity !== remaining || p.status !== expectedStatus) {
+        const { error } = await client
+          .from('prizes')
+          .update({
+            drawn_quantity: actualWon,
+            remaining_quantity: remaining,
+            status: expectedStatus
+          })
+          .eq('id', p.id);
+
+        if (!error) {
+          updatedCount++;
+        }
+      }
+    }
+
+    return { success: true, reconciledCount: updatedCount };
+  } catch (err) {
+    const formatted = formatSupabaseError(err);
+    console.error('Error reconciling prizes in Supabase:', formatted, err);
+    return { success: false, reconciledCount: 0, error: formatted };
+  }
+}
+
 export async function fetchLogsFromSupabase(): Promise<RaffleLog[] | null> {
   const client = getSupabase();
   if (!client) return null;
