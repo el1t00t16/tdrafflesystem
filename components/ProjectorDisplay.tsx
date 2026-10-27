@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { District, DistributionMode, Participant, Prize, Winner } from '../lib/types';
-import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown, Play, Pause, Gauge } from 'lucide-react';
+import { Trophy, Minus, Plus, CheckCircle, RotateCcw, Volume2, VolumeX, Maximize2, Minimize2, Settings, ChevronDown, ChevronLeft, ChevronRight, Play, Pause, Gauge, Sparkles } from 'lucide-react';
+import { soundSynthesizer } from '../lib/sound';
+import { APP_VERSION } from '../lib/constants';
 
 interface ProjectorDisplayProps {
   selectedPrize: Prize | null;
@@ -117,6 +119,53 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
 
   // Marquee Ticker Source Filter: 'ALL' | 'LIVE' | 'PRE_DRAW'
   const [tickerSource, setTickerSource] = useState<'ALL' | 'LIVE' | 'PRE_DRAW'>('ALL');
+
+  // Horizontal Prize Deck Filter & Scrolling
+  const [prizeCategoryFilter, setPrizeCategoryFilter] = useState<'AVAILABLE' | 'ALL' | 'GRAND' | 'MINOR'>('AVAILABLE');
+  const prizeTrackRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollPrizeTrack = (direction: 'left' | 'right') => {
+    if (!prizeTrackRef.current) return;
+    const scrollAmount = 220;
+    prizeTrackRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
+  const availablePrizesCount = useMemo(() => {
+    return (prizes || []).filter((p) => p.remainingQuantity > 0).length;
+  }, [prizes]);
+
+  const allPrizesCount = (prizes || []).length;
+  const grandPrizesCount = useMemo(() => {
+    return (prizes || []).filter((p) => p.category === 'GRAND' && (prizeCategoryFilter === 'ALL' || p.remainingQuantity > 0)).length;
+  }, [prizes, prizeCategoryFilter]);
+
+  const minorPrizesCount = useMemo(() => {
+    return (prizes || []).filter((p) => p.category === 'MINOR' && (prizeCategoryFilter === 'ALL' || p.remainingQuantity > 0)).length;
+  }, [prizes, prizeCategoryFilter]);
+
+  const filteredPrizeDeck = useMemo(() => {
+    if (!prizes) return [];
+    return prizes.filter((p) => {
+      // Always keep active prize visible in strip even if it was just exhausted
+      if (p.id === (selectedPrizeId || selectedPrize?.id)) return true;
+      if (prizeCategoryFilter === 'AVAILABLE') return p.remainingQuantity > 0;
+      if (prizeCategoryFilter === 'GRAND') return p.category === 'GRAND';
+      if (prizeCategoryFilter === 'MINOR') return p.category === 'MINOR';
+      return true;
+    });
+  }, [prizes, prizeCategoryFilter, selectedPrizeId, selectedPrize]);
+
+  useEffect(() => {
+    const activeId = selectedPrizeId || selectedPrize?.id;
+    if (!activeId || !prizeTrackRef.current) return;
+    const activeEl = prizeTrackRef.current.querySelector(`[data-prize-id="${activeId}"]`) as HTMLElement;
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [selectedPrizeId, selectedPrize, prizeCategoryFilter]);
 
   const liveWinners = useMemo(() => {
     return (allWinners || []).filter((w) => {
@@ -691,67 +740,202 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               )}
             </div>
 
-            {/* Active Prize Selection Card */}
-            <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] p-3.5 rounded-lg space-y-2.5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/70 font-bold">
-                  Active Raffle Prize
+            {/* Active Prize Selection & Scrollable Card Deck */}
+            <div className="bg-[#f8f7f4] border-2 border-[#1a1a1a] p-3 rounded-lg space-y-2.5 shadow-xs">
+              {/* Header & Filter Controls */}
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-[#1a1a1a]/70 font-bold flex items-center gap-1">
+                  <span>Prize Vault</span>
+                  <span className="text-neutral-400 font-normal">({availablePrizesCount} Available)</span>
                 </span>
-                {prizes && prizes.length > 1 && onSelectPrize && (
-                  <span className="font-mono text-[9px] uppercase font-bold text-[#ff6a00] bg-[#ff6a00]/10 border border-[#ff6a00]/30 px-2 py-0.5 rounded-xs">
-                    Select Below
-                  </span>
+
+                {/* Scroll Arrows */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => scrollPrizeTrack('left')}
+                    className="w-6 h-6 flex items-center justify-center bg-white border border-[#1a1a1a]/20 hover:border-[#1a1a1a] hover:bg-[#ff6a00] hover:text-white transition-colors cursor-pointer rounded-xs"
+                    title="Scroll cards left"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollPrizeTrack('right')}
+                    className="w-6 h-6 flex items-center justify-center bg-white border border-[#1a1a1a]/20 hover:border-[#1a1a1a] hover:bg-[#ff6a00] hover:text-white transition-colors cursor-pointer rounded-xs"
+                    title="Scroll cards right"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Chips: Available (Default) | All | Grand | Minor */}
+              <div className="inline-flex border border-[#1a1a1a]/20 rounded-xs divide-x divide-[#1a1a1a]/20 bg-white text-[10px] font-mono overflow-x-auto max-w-full">
+                <button
+                  type="button"
+                  onClick={() => setPrizeCategoryFilter('AVAILABLE')}
+                  className={`px-2.5 py-0.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                    prizeCategoryFilter === 'AVAILABLE' ? 'bg-[#ff6a00] text-white font-black' : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  }`}
+                  title="Show only prizes with stock remaining (Default)"
+                >
+                  Available ({availablePrizesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrizeCategoryFilter('ALL')}
+                  className={`px-2.5 py-0.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                    prizeCategoryFilter === 'ALL' ? 'bg-[#1a1a1a] text-white font-black' : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  }`}
+                  title="Show all prizes including completed/drawn"
+                >
+                  All ({allPrizesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrizeCategoryFilter('GRAND')}
+                  className={`px-2 py-0.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                    prizeCategoryFilter === 'GRAND' ? 'bg-amber-500 text-black font-black' : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  }`}
+                  title="Show Grand Prizes only"
+                >
+                  👑 Grand ({grandPrizesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrizeCategoryFilter('MINOR')}
+                  className={`px-2 py-0.5 font-bold uppercase transition-colors shrink-0 cursor-pointer ${
+                    prizeCategoryFilter === 'MINOR' ? 'bg-blue-600 text-white font-black' : 'text-[#1a1a1a]/70 hover:text-[#1a1a1a]'
+                  }`}
+                  title="Show Minor Prizes only"
+                >
+                  🎁 Minor ({minorPrizesCount})
+                </button>
+              </div>
+
+              {/* Horizontal Scrollable Prize Card Track */}
+              <div
+                ref={prizeTrackRef}
+                className="flex items-stretch gap-2.5 overflow-x-auto py-1 px-0.5 scroll-smooth snap-x snap-mandatory select-none"
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                {filteredPrizeDeck.length === 0 ? (
+                  <div className="w-full py-5 text-center font-mono text-xs text-neutral-500 bg-white border border-[#1a1a1a]/15 rounded-lg">
+                    No prizes matching this filter.
+                    {prizeCategoryFilter === 'AVAILABLE' && (
+                      <button
+                        type="button"
+                        onClick={() => setPrizeCategoryFilter('ALL')}
+                        className="block mx-auto mt-1 text-[#ff6a00] underline font-bold"
+                      >
+                        View All Completed Prizes
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  filteredPrizeDeck.map((p) => {
+                    const isSelected = p.id === (selectedPrizeId || selectedPrize?.id);
+                    const isExhausted = p.remainingQuantity <= 0;
+                    const isGrand = p.category === 'GRAND';
+
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        data-prize-id={p.id}
+                        onClick={() => {
+                          if (isDrawing || !onSelectPrize) return;
+                          soundSynthesizer.playClick();
+                          onSelectPrize(p.id);
+                        }}
+                        disabled={isDrawing}
+                        className={`shrink-0 w-44 sm:w-48 text-left p-2.5 rounded-lg border-2 transition-all snap-start flex flex-col justify-between cursor-pointer relative group ${
+                          isSelected
+                            ? 'bg-white border-[#ff6a00] shadow-md ring-2 ring-[#ff6a00]/30 -translate-y-0.5'
+                            : isExhausted
+                            ? 'bg-neutral-100/70 border-neutral-300 opacity-60 hover:opacity-100'
+                            : 'bg-white hover:bg-neutral-50 border-[#1a1a1a]/20 hover:border-[#1a1a1a]/60 shadow-2xs'
+                        }`}
+                      >
+                        {/* Top Meta: Tier Badge & Remaining Count */}
+                        <div className="flex items-center justify-between gap-1 mb-1.5 w-full">
+                          <span
+                            className={`font-mono text-[9px] px-1.5 py-0.5 rounded-xs font-black uppercase tracking-wider border ${
+                              isGrand
+                                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                : 'bg-blue-100 text-blue-900 border-blue-300'
+                            }`}
+                          >
+                            {isGrand ? '👑 GRAND' : '🎁 MINOR'}
+                          </span>
+
+                          <span
+                            className={`font-mono text-[10px] font-black px-1.5 py-0.5 rounded-xs uppercase tracking-wider ${
+                              isExhausted
+                                ? 'bg-neutral-200 text-neutral-600'
+                                : p.remainingQuantity <= 2
+                                ? 'bg-amber-500 text-black font-black animate-pulse'
+                                : 'bg-emerald-600 text-white'
+                            }`}
+                          >
+                            {isExhausted ? '0 LEFT' : `${p.remainingQuantity} LEFT`}
+                          </span>
+                        </div>
+
+                        {/* Prize Title */}
+                        <div className="font-display text-xs sm:text-sm font-black uppercase text-[#1a1a1a] tracking-tight leading-snug line-clamp-2 min-h-[2.4rem]">
+                          {p.name}
+                        </div>
+
+                        {/* Bottom Info: Unit Value / Sponsor & Active Pill */}
+                        <div className="mt-2 pt-1.5 border-t border-[#1a1a1a]/10 flex items-center justify-between text-[10px] font-mono w-full">
+                          <span className="font-bold text-[#1a1a1a]/70 truncate max-w-[105px]">
+                            {p.unitValue > 0 ? `₱${p.unitValue.toLocaleString()}` : p.description || 'Raffle Item'}
+                          </span>
+                          {isSelected && (
+                            <span className="font-mono text-[9px] font-black uppercase text-[#ff6a00] flex items-center gap-0.5 shrink-0">
+                              <CheckCircle className="w-3 h-3 text-[#ff6a00]" />
+                              ACTIVE
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
 
-              {/* Quick Prize Selector Dropdown */}
-              {prizes && prizes.length > 0 && onSelectPrize && (
-                <select
-                  id="projector-prize-select"
-                  value={selectedPrizeId || selectedPrize?.id || ''}
-                  onChange={(e) => onSelectPrize(e.target.value)}
-                  disabled={isDrawing}
-                  aria-label="Select Prize to Draw"
-                  className="w-full bg-white hover:bg-neutral-50 border-2 border-[#1a1a1a] focus:border-[#ff6a00] p-2 text-xs font-mono font-bold uppercase tracking-wide text-[#1a1a1a] outline-none transition-colors cursor-pointer shadow-xs disabled:opacity-40"
-                >
-                  {prizes.map((p) => {
-                    const isExhausted = p.remainingQuantity <= 0;
-                    const catTag = p.category === 'GRAND' ? '👑 [GRAND]' : '🎁 [MINOR]';
-                    const label = p.unitValue > 0
-                      ? `${catTag} ${p.name} (₱${p.unitValue.toLocaleString()}) — ${p.remainingQuantity} Left`
-                      : `${catTag} ${p.name}${p.description ? ` [${p.description}]` : ''} — ${p.remainingQuantity} Left`;
-                    return (
-                      <option
-                        key={p.id}
-                        value={p.id}
-                        disabled={isExhausted}
-                        className="bg-white text-[#1a1a1a] py-1 font-bold"
-                      >
-                        {isExhausted ? `[DRAWN] ${label}` : label}
-                      </option>
-                    );
-                  })}
-                </select>
-              )}
-
-              <div className="pt-0.5">
-                <div className="font-display text-2xl sm:text-3xl font-black leading-tight text-[#1a1a1a] tracking-tight truncate">
-                  {selectedPrize ? selectedPrize.name : 'SELECT PRIZE'}
-                </div>
-                <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5 flex items-center justify-between gap-2 flex-wrap">
-                  <span>
-                    {selectedPrize ? (
-                      `${selectedPrize.description ? `${selectedPrize.description} • ` : ''}${availableQty} AVAILABLE`
-                    ) : (
-                      'NO PRIZE SELECTED'
-                    )}
-                  </span>
-                  {selectedPrize && (
-                    <span className="text-[10px] font-bold text-[#1a1a1a]/70">
-                      {selectedPrize.category === 'GRAND' ? 'Teaching Only' : 'Teaching & Non-Teaching'}
+              {/* Active Hero Summary Card (Immediately below the strip) */}
+              <div className="pt-2 border-t border-[#1a1a1a]/15 flex items-center justify-between gap-2 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-mono uppercase font-bold text-[#1a1a1a]/60">
+                    Active Raffle Target:
+                  </div>
+                  <div className="font-display text-xl sm:text-2xl font-black uppercase text-[#1a1a1a] tracking-tight truncate leading-tight">
+                    {selectedPrize ? selectedPrize.name : 'NO PRIZE SELECTED'}
+                  </div>
+                  <div className="font-mono text-[11px] uppercase tracking-wider text-[#1a1a1a]/70 font-semibold mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <span>
+                      {selectedPrize ? (
+                        <>
+                          {selectedPrize.description ? `${selectedPrize.description} • ` : ''}
+                          <strong className={availableQty > 0 ? 'text-emerald-700 font-black' : 'text-red-600 font-black'}>
+                            {availableQty} AVAILABLE
+                          </strong>
+                        </>
+                      ) : (
+                        'CLICK A CARD ABOVE TO SELECT'
+                      )}
                     </span>
-                  )}
+                  </div>
                 </div>
+
+                {selectedPrize && (
+                  <span className="font-mono text-[10px] font-bold text-[#1a1a1a]/70 bg-white border border-[#1a1a1a]/20 px-2 py-1 rounded-xs shrink-0 shadow-2xs">
+                    {selectedPrize.category === 'GRAND' ? 'Teaching Only' : 'Teaching & Non-Teaching'}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -943,10 +1127,13 @@ export const ProjectorDisplay: React.FC<ProjectorDisplayProps> = ({
               </button>
             )}
 
-            {/* Quick Operator Status Footer */}
-            <div className="mt-auto pt-3 border-t border-[#1a1a1a]/10 font-mono text-[10px] text-[#1a1a1a]/50 flex items-center justify-between">
-              <span>PROJECTOR READY</span>
-              <span>PRESS ESC TO EXIT FULL STAGE</span>
+            {/* Quick Operator Status Footer with Version */}
+            <div className="mt-auto pt-3 border-t border-[#1a1a1a]/10 font-mono text-[10px] text-[#1a1a1a]/60 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>PROJECTOR READY • {APP_VERSION}</span>
+              </span>
+              <span>ESC: FULL STAGE</span>
             </div>
           </aside>
         )}

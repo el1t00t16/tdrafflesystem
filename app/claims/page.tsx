@@ -1,5 +1,7 @@
 'use client';
 
+import { APP_VERSION } from '../../lib/constants';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Gift, Lock, ShieldCheck, Loader2, RefreshCw, AlertTriangle, Database, Sun, Moon, Printer } from 'lucide-react';
 import { ClaimsLoginForm } from '../../components/claims/ClaimsLoginForm';
@@ -878,7 +880,7 @@ export default function ClaimsPage() {
       {/* Footer */}
       <footer className="bg-[#121215] border-t border-white/10 px-6 py-3 text-center font-mono text-[11px] text-neutral-500 uppercase tracking-widest flex flex-wrap items-center justify-between gap-2 print:hidden">
         <span>Municipal Teachers&apos; Day 2026 • Official Prize Claim &amp; Disbursement Desk</span>
-        <span className="text-neutral-400 text-[10px]">Station: {claimSession.stationId}</span>
+        <span className="text-neutral-400 text-[10px]">Station: {claimSession.stationId} • {APP_VERSION}</span>
       </footer>
     </div>
   );

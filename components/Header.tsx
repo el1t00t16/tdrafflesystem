@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { Lock, ExternalLink, Sun, Moon, Download } from 'lucide-react';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { APP_VERSION } from '../lib/constants';
 
 interface HeaderProps {
   currentView: 'display' | 'admin' | 'claim' | 'attendance' | 'predraw';
@@ -220,6 +221,13 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
+          <div
+            className="font-mono text-[9px] px-2 py-1 border border-white/20 bg-black/40 text-neutral-300 font-bold uppercase tracking-wider hidden sm:block"
+            title={`System Release Version: ${APP_VERSION}`}
+          >
+            {APP_VERSION}
+          </div>
+
           <button
             id="header-sound-toggle"
             onClick={onToggleSound}
@@ -300,7 +308,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="header-meta font-mono text-[10px] sm:text-xs uppercase tracking-wider text-left sm:text-right leading-relaxed text-[#1a1a1a]/70 dark:text-neutral-400">
           MUNICIPALITY OF MALUNGON<br />
-          GRAND RAFFLE SYSTEM V2.6
+          GRAND RAFFLE SYSTEM {APP_VERSION.toUpperCase()}
         </div>
       </header>
     </>

@@ -1,5 +1,7 @@
 'use client';
 
+import { APP_VERSION } from '../lib/constants';
+
 import React, { useState } from 'react';
 import { District, DistributionMode, Participant, Prize, RaffleLog, SystemSettings, Winner } from '../lib/types';
 import { DashboardOverview } from './admin/DashboardOverview';
@@ -334,6 +336,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onResetDryRunOnly={onResetDryRunOnly}
         />
       )}
+
+      {/* Admin Version Footer */}
+      <div className="pt-4 border-t border-[#1a1a1a]/10 dark:border-white/10 flex items-center justify-between font-mono text-[10px] text-neutral-500 uppercase tracking-widest">
+        <span>Municipal Teachers&apos; Day 2026 • Admin Management Console</span>
+        <span className="font-bold text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-xs border border-neutral-300 dark:border-white/10">{APP_VERSION}</span>
+      </div>
     </div>
   );
 };
